@@ -1,12 +1,23 @@
 import React, { useState, useCallback } from "react";
+import { layoutProcess } from "bpmn-auto-layout";
 import BpmnEditor from "./components/BpmnEditor.jsx";
 import ValidationPanel from "./components/ValidationPanel.jsx";
 import ChatPanel from "./components/ChatPanel.jsx";
 import { uploadDiagram, validateDiagram, exportDiagram } from "./api/client.js";
 
+// run bpmn-auto-layout on raw XML, fall back to the original if it fails
+async function autoLayout(xmlString) {
+  try {
+    return await layoutProcess(xmlString);
+  } catch (err) {
+    console.warn("auto-layout failed, using raw XML:", err);
+    return xmlString;
+  }
+}
+
 export default function App() {
   const [xml, setXml] = useState(null);
-  const [ir, setIr] = useState(null);
+  const [diagram, setDiagram] = useState(null);
   const [validationResult, setValidationResult] = useState(null);
   const [validating, setValidating] = useState(false);
   const [includeSemantic, setIncludeSemantic] = useState(false);
@@ -21,20 +32,20 @@ export default function App() {
     if (!file) return;
     try {
       const res = await uploadDiagram(file);
-      setIr(res.ir);
-      // convert IR back to xml so the editor shows the parsed result
-      const exported = await exportDiagram(res.ir);
-      setXml(exported.xml);
+      setDiagram(res.diagram);
+      const exported = await exportDiagram(res.diagram);
+      const laid = await autoLayout(exported.xml);
+      setXml(laid);
     } catch (err) {
       alert(`Upload failed: ${err.message}`);
     }
   }
 
   async function handleValidate() {
-    if (!ir) return alert("Upload a diagram first.");
+    if (!diagram) return alert("Upload a diagram first.");
     setValidating(true);
     try {
-      const res = await validateDiagram(ir, includeSemantic);
+      const res = await validateDiagram(diagram, includeSemantic);
       setValidationResult(res);
     } catch (err) {
       alert(`Validation failed: ${err.message}`);
@@ -43,12 +54,16 @@ export default function App() {
     }
   }
 
-  // called when the chat assistant proposes an IR update
-  function handleIrUpdate(updatedIr) {
-    setIr(updatedIr);
-    exportDiagram(updatedIr)
-      .then((res) => setXml(res.xml))
-      .catch(console.error);
+  // called when the chat assistant proposes a diagram update
+  async function handleDiagramUpdate(updatedDiagram) {
+    setDiagram(updatedDiagram);
+    try {
+      const exported = await exportDiagram(updatedDiagram);
+      const laid = await autoLayout(exported.xml);
+      setXml(laid);
+    } catch (err) {
+      console.error("failed to apply diagram update:", err);
+    }
   }
 
   return (
@@ -130,9 +145,9 @@ export default function App() {
           </div>
           <div style={{ flex: 1, overflow: "hidden" }}>
             <ChatPanel
-              ir={ir}
+              ir={diagram}
               issues={[...(validationResult?.issues ?? []), ...(validationResult?.semantic_issues ?? [])]}
-              onIrUpdate={handleIrUpdate}
+              onIrUpdate={handleDiagramUpdate}
             />
           </div>
         </div>
