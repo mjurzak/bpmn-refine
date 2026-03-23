@@ -16,8 +16,18 @@ from app.model.schema import (
     SequenceFlow,
 )
 
-# standard BPMN 2.0 namespace
+# standard BPMN 2.0 namespaces
 BPMN_NS = "http://www.omg.org/spec/BPMN/20100524/MODEL"
+BPMNDI_NS = "http://www.omg.org/spec/BPMN/20100524/DI"
+DC_NS = "http://www.omg.org/spec/DD/20100524/DC"
+DI_NS = "http://www.omg.org/spec/DD/20100524/DI"
+
+# dimensions for auto-layout
+_EVENT_SIZE = 36
+_TASK_SIZE = (100, 80)
+_GATEWAY_SIZE = 50
+_H_GAP = 50
+_Y_CENTER = 200
 
 _FLOW_NODE_TAGS = {t.value for t in FlowNodeType}
 
@@ -44,7 +54,13 @@ class PydanticConverter:
 
     def serialize(self, diagram: BpmnDiagram) -> bytes:
         """Serialise a BpmnDiagram back to BPMN XML bytes."""
-        nsmap: dict = diagram.namespaces or {"bpmn": BPMN_NS}
+        nsmap: dict = dict(diagram.namespaces) if diagram.namespaces else {}
+        # ensure all required namespaces are present
+        nsmap.setdefault("bpmn", BPMN_NS)
+        nsmap.setdefault("bpmndi", BPMNDI_NS)
+        nsmap.setdefault("dc", DC_NS)
+        nsmap.setdefault("di", DI_NS)
+
         root = etree.Element(
             f"{{{BPMN_NS}}}definitions",
             nsmap=nsmap,
@@ -55,6 +71,10 @@ class PydanticConverter:
         )
         for proc in diagram.processes:
             root.append(_serialize_process(proc, BPMN_NS))
+
+        # bpmn-js requires BPMNDI to render — generate a simple left-to-right layout
+        for proc in diagram.processes:
+            root.append(_serialize_bpmndi(proc))
 
         return etree.tostring(root, pretty_print=True, xml_declaration=True, encoding="UTF-8")
 
@@ -157,3 +177,107 @@ def _serialize_process(proc: BpmnProcess, bpmn_ns: str) -> etree._Element:
             cond_el.text = sf.condition_expression
 
     return el
+
+
+def _serialize_bpmndi(proc: BpmnProcess) -> etree._Element:
+    """Generate minimal BPMNDI for bpmn-js rendering.
+
+    Lays out nodes left-to-right in sequence flow order so the diagram is
+    at least readable.  This is not a full auto-layout — just enough for
+    bpmn-js to initialise its canvas.
+    """
+    diagram_el = etree.Element(
+        f"{{{BPMNDI_NS}}}BPMNDiagram",
+        attrib={"id": f"BPMNDiagram_{proc.id}"},
+    )
+    plane_el = etree.SubElement(
+        diagram_el,
+        f"{{{BPMNDI_NS}}}BPMNPlane",
+        attrib={"id": f"BPMNPlane_{proc.id}", "bpmnElement": proc.id},
+    )
+
+    # build a simple left-to-right ordering following sequence flows
+    ordered_ids = _topo_order(proc)
+    node_positions: dict[str, tuple[int, int, int, int]] = {}  # id → (x, y, w, h)
+
+    x = 150
+    for node_id in ordered_ids:
+        node = next((n for n in proc.flow_nodes if n.id == node_id), None)
+        if node is None:
+            continue
+        w, h = _node_dimensions(node)
+        y = _Y_CENTER - h // 2
+        node_positions[node_id] = (x, y, w, h)
+        x += w + _H_GAP
+
+    # shapes
+    for node_id, (bx, by, bw, bh) in node_positions.items():
+        shape_el = etree.SubElement(
+            plane_el,
+            f"{{{BPMNDI_NS}}}BPMNShape",
+            attrib={"id": f"{node_id}_di", "bpmnElement": node_id},
+        )
+        etree.SubElement(
+            shape_el,
+            f"{{{DC_NS}}}Bounds",
+            attrib={"x": str(bx), "y": str(by), "width": str(bw), "height": str(bh)},
+        )
+
+    # edges — simple straight line from source center-right to target center-left
+    for sf in proc.sequence_flows:
+        src = node_positions.get(sf.source_ref)
+        tgt = node_positions.get(sf.target_ref)
+        if not src or not tgt:
+            continue
+        edge_el = etree.SubElement(
+            plane_el,
+            f"{{{BPMNDI_NS}}}BPMNEdge",
+            attrib={"id": f"{sf.id}_di", "bpmnElement": sf.id},
+        )
+        # waypoint: right edge of source → left edge of target
+        sx, sy, sw, sh = src
+        tx, ty, tw, th = tgt
+        etree.SubElement(edge_el, f"{{{DI_NS}}}waypoint", attrib={"x": str(sx + sw), "y": str(sy + sh // 2)})
+        etree.SubElement(edge_el, f"{{{DI_NS}}}waypoint", attrib={"x": str(tx), "y": str(ty + th // 2)})
+
+    return diagram_el
+
+
+def _node_dimensions(node: FlowNode) -> tuple[int, int]:
+    """Return (width, height) for a given node type."""
+    if node.type.value in ("startEvent", "endEvent",
+                           "intermediateCatchEvent", "intermediateThrowEvent"):
+        return (_EVENT_SIZE, _EVENT_SIZE)
+    if "Gateway" in node.type.value or "gateway" in node.type.value:
+        return (_GATEWAY_SIZE, _GATEWAY_SIZE)
+    return _TASK_SIZE
+
+
+def _topo_order(proc: BpmnProcess) -> list[str]:
+    """Topological sort of flow nodes by sequence flows (simple BFS)."""
+    node_ids = {n.id for n in proc.flow_nodes}
+    incoming_count: dict[str, int] = {nid: 0 for nid in node_ids}
+    adjacency: dict[str, list[str]] = {nid: [] for nid in node_ids}
+
+    for sf in proc.sequence_flows:
+        if sf.source_ref in node_ids and sf.target_ref in node_ids:
+            adjacency[sf.source_ref].append(sf.target_ref)
+            incoming_count[sf.target_ref] += 1
+
+    # start from nodes with no incoming edges
+    queue = [nid for nid, c in incoming_count.items() if c == 0]
+    ordered: list[str] = []
+    while queue:
+        nid = queue.pop(0)
+        ordered.append(nid)
+        for successor in adjacency[nid]:
+            incoming_count[successor] -= 1
+            if incoming_count[successor] == 0:
+                queue.append(successor)
+
+    # append any nodes not reached (disconnected)
+    for nid in node_ids:
+        if nid not in ordered:
+            ordered.append(nid)
+
+    return ordered

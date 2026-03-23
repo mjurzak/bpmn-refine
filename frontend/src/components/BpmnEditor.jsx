@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import BpmnModeler from "bpmn-js/lib/Modeler";
 import "bpmn-js/dist/assets/bpmn-js.css";
 import "bpmn-js/dist/assets/diagram-js.css";
@@ -27,25 +27,34 @@ export default function BpmnEditor({ xml, onXmlChange }) {
   const containerRef = useRef(null);
   const modelerRef = useRef(null);
 
+  // stable reference so the commandStack listener doesn't go stale
+  const onXmlChangeRef = useRef(onXmlChange);
+  onXmlChangeRef.current = onXmlChange;
+
   useEffect(() => {
-    modelerRef.current = new BpmnModeler({ container: containerRef.current });
+    const modeler = new BpmnModeler({ container: containerRef.current });
+    modelerRef.current = modeler;
 
-    modelerRef.current.importXML(xml || DEFAULT_DIAGRAM).catch(console.error);
+    modeler.importXML(xml || DEFAULT_DIAGRAM).catch(console.error);
 
-    // notify parent whenever the diagram changes
-    modelerRef.current.on("commandStack.changed", async () => {
+    modeler.on("commandStack.changed", async () => {
+      if (!modelerRef.current) return; // destroyed by cleanup
       try {
-        const { xml: updatedXml } = await modelerRef.current.saveXML({ format: true });
-        onXmlChange?.(updatedXml);
+        const { xml: updatedXml } = await modeler.saveXML({ format: true });
+        onXmlChangeRef.current?.(updatedXml);
       } catch (err) {
         console.error("failed to export xml", err);
       }
     });
 
-    return () => modelerRef.current?.destroy();
+    return () => {
+      // clear ref BEFORE destroy so other effects see null and bail out
+      modelerRef.current = null;
+      modeler.destroy();
+    };
   }, []);
 
-  // re-import when xml prop changes from outside
+  // re-import when xml prop changes from outside (e.g. chat applying a diagram)
   useEffect(() => {
     if (!xml || !modelerRef.current) return;
     modelerRef.current.importXML(xml).catch(console.error);
