@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -68,7 +71,7 @@ async def chat(req: ChatRequest) -> ChatResponse:
             end = reply.index("```", start)
             diagram_json = reply[start:end].strip()
             updated_diagram = BpmnDiagram.model_validate_json(diagram_json)
-        except Exception:
-            pass  # non-critical — the reply text still carries value
+        except Exception as exc:
+            logger.warning("failed to parse diagram from LLM reply: %s", exc)
 
     return ChatResponse(reply=reply, updated_diagram=updated_diagram)

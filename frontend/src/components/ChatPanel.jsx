@@ -25,8 +25,8 @@ export default function ChatPanel({ ir, issues, onIrUpdate }) {
       const res = await sendChatMessage(nextMessages, ir, issues);
       const assistantMsg = { role: "assistant", content: res.reply };
       setMessages((prev) => [...prev, assistantMsg]);
-      if (res.updated_ir) {
-        onIrUpdate?.(res.updated_ir);
+      if (res.updated_diagram) {
+        onIrUpdate?.(res.updated_diagram);
       }
     } catch (err) {
       setMessages((prev) => [
