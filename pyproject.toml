@@ -1,0 +1,37 @@
+[project]
+name = "bpmn-ai-validator"
+version = "0.1.0"
+description = "Interactive BPMN validation, repair, and refinement with LLMs"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "anthropic>=0.40.0",
+    "lxml>=5.3.0",
+    "python-multipart>=0.0.12",
+    "httpx>=0.28.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.28.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# source is in backend/ so we don't publish a top-level package
+packages = []
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+# run tests with:  PYTHONPATH=backend .venv/bin/pytest tests/
