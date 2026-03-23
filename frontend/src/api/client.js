@@ -23,18 +23,18 @@ export async function exportDiagram(ir) {
   });
 }
 
-export async function validateDiagram(ir, includeSemantic = false) {
+export async function validateDiagram(diagram, includeSemantic = false) {
   return request("/validate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ir, include_semantic: includeSemantic }),
+    body: JSON.stringify({ diagram, include_semantic: includeSemantic }),
   });
 }
 
-export async function sendChatMessage(messages, ir = null, issues = []) {
+export async function sendChatMessage(messages, diagram = null, issues = []) {
   return request("/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, ir, issues }),
+    body: JSON.stringify({ messages, diagram, issues }),
   });
 }

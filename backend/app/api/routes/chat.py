@@ -64,14 +64,18 @@ async def chat(req: ChatRequest) -> ChatResponse:
     )
 
     updated_diagram: BpmnDiagram | None = None
-    # extract diagram update if the assistant wrapped one in ```diagram ... ```
-    if "```diagram" in reply:
+    # accept whichever fence name the LLM chose — models don't always follow instructions exactly
+    for fence in ("```diagram", "```ir", "```json"):
+        if fence not in reply:
+            continue
         try:
-            start = reply.index("```diagram") + 10
+            start = reply.index(fence) + len(fence)
             end = reply.index("```", start)
             diagram_json = reply[start:end].strip()
             updated_diagram = BpmnDiagram.model_validate_json(diagram_json)
+            logger.info("parsed updated diagram from %s fence", fence)
+            break
         except Exception as exc:
-            logger.warning("failed to parse diagram from LLM reply: %s", exc)
+            logger.warning("failed to parse diagram from %s fence: %s", fence, exc)
 
     return ChatResponse(reply=reply, updated_diagram=updated_diagram)
