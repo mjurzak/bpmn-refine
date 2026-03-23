@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from app.model.schema import BpmnDiagram
 from app.llm import client as llm_client
-from app.llm.router import TaskType, resolve_model
+from app.llm.router import TaskType, resolve_model, resolve_provider
 from app.validation.rules import ValidationIssue, ValidationReport, validate
 
 router = APIRouter(prefix="/validate", tags=["validate"])
@@ -52,6 +52,7 @@ async def _semantic_validate(diagram: BpmnDiagram, report: ValidationReport) -> 
         prompt=json.dumps(payload),
         system=system_prompt,
         model=resolve_model(TaskType.SEMANTIC_VALIDATION),
+        provider=resolve_provider(TaskType.SEMANTIC_VALIDATION),
     )
     try:
         issues_data = json.loads(raw)

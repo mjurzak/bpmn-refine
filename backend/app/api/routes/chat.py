@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from app.model.schema import BpmnDiagram
 from app.llm import client as llm_client
-from app.llm.router import TaskType, resolve_model
+from app.llm.router import TaskType, resolve_model, resolve_provider
 from app.validation.rules import ValidationIssue
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -57,6 +57,7 @@ async def chat(req: ChatRequest) -> ChatResponse:
         messages=messages,
         system=system_prompt,
         model=resolve_model(TaskType.REFINEMENT),
+        provider=resolve_provider(TaskType.REFINEMENT),
     )
 
     updated_diagram: BpmnDiagram | None = None

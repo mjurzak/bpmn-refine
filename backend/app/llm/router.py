@@ -1,7 +1,7 @@
-"""Model routing logic.
+"""Model and provider routing.
 
-Chooses which model tier to use based on task type.  Call site code should
-import TaskType and call resolve_model() rather than hard-coding model names.
+Call sites import TaskType and use resolve_model() / resolve_provider() rather
+than hard-coding names.  Both respect per-tier overrides from settings.
 """
 from __future__ import annotations
 
@@ -11,11 +11,11 @@ from app.core.config import settings
 
 
 class TaskType(StrEnum):
-    # reasoning-critical tasks — use strong model
+    # reasoning-critical tasks — use strong tier
     SEMANTIC_VALIDATION = "semantic_validation"
     REPAIR = "repair"
     REFINEMENT = "refinement"
-    # mechanical / structured tasks — use fast model
+    # mechanical / structured tasks — use fast tier
     IR_CONVERSION = "ir_conversion"
     SUMMARY = "summary"
     SIMPLE_QUERY = "simple_query"
@@ -29,7 +29,17 @@ _STRONG_TASKS = {
 
 
 def resolve_model(task: TaskType) -> str:
-    """Return the appropriate model ID for the given task type."""
+    """Return the model name for the given task type."""
     if task in _STRONG_TASKS:
         return settings.llm_strong_model
     return settings.llm_fast_model
+
+
+def resolve_provider(task: TaskType) -> str:
+    """Return the provider name for the given task type.
+
+    Checks per-tier overrides first; falls back to the global llm_provider.
+    """
+    if task in _STRONG_TASKS:
+        return settings.llm_strong_provider or settings.llm_provider
+    return settings.llm_fast_provider or settings.llm_provider

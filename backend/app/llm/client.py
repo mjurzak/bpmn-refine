@@ -15,10 +15,15 @@ async def complete(
     prompt: str,
     system: str | None = None,
     model: str | None = None,
+    provider: str | None = None,
     max_tokens: int = 4096,
 ) -> str:
-    """Single-turn completion via the configured provider."""
-    return await get_provider().complete(
+    """Single-turn completion.
+
+    provider: name registered in llm/registry.py; defaults to settings.llm_provider.
+    model:    model ID for the chosen provider; defaults to settings.llm_fast_model.
+    """
+    return await get_provider(provider).complete(
         prompt=prompt,
         system=system,
         model=model or settings.llm_fast_model,
@@ -30,13 +35,16 @@ async def complete_with_history(
     messages: list[dict],
     system: str | None = None,
     model: str | None = None,
+    provider: str | None = None,
     max_tokens: int = 4096,
 ) -> str:
-    """Multi-turn completion via the configured provider.
+    """Multi-turn completion.
 
     messages format: [{"role": "user"|"assistant", "content": "..."}]
+    provider: name registered in llm/registry.py; defaults to settings.llm_provider.
+    model:    model ID for the chosen provider; defaults to settings.llm_fast_model.
     """
-    return await get_provider().complete_with_history(
+    return await get_provider(provider).complete_with_history(
         messages=messages,
         system=system,
         model=model or settings.llm_fast_model,
