@@ -63,7 +63,7 @@ export default function BpmnEditor({ xml, onXmlChange }) {
   return (
     <div
       ref={containerRef}
-      style={{ width: "100%", height: "100%", border: "1px solid #ddd" }}
+      style={{ width: "100%", height: "100%" }}
     />
   );
 }

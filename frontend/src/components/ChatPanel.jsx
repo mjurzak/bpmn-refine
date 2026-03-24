@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { sendChatMessage } from "../api/client.js";
 
-export default function ChatPanel({ ir, issues, onIrUpdate }) {
+export default function ChatPanel({ ir, issues, onIrUpdate, SendIcon }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,72 +46,49 @@ export default function ChatPanel({ ir, issues, onIrUpdate }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <h3 style={{ padding: "12px 12px 4px" }}>Chat</h3>
+    <>
+      <div className="panel-header">Chat</div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px" }}>
+      <div className="chat-body">
+        {messages.length === 0 && !loading && (
+          <div className="validation-empty" style={{ height: "auto", paddingTop: 40 }}>
+            Ask questions about your diagram or request changes.
+          </div>
+        )}
+
         {messages.map((m, i) => (
           <div
             key={i}
-            style={{
-              marginBottom: "10px",
-              textAlign: m.role === "user" ? "right" : "left",
-            }}
+            className={`chat-message chat-message--${m.role}`}
           >
-            <span
-              style={{
-                display: "inline-block",
-                maxWidth: "85%",
-                padding: "8px 12px",
-                borderRadius: "12px",
-                background: m.role === "user" ? "#1976d2" : "#f0f0f0",
-                color: m.role === "user" ? "#fff" : "#333",
-                whiteSpace: "pre-wrap",
-                fontSize: "0.9em",
-              }}
-            >
+            <div className={`chat-bubble chat-bubble--${m.role}`}>
               {m.content}
-            </span>
+            </div>
           </div>
         ))}
-        {loading && (
-          <div style={{ color: "#888", fontSize: "0.85em" }}>Thinking…</div>
-        )}
+
+        {loading && <div className="chat-thinking">Thinking...</div>}
         <div ref={bottomRef} />
       </div>
 
-      <div style={{ display: "flex", padding: "8px 12px", borderTop: "1px solid #ddd" }}>
+      <div className="chat-input-area">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask about the diagram or request changes…"
+          placeholder="Ask about the diagram..."
           rows={2}
-          style={{
-            flex: 1,
-            resize: "none",
-            padding: "8px",
-            borderRadius: "4px",
-            border: "1px solid #ccc",
-            fontSize: "0.9em",
-          }}
+          className="chat-textarea"
         />
         <button
           onClick={handleSend}
           disabled={loading || !input.trim()}
-          style={{
-            marginLeft: "8px",
-            padding: "0 16px",
-            background: "#1976d2",
-            color: "#fff",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
+          className="chat-send-btn"
+          title="Send message"
         >
-          Send
+          {SendIcon ? <SendIcon /> : "Send"}
         </button>
       </div>
-    </div>
+    </>
   );
 }

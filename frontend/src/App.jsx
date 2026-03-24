@@ -4,6 +4,8 @@ import BpmnEditor from "./components/BpmnEditor.jsx";
 import ValidationPanel from "./components/ValidationPanel.jsx";
 import ChatPanel from "./components/ChatPanel.jsx";
 import { uploadDiagram, validateDiagram, exportDiagram } from "./api/client.js";
+import useResize from "./hooks/useResize.js";
+import "./app.css";
 
 // run bpmn-auto-layout on raw XML, fall back to the original if it fails
 async function autoLayout(xmlString) {
@@ -15,6 +17,16 @@ async function autoLayout(xmlString) {
   }
 }
 
+// simple arrow icon for the send button
+function SendIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+    </svg>
+  );
+}
+
 export default function App() {
   const [xml, setXml] = useState(null);
   const [diagram, setDiagram] = useState(null);
@@ -22,7 +34,13 @@ export default function App() {
   const [validating, setValidating] = useState(false);
   const [includeSemantic, setIncludeSemantic] = useState(false);
 
-  // when the user edits in the canvas we update xml but don't auto-validate
+  // resizable sidebar width
+  const sidebar = useResize({ initial: 340, min: 260, max: 520, axis: "horizontal" });
+
+  // resizable split between validation (top) and chat (bottom)
+  // this is the height of the validation section in px
+  const panelSplit = useResize({ initial: 260, min: 80, max: 600, axis: "vertical" });
+
   const handleXmlChange = useCallback((updatedXml) => {
     setXml(updatedXml);
   }, []);
@@ -66,34 +84,33 @@ export default function App() {
     }
   }
 
+  const allIssues = [
+    ...(validationResult?.issues ?? []),
+    ...(validationResult?.semantic_issues ?? []),
+  ];
+  const errorCount = allIssues.filter((i) => i.severity === "error").length;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+    <div className="app-layout">
       {/* toolbar */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          padding: "8px 16px",
-          background: "#1976d2",
-          color: "#fff",
-        }}
-      >
-        <strong>BPMN AI Validator</strong>
-        <label
-          style={{
-            cursor: "pointer",
-            background: "#fff",
-            color: "#1976d2",
-            padding: "4px 10px",
-            borderRadius: "4px",
-            fontSize: "0.85em",
-          }}
-        >
+      <div className="toolbar">
+        <div className="toolbar-title">
+          BPMN <span>AI</span> Validator
+        </div>
+
+        <div className="toolbar-spacer" />
+
+        <label className="toolbar-btn">
           Upload .bpmn
-          <input type="file" accept=".bpmn" onChange={handleUpload} style={{ display: "none" }} />
+          <input
+            type="file"
+            accept=".bpmn"
+            onChange={handleUpload}
+            style={{ display: "none" }}
+          />
         </label>
-        <label style={{ fontSize: "0.85em", display: "flex", alignItems: "center", gap: "4px" }}>
+
+        <label className="toolbar-checkbox">
           <input
             type="checkbox"
             checked={includeSemantic}
@@ -101,55 +118,53 @@ export default function App() {
           />
           Semantic (LLM)
         </label>
-        <button
-          onClick={handleValidate}
-          style={{
-            background: "#fff",
-            color: "#1976d2",
-            border: "none",
-            padding: "4px 10px",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "0.85em",
-          }}
-        >
+
+        <button onClick={handleValidate} className="toolbar-btn toolbar-btn--primary">
           Validate
         </button>
       </div>
 
       {/* main area */}
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* bpmn editor — takes most space */}
-        <div style={{ flex: 3 }}>
-          <BpmnEditor xml={xml} onXmlChange={handleXmlChange} />
-        </div>
-
-        {/* right sidebar */}
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            borderLeft: "1px solid #ddd",
-            minWidth: "280px",
-            maxWidth: "380px",
-          }}
-        >
-          <div style={{ flex: 1, borderBottom: "1px solid #ddd", overflow: "auto" }}>
+      <div className="main-area">
+        {/* left sidebar */}
+        <div className="sidebar" style={{ width: sidebar.size }}>
+          {/* validation panel — top */}
+          <div className="panel-section" style={{ height: panelSplit.size }}>
             <ValidationPanel
               issues={validationResult?.issues ?? []}
               semanticIssues={validationResult?.semantic_issues ?? []}
               isValid={validationResult?.is_valid}
               loading={validating}
+              errorCount={errorCount}
             />
           </div>
-          <div style={{ flex: 1, overflow: "hidden" }}>
+
+          {/* vertical resize handle */}
+          <div
+            className={`resize-handle-v${panelSplit.isDragging ? " dragging" : ""}`}
+            onMouseDown={panelSplit.handleMouseDown}
+          />
+
+          {/* chat panel — bottom */}
+          <div className="panel-section" style={{ flex: 1 }}>
             <ChatPanel
               ir={diagram}
-              issues={[...(validationResult?.issues ?? []), ...(validationResult?.semantic_issues ?? [])]}
+              issues={allIssues}
               onIrUpdate={handleDiagramUpdate}
+              SendIcon={SendIcon}
             />
           </div>
+        </div>
+
+        {/* horizontal resize handle */}
+        <div
+          className={`resize-handle-h${sidebar.isDragging ? " dragging" : ""}`}
+          onMouseDown={sidebar.handleMouseDown}
+        />
+
+        {/* bpmn editor */}
+        <div className="editor-pane">
+          <BpmnEditor xml={xml} onXmlChange={handleXmlChange} />
         </div>
       </div>
     </div>
