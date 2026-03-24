@@ -27,7 +27,6 @@ async def complete(
         prompt=prompt,
         system=system,
         model=model or settings.llm_fast_model,
-        max_tokens=max_tokens,
     )
 
 
@@ -48,5 +47,4 @@ async def complete_with_history(
         messages=messages,
         system=system,
         model=model or settings.llm_fast_model,
-        max_tokens=max_tokens,
     )

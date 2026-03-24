@@ -8,7 +8,11 @@ Usage:
 """
 from __future__ import annotations
 
+import logging
+
 from app.llm.protocol import LLMProvider
+
+logger = logging.getLogger(__name__)
 
 _registry: dict[str, LLMProvider] = {}
 
@@ -39,14 +43,21 @@ def _bootstrap() -> None:
     from app.llm.providers.openai import OpenAIProvider
     from app.llm.providers.ollama import OllamaProvider
 
+    print(f"[llm bootstrap] provider={settings.llm_provider!r}")
+    print(f"[llm bootstrap] anthropic_api_key present: {bool(settings.anthropic_api_key)}, len={len(settings.anthropic_api_key)}")
+    print(f"[llm bootstrap] openai_api_key present: {bool(settings.openai_api_key)}, len={len(settings.openai_api_key)}")
+
     if settings.anthropic_api_key:
         register("anthropic", AnthropicProvider(settings.anthropic_api_key))
+        print("[llm bootstrap] registered: anthropic")
 
     if settings.openai_api_key:
         register("openai", OpenAIProvider(settings.openai_api_key))
+        print("[llm bootstrap] registered: openai")
 
     # Ollama runs locally — no key needed
     register("ollama", OllamaProvider(settings.ollama_base_url))
+    print("[llm bootstrap] registered: ollama")
 
 
 _bootstrap()

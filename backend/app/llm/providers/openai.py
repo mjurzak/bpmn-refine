@@ -16,14 +16,13 @@ class OpenAIProvider:
         prompt: str,
         system: str | None,
         model: str,
-        max_tokens: int,
     ) -> str:
         messages: list[dict] = []
         if system:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
         response = await self._client.chat.completions.create(
-            model=model, max_tokens=max_tokens, messages=messages
+            model=model, messages=messages
         )
         return response.choices[0].message.content or ""
 
@@ -32,7 +31,6 @@ class OpenAIProvider:
         messages: list[dict],
         system: str | None,
         model: str,
-        max_tokens: int,
     ) -> str:
         # OpenAI takes system as the first message in the list
         full_messages: list[dict] = []
@@ -40,6 +38,6 @@ class OpenAIProvider:
             full_messages.append({"role": "system", "content": system})
         full_messages.extend(messages)
         response = await self._client.chat.completions.create(
-            model=model, max_tokens=max_tokens, messages=full_messages
+            model=model, messages=full_messages
         )
         return response.choices[0].message.content or ""

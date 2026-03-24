@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=("../.env", ".env"),  # works from both repo root and backend/
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # llm provider — must match a name registered in app.llm.registry
     # options: anthropic | openai | ollama
     # used as the default for both tiers unless overridden below
-    llm_provider: str = "anthropic"
+    llm_provider: str = "openai"
 
     # per-tier provider overrides — leave empty to fall back to llm_provider
     # example: llm_strong_provider=anthropic, llm_fast_provider=openai
@@ -24,9 +24,9 @@ class Settings(BaseSettings):
 
     # model names — must be valid for the chosen provider
     # "strong" model for reasoning-critical tasks (repair, semantic validation)
-    llm_strong_model: str = "claude-opus-4-6"
+    llm_strong_model: str = "gpt-5.4"
     # "fast" model for mechanical transformations (format conversion, simple checks)
-    llm_fast_model: str = "claude-haiku-4-5-20251001"
+    llm_fast_model: str = "gpt-5-nano"
 
     # provider credentials / endpoints
     # empty string = key not set; actual values must come from .env

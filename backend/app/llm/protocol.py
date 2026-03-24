@@ -15,7 +15,6 @@ class LLMProvider(Protocol):
         prompt: str,
         system: str | None,
         model: str,
-        max_tokens: int,
     ) -> str:
         """Single-turn completion.  Returns the response text."""
         ...
@@ -25,7 +24,6 @@ class LLMProvider(Protocol):
         messages: list[dict],
         system: str | None,
         model: str,
-        max_tokens: int,
     ) -> str:
         """Multi-turn completion given a full message history.
 
