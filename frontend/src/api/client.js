@@ -31,10 +31,22 @@ export async function validateDiagram(diagram, includeSemantic = false) {
   });
 }
 
-export async function sendChatMessage(messages, diagram = null, issues = []) {
+export async function sendChatMessage(messages, diagram = null, issues = [], sessionId = null) {
   return request("/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, diagram, issues }),
+    body: JSON.stringify({ messages, diagram, issues, session_id: sessionId }),
   });
+}
+
+export async function getHistory(sessionId) {
+  return request(`/history/${sessionId}`);
+}
+
+export async function getRevision(sessionId, revId) {
+  return request(`/history/${sessionId}/${revId}`);
+}
+
+export async function revertToRevision(sessionId, revId) {
+  return request(`/history/${sessionId}/revert/${revId}`, { method: "POST" });
 }

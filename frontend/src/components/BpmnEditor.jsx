@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import BpmnModeler from "bpmn-js/lib/Modeler";
 import "bpmn-js/dist/assets/bpmn-js.css";
 import "bpmn-js/dist/assets/diagram-js.css";
@@ -22,8 +22,11 @@ const DEFAULT_DIAGRAM = `<?xml version="1.0" encoding="UTF-8"?>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>`;
 
+const DIFF_MARKERS = ["diff-added", "diff-modified"];
+
 // wraps bpmn-js Modeler as a React component
-export default function BpmnEditor({ xml, onXmlChange }) {
+// exposes applyDiff / clearDiff via ref for hover-based diff highlighting
+const BpmnEditor = forwardRef(function BpmnEditor({ xml, onXmlChange }, ref) {
   const containerRef = useRef(null);
   const modelerRef = useRef(null);
 
@@ -38,7 +41,7 @@ export default function BpmnEditor({ xml, onXmlChange }) {
     modeler.importXML(xml || DEFAULT_DIAGRAM).catch(console.error);
 
     modeler.on("commandStack.changed", async () => {
-      if (!modelerRef.current) return; // destroyed by cleanup
+      if (!modelerRef.current) return;
       try {
         const { xml: updatedXml } = await modeler.saveXML({ format: true });
         onXmlChangeRef.current?.(updatedXml);
@@ -48,17 +51,50 @@ export default function BpmnEditor({ xml, onXmlChange }) {
     });
 
     return () => {
-      // clear ref BEFORE destroy so other effects see null and bail out
       modelerRef.current = null;
       modeler.destroy();
     };
   }, []);
 
-  // re-import when xml prop changes from outside (e.g. chat applying a diagram)
   useEffect(() => {
     if (!xml || !modelerRef.current) return;
     modelerRef.current.importXML(xml).catch(console.error);
   }, [xml]);
+
+  // expose diff marker controls and direct import to parent via ref
+  useImperativeHandle(ref, () => ({
+    importXml(xml) {
+      if (!modelerRef.current) return;
+      modelerRef.current.importXML(xml).catch(console.error);
+    },
+
+    applyDiff({ added = [], modified = [] }) {
+      const modeler = modelerRef.current;
+      if (!modeler) return;
+      const canvas = modeler.get("canvas");
+      const elementRegistry = modeler.get("elementRegistry");
+
+      for (const id of added) {
+        if (elementRegistry.get(id)) canvas.addMarker(id, "diff-added");
+      }
+      for (const id of modified) {
+        if (elementRegistry.get(id)) canvas.addMarker(id, "diff-modified");
+      }
+    },
+
+    clearDiff() {
+      const modeler = modelerRef.current;
+      if (!modeler) return;
+      const canvas = modeler.get("canvas");
+      const elementRegistry = modeler.get("elementRegistry");
+
+      for (const { id } of elementRegistry.getAll()) {
+        for (const marker of DIFF_MARKERS) {
+          canvas.removeMarker(id, marker);
+        }
+      }
+    },
+  }));
 
   return (
     <div
@@ -66,4 +102,6 @@ export default function BpmnEditor({ xml, onXmlChange }) {
       style={{ width: "100%", height: "100%" }}
     />
   );
-}
+});
+
+export default BpmnEditor;
