@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api.routes import diagrams, validate, chat
+from app.api.routes import diagrams, validate, chat, history
 
 app = FastAPI(
     title="BPMN AI Validator",
@@ -21,6 +21,7 @@ app.add_middleware(
 app.include_router(diagrams.router, prefix=settings.api_prefix)
 app.include_router(validate.router, prefix=settings.api_prefix)
 app.include_router(chat.router, prefix=settings.api_prefix)
+app.include_router(history.router, prefix=settings.api_prefix)
 
 
 @app.get("/health")

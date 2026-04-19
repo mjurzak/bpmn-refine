@@ -5,12 +5,15 @@ WORKDIR /app
 # install uv
 RUN pip install uv
 
-# copy dependency spec first for layer caching
+# copy dependency metadata first for layer caching
 COPY pyproject.toml .
+COPY uv.lock .
 COPY .python-version .
 
-# install deps into the system python (no venv needed inside Docker)
-RUN uv pip install --system -e ".[dev]"
+# install locked deps into the system python (no venv needed inside Docker)
+RUN uv export --frozen --extra dev --no-emit-project --format requirements.txt --output-file requirements.txt \
+    && uv pip install --system -r requirements.txt \
+    && rm requirements.txt
 
 COPY backend/ ./backend/
 COPY tests/ ./tests/

@@ -46,6 +46,33 @@ docker compose up --build
 PYTHONPATH=backend .venv/bin/pytest tests/ -v
 ```
 
+## CLI
+
+Run the backend-local CLI without starting FastAPI:
+
+```bash
+PYTHONPATH=backend .venv/bin/python -m app.cli validate data/pmo-dataset/bpmn/01.bpmn
+PYTHONPATH=backend .venv/bin/python -m app.cli validate data/pmo-dataset/bpmn/01.bpmn --json
+PYTHONPATH=backend .venv/bin/python -m app.cli roundtrip data/pmo-dataset/bpmn/01.bpmn --out /tmp/roundtrip.bpmn
+PYTHONPATH=backend .venv/bin/python -m app.cli chat data/pmo-dataset/bpmn/01.bpmn --message "add a manager approval step" --out /tmp/refined.bpmn
+PYTHONPATH=backend .venv/bin/python -m app.cli repair data/pmo-dataset/bpmn/01.bpmn --out /tmp/repaired.bpmn
+PYTHONPATH=backend .venv/bin/python -m app.cli batch-validate data/pmo-dataset/bpmn --recursive --format jsonl --out /tmp/validation.jsonl
+```
+
+After `uv pip install -e .`, the CLI is also exposed as:
+
+```bash
+bpmn-ai-validator validate data/pmo-dataset/bpmn/01.bpmn
+```
+
+Experiment-oriented commands support metadata such as runtime, dataset path, provider, model, and prompt filename:
+
+```bash
+bpmn-ai-validator validate data/pmo-dataset/bpmn/01.bpmn --json
+bpmn-ai-validator repair data/pmo-dataset/bpmn/01.bpmn --json
+bpmn-ai-validator batch-validate data/pmo-dataset/bpmn --recursive --format json --out /tmp/results.json
+```
+
 ## Documentation
 
 | Document | Description |

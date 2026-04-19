@@ -10,6 +10,9 @@ dist/
 # env
 .env
 
+# diagram session workspaces (runtime data, not source)
+workspaces/
+
 # node
 frontend/node_modules/
 frontend/dist/

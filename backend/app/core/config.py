@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     # diagram converter — must match a name registered in app.model.registry
     diagram_converter: str = "pydantic"
 
+    # workspace — where session snapshots are stored
+    workspace_dir: str = "workspaces"
+
     # behaviour
     max_repair_iterations: int = 3
 
