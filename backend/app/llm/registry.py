@@ -6,6 +6,7 @@ Usage:
     provider = get_provider()           # uses LLM_PROVIDER from settings
     provider = get_provider("openai")   # explicit
 """
+
 from __future__ import annotations
 
 import logging
@@ -26,11 +27,11 @@ def get_provider(name: str | None = None) -> LLMProvider:
     """Return a provider by name, falling back to the setting default."""
     if name is None:
         from app.core.config import settings
+
         name = settings.llm_provider
     if name not in _registry:
         raise KeyError(
-            f"No LLM provider registered under '{name}'. "
-            f"Available: {list(_registry)}"
+            f"No LLM provider registered under '{name}'. Available: {list(_registry)}"
         )
     return _registry[name]
 
@@ -43,21 +44,29 @@ def _bootstrap() -> None:
     from app.llm.providers.openai import OpenAIProvider
     from app.llm.providers.ollama import OllamaProvider
 
-    print(f"[llm bootstrap] provider={settings.llm_provider!r}")
-    print(f"[llm bootstrap] anthropic_api_key present: {bool(settings.anthropic_api_key)}, len={len(settings.anthropic_api_key)}")
-    print(f"[llm bootstrap] openai_api_key present: {bool(settings.openai_api_key)}, len={len(settings.openai_api_key)}")
+    logger.debug("llm bootstrap provider=%r", settings.llm_provider)
+    logger.debug(
+        "anthropic key present=%s len=%d",
+        bool(settings.anthropic_api_key),
+        len(settings.anthropic_api_key),
+    )
+    logger.debug(
+        "openai key present=%s len=%d",
+        bool(settings.openai_api_key),
+        len(settings.openai_api_key),
+    )
 
     if settings.anthropic_api_key:
         register("anthropic", AnthropicProvider(settings.anthropic_api_key))
-        print("[llm bootstrap] registered: anthropic")
+        logger.debug("registered anthropic provider")
 
     if settings.openai_api_key:
         register("openai", OpenAIProvider(settings.openai_api_key))
-        print("[llm bootstrap] registered: openai")
+        logger.debug("registered openai provider")
 
     # Ollama runs locally — no key needed
     register("ollama", OllamaProvider(settings.ollama_base_url))
-    print("[llm bootstrap] registered: ollama")
+    logger.debug("registered ollama provider")
 
 
 _bootstrap()

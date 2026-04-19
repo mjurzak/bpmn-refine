@@ -1,20 +1,15 @@
 """Validation endpoints — deterministic rules first, then optional LLM pass."""
-from __future__ import annotations
 
-import json
-from pathlib import Path
+from __future__ import annotations
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.model.schema import BpmnDiagram
-from app.llm import client as llm_client
-from app.llm.router import TaskType, resolve_model, resolve_provider
-from app.validation.rules import ValidationIssue, ValidationReport, validate
+from app.services.validation import ValidationResult, validate_diagram as run_validation
+from app.validation.rules import ValidationIssue
 
 router = APIRouter(prefix="/validate", tags=["validate"])
-
-_PROMPT_DIR = Path(__file__).parent.parent.parent / "llm" / "prompts"
 
 
 class ValidationRequest(BaseModel):
@@ -22,47 +17,12 @@ class ValidationRequest(BaseModel):
     include_semantic: bool = False
 
 
-class ValidationResponse(BaseModel):
-    is_valid: bool
-    issues: list[ValidationIssue]
-    semantic_issues: list[ValidationIssue] = []
+class ValidationResponse(ValidationResult):
+    pass
 
 
 @router.post("", response_model=ValidationResponse)
 async def validate_diagram(req: ValidationRequest) -> ValidationResponse:
     """Run deterministic validation and optionally an LLM semantic pass."""
-    report: ValidationReport = validate(req.diagram)
-    semantic_issues: list[ValidationIssue] = []
-
-    if req.include_semantic:
-        semantic_issues = await _semantic_validate(req.diagram, report)
-
-    all_issues = report.issues + semantic_issues
-    is_valid = not any(i.severity == "error" for i in all_issues)
-    return ValidationResponse(is_valid=is_valid, issues=report.issues, semantic_issues=semantic_issues)
-
-
-async def _semantic_validate(diagram: BpmnDiagram, report: ValidationReport) -> list[ValidationIssue]:
-    system_prompt = (_PROMPT_DIR / "validate.txt").read_text()
-    payload = {
-        "diagram": diagram.model_dump(),
-        "existing_issues": [i.__dict__ for i in report.issues],
-    }
-    raw = await llm_client.complete(
-        prompt=json.dumps(payload),
-        system=system_prompt,
-        model=resolve_model(TaskType.SEMANTIC_VALIDATION),
-        provider=resolve_provider(TaskType.SEMANTIC_VALIDATION),
-    )
-    try:
-        issues_data = json.loads(raw)
-        return [ValidationIssue(**d) for d in issues_data]
-    except Exception:
-        # if the LLM returns malformed JSON, surface a warning rather than crashing
-        return [
-            ValidationIssue(
-                rule_id="LLM_PARSE_ERROR",
-                severity="warning",
-                message="LLM semantic validation returned an unparseable response.",
-            )
-        ]
+    result = await run_validation(req.diagram, include_semantic=req.include_semantic)
+    return ValidationResponse(**result.model_dump())

@@ -4,6 +4,7 @@ Implements app.model.protocol.DiagramConverter.
 Keeps the round-trip property: XML → BpmnDiagram → XML should produce
 semantically equivalent BPMN (modulo whitespace and attribute ordering).
 """
+
 from __future__ import annotations
 
 from lxml import etree
@@ -54,12 +55,11 @@ class PydanticConverter:
 
     def serialize(self, diagram: BpmnDiagram) -> bytes:
         """Serialise a BpmnDiagram back to BPMN XML bytes."""
-        nsmap: dict = dict(diagram.namespaces) if diagram.namespaces else {}
-        # ensure all required namespaces are present
-        nsmap.setdefault("bpmn", BPMN_NS)
-        nsmap.setdefault("bpmndi", BPMNDI_NS)
-        nsmap.setdefault("dc", DC_NS)
-        nsmap.setdefault("di", DI_NS)
+        nsmap = _normalise_nsmap(diagram.namespaces)
+        _ensure_namespace(nsmap, None, BPMN_NS)
+        _ensure_namespace(nsmap, "bpmndi", BPMNDI_NS)
+        _ensure_namespace(nsmap, "dc", DC_NS)
+        _ensure_namespace(nsmap, "di", DI_NS)
 
         root = etree.Element(
             f"{{{BPMN_NS}}}definitions",
@@ -76,15 +76,38 @@ class PydanticConverter:
         for proc in diagram.processes:
             root.append(_serialize_bpmndi(proc))
 
-        return etree.tostring(root, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+        return etree.tostring(
+            root, pretty_print=True, xml_declaration=True, encoding="UTF-8"
+        )
 
 
 # ---------------------------------------------------------------------------
 # internal helpers
 # ---------------------------------------------------------------------------
 
+
 def _extract_namespaces(root: etree._Element) -> dict[str, str]:
     return {prefix or "": uri for prefix, uri in root.nsmap.items()}
+
+
+def _normalise_nsmap(namespaces: dict[str, str] | None) -> dict[None | str, str]:
+    nsmap: dict[None | str, str] = {}
+    if not namespaces:
+        return nsmap
+
+    for prefix, uri in namespaces.items():
+        if not uri:
+            continue
+        nsmap[None if prefix == "" else prefix] = uri
+
+    return nsmap
+
+
+def _ensure_namespace(
+    nsmap: dict[None | str, str], prefix: None | str, uri: str
+) -> None:
+    if uri not in nsmap.values():
+        nsmap[prefix] = uri
 
 
 def _resolve_bpmn_ns(root: etree._Element) -> str:
@@ -156,7 +179,11 @@ def _serialize_process(proc: BpmnProcess, bpmn_ns: str) -> etree._Element:
         node_el = etree.SubElement(
             el,
             f"{{{bpmn_ns}}}{node.type.value}",
-            attrib={"id": node.id, **({"name": node.name} if node.name else {}), **node.extra},
+            attrib={
+                "id": node.id,
+                **({"name": node.name} if node.name else {}),
+                **node.extra,
+            },
         )
         for out_id in node.outgoing:
             etree.SubElement(node_el, f"{{{bpmn_ns}}}outgoing").text = out_id
@@ -237,16 +264,28 @@ def _serialize_bpmndi(proc: BpmnProcess) -> etree._Element:
         # waypoint: right edge of source → left edge of target
         sx, sy, sw, sh = src
         tx, ty, tw, th = tgt
-        etree.SubElement(edge_el, f"{{{DI_NS}}}waypoint", attrib={"x": str(sx + sw), "y": str(sy + sh // 2)})
-        etree.SubElement(edge_el, f"{{{DI_NS}}}waypoint", attrib={"x": str(tx), "y": str(ty + th // 2)})
+        etree.SubElement(
+            edge_el,
+            f"{{{DI_NS}}}waypoint",
+            attrib={"x": str(sx + sw), "y": str(sy + sh // 2)},
+        )
+        etree.SubElement(
+            edge_el,
+            f"{{{DI_NS}}}waypoint",
+            attrib={"x": str(tx), "y": str(ty + th // 2)},
+        )
 
     return diagram_el
 
 
 def _node_dimensions(node: FlowNode) -> tuple[int, int]:
     """Return (width, height) for a given node type."""
-    if node.type.value in ("startEvent", "endEvent",
-                           "intermediateCatchEvent", "intermediateThrowEvent"):
+    if node.type.value in (
+        "startEvent",
+        "endEvent",
+        "intermediateCatchEvent",
+        "intermediateThrowEvent",
+    ):
         return (_EVENT_SIZE, _EVENT_SIZE)
     if "Gateway" in node.type.value or "gateway" in node.type.value:
         return (_GATEWAY_SIZE, _GATEWAY_SIZE)
