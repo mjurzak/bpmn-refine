@@ -13,6 +13,11 @@ dist/
 # diagram session workspaces (runtime data, not source)
 workspaces/
 
+# dataset cache; keep only the metadata files versioned
+data/pmo-dataset/*
+!data/pmo-dataset/INFO.md
+!data/pmo-dataset/SOURCE.md
+
 # node
 frontend/node_modules/
 frontend/dist/
