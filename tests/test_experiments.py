@@ -8,7 +8,6 @@ from app.experiments import (
     ExperimentConfig,
     PromptVersion,
     RunBlock,
-    RunEnvelope,
     build_run_block,
     canonical_config_json,
     config_hash,
@@ -40,7 +39,7 @@ def test_custom_model_tier_requires_model_override():
     assert config.model_override == "local-model"
 
 
-def test_run_envelope_accepts_required_run_block():
+def test_run_block_accepts_required_reproducibility_fields():
     run = RunBlock(
         model_used="gpt-5.4",
         prompt_versions={
@@ -53,9 +52,7 @@ def test_run_envelope_accepts_required_run_block():
         request_id="request-1",
     )
 
-    envelope = RunEnvelope(run=run)
-
-    assert envelope.run.prompt_versions["validate"].hash == "012345abcdef"
+    assert run.prompt_versions["validate"].hash == "012345abcdef"
 
 
 def test_canonical_config_json_drops_nulls_and_sorts_keys():

@@ -14,6 +14,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field, model_validator
 
 HASH_PREFIX_LENGTH = 12
+CONVERTER_VERSION = "pydantic_ir@v1"
 
 
 class ModelTier(StrEnum):
@@ -116,10 +117,6 @@ class RunBlock(BaseModel):
     request_id: str
     iterations: int | None = Field(default=None, ge=0)
     converged: bool | None = None
-
-
-class RunEnvelope(BaseModel):
-    run: RunBlock
 
 
 def build_run_block(

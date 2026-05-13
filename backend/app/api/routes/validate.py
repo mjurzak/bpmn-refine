@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.experiments import ExperimentConfig, RunBlock, build_run_block
+from app.experiments import CONVERTER_VERSION, ExperimentConfig, RunBlock, build_run_block
 from app.llm.router import TaskType, resolve_model
 from app.model.schema import BpmnDiagram
 from app.services.validation import (
@@ -16,8 +17,6 @@ from app.services.validation import (
 from app.validation.rules import RULES_VERSION
 
 router = APIRouter(prefix="/validate", tags=["validate"])
-
-_CONVERTER_VERSION = "pydantic_ir@v1"
 
 
 class ValidationRequest(BaseModel):
@@ -31,14 +30,9 @@ class ValidationResponse(ValidationResult):
 
 
 @router.post("", response_model=ValidationResponse)
-async def validate_diagram(req: ValidationRequest) -> ValidationResponse:
+async def validate_diagram(req: ValidationRequest) -> ValidationResponse | JSONResponse:
     """Run deterministic validation and optionally an LLM semantic pass."""
     include_semantic = req.include_semantic or req.config.tiers_enabled.t3
-    result = await run_validation(
-        req.diagram,
-        include_semantic=include_semantic,
-        config=req.config,
-    )
     run = build_run_block(
         config=req.config,
         model_used=(
@@ -46,8 +40,19 @@ async def validate_diagram(req: ValidationRequest) -> ValidationResponse:
             if include_semantic
             else "none"
         ),
-        converter=_CONVERTER_VERSION,
+        converter=CONVERTER_VERSION,
         rules_version=RULES_VERSION,
         prompt_files={"validate": validate_prompt_path()} if include_semantic else None,
     )
+    try:
+        result = await run_validation(
+            req.diagram,
+            include_semantic=include_semantic,
+            config=req.config,
+        )
+    except Exception as exc:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(exc), "run": run.model_dump(mode="json")},
+        )
     return ValidationResponse(**result.model_dump(), run=run)

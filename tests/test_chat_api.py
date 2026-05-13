@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app.experiments import ExperimentConfig, config_hash
+from app.experiments import CONVERTER_VERSION, ExperimentConfig, config_hash
 from app.main import app
 from app.services.chat import ChatResult
 
@@ -44,7 +44,7 @@ def test_chat_response_includes_run_block(monkeypatch):
     assert run["model_used"] == "custom-chat-model"
     assert run["prompt_versions"]["chat"]["name"] == "chat_system.txt"
     assert len(run["prompt_versions"]["chat"]["hash"]) == 12
-    assert run["converter"] == "pydantic_ir@v1"
+    assert run["converter"] == CONVERTER_VERSION
     assert run["rules_version"] == "R001-R011"
     assert run["config_hash"] == config_hash(ExperimentConfig(**config))
     assert run["request_id"]

@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app.experiments import ExperimentConfig, config_hash
+from app.experiments import CONVERTER_VERSION, ExperimentConfig, config_hash
 from app.main import app
 
 
@@ -30,13 +30,12 @@ def test_validate_response_includes_run_block():
     assert payload["is_valid"] is True
     assert run["model_used"] == "none"
     assert run["prompt_versions"] == {}
-    assert run["converter"] == "pydantic_ir@v1"
+    assert run["converter"] == CONVERTER_VERSION
     assert run["rules_version"] == "R001-R011"
     assert run["config_hash"] == config_hash(ExperimentConfig(**config))
     assert len(run["config_hash"]) == 12
     assert run["request_id"]
     assert run["timestamp"]
-
 
 def _minimal_valid_diagram() -> dict:
     return {
