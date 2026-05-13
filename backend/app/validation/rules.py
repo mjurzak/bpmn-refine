@@ -10,6 +10,8 @@ from enum import StrEnum
 
 from app.model.schema import BpmnDiagram, BpmnProcess, FlowNodeType
 
+RULES_VERSION = "R001-R011"
+
 
 class Severity(StrEnum):
     ERROR = "error"

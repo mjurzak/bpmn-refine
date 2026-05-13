@@ -8,6 +8,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from app.experiments import ExperimentConfig
 from app.history import service as hist
 from app.llm import client as llm_client
 from app.llm.router import TaskType, resolve_model, resolve_provider
@@ -37,6 +38,7 @@ async def chat_diagram(
     diagram: BpmnDiagram | None = None,
     issues: list[ValidationIssue] | None = None,
     session_id: str | None = None,
+    config: ExperimentConfig | None = None,
 ) -> ChatResult:
     """run one conversational refinement turn and optionally snapshot diagram output"""
     system_prompt = _CHAT_PROMPT.read_text()
@@ -61,8 +63,8 @@ async def chat_diagram(
     reply = await llm_client.complete_with_history(
         messages=payload_messages,
         system=system_prompt,
-        model=resolve_model(TaskType.REFINEMENT),
-        provider=resolve_provider(TaskType.REFINEMENT),
+        model=resolve_model(TaskType.REFINEMENT, config=config),
+        provider=resolve_provider(TaskType.REFINEMENT, config=config),
     )
 
     updated_diagram = _parse_diagram_from_reply(reply)
@@ -99,6 +101,10 @@ async def chat_diagram(
 
 def chat_prompt_name() -> str:
     return _CHAT_PROMPT.name
+
+
+def chat_prompt_path() -> Path:
+    return _CHAT_PROMPT
 
 
 def _parse_diagram_from_reply(reply: str) -> BpmnDiagram | None:

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from app.experiments import ExperimentConfig
 from app.llm import client as llm_client
 from app.llm.router import TaskType, resolve_model, resolve_provider
 from app.model.schema import BpmnDiagram
@@ -25,13 +26,14 @@ class ValidationResult(BaseModel):
 async def validate_diagram(
     diagram: BpmnDiagram,
     include_semantic: bool = False,
+    config: ExperimentConfig | None = None,
 ) -> ValidationResult:
     """run deterministic validation and optionally an LLM semantic pass"""
     report: ValidationReport = validate(diagram)
     semantic_issues: list[ValidationIssue] = []
 
     if include_semantic:
-        semantic_issues = await _semantic_validate(diagram, report)
+        semantic_issues = await _semantic_validate(diagram, report, config=config)
 
     all_issues = report.issues + semantic_issues
     is_valid = not any(issue.severity == "error" for issue in all_issues)
@@ -45,6 +47,7 @@ async def validate_diagram(
 async def _semantic_validate(
     diagram: BpmnDiagram,
     report: ValidationReport,
+    config: ExperimentConfig | None = None,
 ) -> list[ValidationIssue]:
     system_prompt = _VALIDATE_PROMPT.read_text()
     payload = {
@@ -54,8 +57,8 @@ async def _semantic_validate(
     raw = await llm_client.complete(
         prompt=json.dumps(payload),
         system=system_prompt,
-        model=resolve_model(TaskType.SEMANTIC_VALIDATION),
-        provider=resolve_provider(TaskType.SEMANTIC_VALIDATION),
+        model=resolve_model(TaskType.SEMANTIC_VALIDATION, config=config),
+        provider=resolve_provider(TaskType.SEMANTIC_VALIDATION, config=config),
     )
     try:
         issues_data = json.loads(raw)
@@ -73,3 +76,7 @@ async def _semantic_validate(
 
 def validate_prompt_name() -> str:
     return _VALIDATE_PROMPT.name
+
+
+def validate_prompt_path() -> Path:
+    return _VALIDATE_PROMPT

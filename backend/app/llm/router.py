@@ -8,6 +8,7 @@ from __future__ import annotations
 from enum import StrEnum
 
 from app.core.config import settings
+from app.experiments import ExperimentConfig, ModelTier
 
 
 class TaskType(StrEnum):
@@ -28,18 +29,33 @@ _STRONG_TASKS = {
 }
 
 
-def resolve_model(task: TaskType) -> str:
+def resolve_model(task: TaskType, config: ExperimentConfig | None = None) -> str:
     """Return the model name for the given task type."""
+    if config is not None:
+        if config.model_tier == ModelTier.CUSTOM:
+            return config.model_override or settings.llm_fast_model
+        if config.model_tier == ModelTier.STRONG:
+            return settings.llm_strong_model
+        return settings.llm_fast_model
+
     if task in _STRONG_TASKS:
         return settings.llm_strong_model
     return settings.llm_fast_model
 
 
-def resolve_provider(task: TaskType) -> str:
+def resolve_provider(task: TaskType, config: ExperimentConfig | None = None) -> str:
     """Return the provider name for the given task type.
 
     Checks per-tier overrides first; falls back to the global llm_provider.
     """
+    if config is not None:
+        if config.provider_override:
+            return config.provider_override
+        if config.model_tier == ModelTier.STRONG:
+            return settings.llm_strong_provider or settings.llm_provider
+        if config.model_tier == ModelTier.FAST:
+            return settings.llm_fast_provider or settings.llm_provider
+
     if task in _STRONG_TASKS:
         return settings.llm_strong_provider or settings.llm_provider
     return settings.llm_fast_provider or settings.llm_provider
