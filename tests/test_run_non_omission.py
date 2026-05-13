@@ -2,7 +2,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.model.schema import BpmnDiagram
+from app.services.diagrams import export_bpmn_xml
 from app.services.chat import ChatResult
+from app.services.repair import RepairResult
 
 
 client = TestClient(app)
@@ -10,11 +13,13 @@ client = TestClient(app)
 
 @pytest.mark.parametrize(
     "endpoint",
-    ["/api/v1/validate", "/api/v1/chat"],
+    ["/api/v1/validate", "/api/v1/chat", "/api/v1/repair"],
 )
 def test_run_endpoints_never_omit_run_on_success(monkeypatch, endpoint):
     if endpoint.endswith("/chat"):
         monkeypatch.setattr("app.api.routes.chat.chat_diagram", _fake_chat_diagram)
+    if endpoint.endswith("/repair"):
+        monkeypatch.setattr("app.api.routes.repair.repair_diagram", _fake_repair_diagram)
 
     response = client.post(endpoint, json=_payload_for(endpoint))
 
@@ -32,6 +37,10 @@ def test_run_endpoints_never_omit_run_on_success(monkeypatch, endpoint):
         (
             "/api/v1/chat",
             "app.api.routes.chat.chat_diagram",
+        ),
+        (
+            "/api/v1/repair",
+            "app.api.routes.repair.repair_diagram",
         ),
     ],
 )
@@ -56,6 +65,10 @@ async def _fake_chat_diagram(*args, **kwargs):
     return ChatResult(reply="No diagram changes needed.")
 
 
+async def _fake_repair_diagram(diagram, *args, **kwargs):
+    return RepairResult(repaired_diagram=diagram)
+
+
 async def _failing_service_call(*args, **kwargs):
     raise RuntimeError("forced failure")
 
@@ -67,6 +80,17 @@ def _chat_message() -> dict:
 def _payload_for(endpoint: str) -> dict:
     if endpoint.endswith("/validate"):
         return {"diagram": _minimal_valid_diagram()}
+    if endpoint.endswith("/repair"):
+        return {
+            "xml": export_bpmn_xml(BpmnDiagram.model_validate(_minimal_valid_diagram())),
+            "issues": [
+                {
+                    "rule_id": "R001",
+                    "severity": "error",
+                    "message": "Process has no start event.",
+                }
+            ],
+        }
     return {"messages": [_chat_message()]}
 
 
