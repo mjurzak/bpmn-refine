@@ -31,10 +31,10 @@ See [`docs/architecture.md`](docs/architecture.md) for a detailed walkthrough.
 # backend
 uv venv .venv && source .venv/bin/activate
 uv pip install fastapi "uvicorn[standard]" pydantic pydantic-settings anthropic lxml python-multipart httpx
-PYTHONPATH=backend uvicorn app.main:app --reload   # → http://localhost:8000
+PYTHONPATH=backend uvicorn app.main:app --reload   # -> http://localhost:8000
 
 # frontend (separate terminal)
-cd frontend && npm install && npm run dev           # → http://localhost:5173
+cd frontend && npm install && npm run dev           # -> http://localhost:5173
 
 # or full-stack via Docker
 docker compose up --build

@@ -1,7 +1,7 @@
 """Default converter: BPMN XML ↔ Pydantic BpmnDiagram model.
 
 Implements app.model.protocol.DiagramConverter.
-Keeps the round-trip property: XML → BpmnDiagram → XML should produce
+Keeps the round-trip property: XML -> BpmnDiagram -> XML should produce
 semantically equivalent BPMN (modulo whitespace and attribute ordering).
 """
 
@@ -225,7 +225,7 @@ def _serialize_bpmndi(proc: BpmnProcess) -> etree._Element:
 
     # build a simple left-to-right ordering following sequence flows
     ordered_ids = _topo_order(proc)
-    node_positions: dict[str, tuple[int, int, int, int]] = {}  # id → (x, y, w, h)
+    node_positions: dict[str, tuple[int, int, int, int]] = {}  # id -> (x, y, w, h)
 
     x = 150
     for node_id in ordered_ids:
@@ -261,7 +261,7 @@ def _serialize_bpmndi(proc: BpmnProcess) -> etree._Element:
             f"{{{BPMNDI_NS}}}BPMNEdge",
             attrib={"id": f"{sf.id}_di", "bpmnElement": sf.id},
         )
-        # waypoint: right edge of source → left edge of target
+        # waypoint: right edge of source -> left edge of target
         sx, sy, sw, sh = src
         tx, ty, tw, th = tgt
         etree.SubElement(

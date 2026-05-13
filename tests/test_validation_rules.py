@@ -6,7 +6,7 @@ from app.validation.rules import Severity, validate
 
 
 def _minimal_valid_diagram() -> BpmnDiagram:
-    """build the simplest valid process: start → task → end"""
+    """build the simplest valid process: start -> task -> end"""
     start = FlowNode(id="start_1", type=FlowNodeType.START_EVENT, outgoing=["sf_1"])
     task = FlowNode(id="task_1", type=FlowNodeType.TASK, name="Do something", incoming=["sf_1"], outgoing=["sf_2"])
     end = FlowNode(id="end_1", type=FlowNodeType.END_EVENT, incoming=["sf_2"])

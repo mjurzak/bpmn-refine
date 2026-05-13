@@ -2,7 +2,7 @@
 
 This is the canonical in-memory representation used by the default converter.
 Every piece of information needed to reconstruct valid BPMN XML must be present
-here — the round-trip property (XML → model → XML) must hold.
+here — the round-trip property (XML -> model -> XML) must hold.
 """
 from __future__ import annotations
 

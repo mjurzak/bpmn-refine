@@ -2,7 +2,7 @@
 
 Repair is one of the three top-level operations (see [`architecture.md`](architecture.md)). It takes **issues** (found by tier 1, tier 2, and/or tier 3) and a diagram, and produces **proposed changes** — never silent mutations. The user decides whether to apply them.
 
-Internally, the repair endpoint is a **closed loop**: dispatcher → apply → re-validate → stop-or-iterate. The loop is what makes repair more than a single-turn LLM call: it tightens convergence on a correct diagram, and it produces a record (`iterations`, `applied_ops`) that is useful both to the user and to Phase 3 evaluation.
+Internally, the repair endpoint is a **closed loop**: dispatcher -> apply -> re-validate -> stop-or-iterate. The loop is what makes repair more than a single-turn LLM call: it tightens convergence on a correct diagram, and it produces a record (`iterations`, `applied_ops`) that is useful both to the user and to Phase 3 evaluation.
 
 This doc owns:
 
@@ -44,7 +44,7 @@ Response:
 }
 ```
 
-`/repair` is meaningless without an issue list. A frontend "Validate & Repair" button is a UI chain (`/validate` → `/repair`); it is not a backend automation. Nothing is applied to the real diagram until the user accepts the response.
+`/repair` is meaningless without an issue list. A frontend "Validate & Repair" button is a UI chain (`/validate` -> `/repair`); it is not a backend automation. Nothing is applied to the real diagram until the user accepts the response.
 
 ---
 
@@ -175,7 +175,7 @@ return diagram, applied, issues, iteration, converged = no_errors_in(issues)
 
 Come from two sources:
 
-1. **Tier 1 category map** ([`validation-rules.md`](validation-rules.md)) — e.g. R007 → suggest removing a single-branch gateway; R008 → prompt the user for a condition.
+1. **Tier 1 category map** ([`validation-rules.md`](validation-rules.md)) — e.g. R007 -> suggest removing a single-branch gateway; R008 -> prompt the user for a condition.
 2. **BPMN Analyzer 2.0** ([`formal-checkers.md`](formal-checkers.md)) — bundles quick-fixes for several soundness/safeness violations (mismatched gateway types, untriggered message events, unsafe sequence flows). These are lifted into `EditOp[]` by the tier-2 adapter.
 
 The dispatcher prefers a deterministic fix whenever one is available, even if the LLM could also do it — deterministic fixes are cheaper, verifiable, and always reproduce.
@@ -214,7 +214,7 @@ Emit an EditOp[] that fixes the deadlock at task_B_join without
 altering branches unrelated to gateway_G.
 ```
 
-The LLM reasons about *why* the trace deadlocks (the classic exclusive-split / parallel-join mismatch) and emits a targeted fix (e.g. `change_gateway_type` on `G`). This is the neuro-symbolic step the thesis rests on — structured counterexample → localised repair, not regenerate-everything-and-hope.
+The LLM reasons about *why* the trace deadlocks (the classic exclusive-split / parallel-join mismatch) and emits a targeted fix (e.g. `change_gateway_type` on `G`). This is the neuro-symbolic step the thesis rests on — structured counterexample -> localised repair, not regenerate-everything-and-hope.
 
 ---
 

@@ -13,7 +13,7 @@ This doc covers **why** the system uses a stack of open-source tools rather than
 No single open-source BPMN formal checker covers the full BPMN 2.0 specification with usable counterexamples. Every tool trades something:
 
 - **BPMN Analyzer 2.0** — excellent counterexamples and sub-500 ms latency, but ignores data/artifacts and treats each pool as one process.
-- **PM4Py Woflan** — classical Petri-net soundness that can in principle cover anything expressible as a Petri net, but the richness of its report depends on the BPMN → PN mapping.
+- **PM4Py Woflan** — classical Petri-net soundness that can in principle cover anything expressible as a Petri net, but the richness of its report depends on the BPMN -> PN mapping.
 - **BPMNspector** — 611 BPMN 2.0 standards constraints, but structural/conformance only — no behavioural verification.
 
 Stacking them under a **uniform** issue shape gives the repair layer one thing to consume and the user one panel to read.
@@ -38,7 +38,7 @@ And: formal BPMN verification is a 20-year-old research area. The thesis contrib
 
 - **Origin:** PM4Py's built-in soundness analysis, implementing Woflan's classical Petri-net soundness.
 - **Checks:** soundness (option-to-complete, proper completion, no dead transitions), bounded-ness for P/T nets.
-- **Counterexamples:** marking-level traces; less visually focused than BPMN Analyzer 2.0 but covers elements Analyzer drops once the BPMN → PN mapping handles them.
+- **Counterexamples:** marking-level traces; less visually focused than BPMN Analyzer 2.0 but covers elements Analyzer drops once the BPMN -> PN mapping handles them.
 - **Coverage:** whatever the canonical IR + PM4Py's BPMN-to-PN conversion support. Strongest when data objects and explicit swimlane semantics are part of the picture.
 - **Wrapping:** Python-native — no subprocess, no sidecar. Runs in-process.
 - **Role in the stack:** fallback when BPMN Analyzer 2.0 cannot analyse a diagram (elements it ignores are load-bearing), and secondary confirmation for diagrams both tools can analyse.

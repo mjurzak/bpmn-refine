@@ -29,7 +29,7 @@ Shared constraints:
 
 - **Nothing applies automatically.** Every repair or refinement result is a **suggestion** until the user accepts it. Validation never modifies the diagram at all.
 - **Repair and refinement share the `EditOp` schema.** They differ in what triggers them and what context they carry, not in what they emit.
-- **Repair requires issues.** `/repair` is meaningless without an issue list — it operates over known problems. A frontend "Validate & Repair" button is a UI chain (`/validate` → `/repair`), not a backend automation.
+- **Repair requires issues.** `/repair` is meaningless without an issue list — it operates over known problems. A frontend "Validate & Repair" button is a UI chain (`/validate` -> `/repair`), not a backend automation.
 - **Refinement cannot be auto-triggered.** The system cannot infer intent; chat is always user-initiated.
 
 Tier 3 findings that look like refinement suggestions (*"this task has a vague name"*) are still **issues**, not chat turns — the user can Repair them like any other issue. The rule of thumb: anything the system *finds* is an issue; anything the user *wants* goes through chat.
@@ -123,7 +123,7 @@ Pure Python, zero external dependencies, runs in <50 ms on typical diagrams. Det
 Three open-source tools stacked under a uniform `CheckerIssue` schema so the repair layer does not care which tool produced a finding.
 
 - **BPMN Analyzer 2.0** (Kräuter, Rust) — soundness, safeness, deadlock, livelock, lack of synchronisation; emits counterexample traces; sub-500 ms. Wrapped as a subprocess / sidecar.
-- **PM4Py Woflan** (Python-native) — classical Petri-net soundness. Covers elements BPMN Analyzer 2.0 drops (data objects, non-message artefacts) via the BPMN → Petri-net mapping PM4Py already provides.
+- **PM4Py Woflan** (Python-native) — classical Petri-net soundness. Covers elements BPMN Analyzer 2.0 drops (data objects, non-message artefacts) via the BPMN -> Petri-net mapping PM4Py already provides.
 - **BPMNspector** (uniba-dsg, Java) — BPMN 2.0 standards compliance across 611 constraints; complements behavioural checks with structural conformance.
 
 Runs on the **on-demand** trigger (explicit *Deep Validate* action). See [`formal-checkers.md`](formal-checkers.md) *(planned doc)*.
@@ -144,12 +144,12 @@ issues (tier 1 + 2 + 3)
   ▼
 repair dispatcher
   │
-  ├── deterministic quick-fix available?   → apply, revalidate
+  ├── deterministic quick-fix available?   -> apply, revalidate
   │
-  └── else → LLM repair call
+  └── else -> LLM repair call
                prompt = {IR, issue, counterexample?, config}
-               mode=atomic  → EditOp[]
-               mode=regen   → full IR
+               mode=atomic  -> EditOp[]
+               mode=regen   -> full IR
                                            │
                                            ▼
                                  apply to canonical IR, revalidate
@@ -235,7 +235,7 @@ Owns the canonical IR and the converter registry.
 
 - `schema.py` — canonical `BpmnDiagram`, `BpmnProcess`, `FlowNode`, `SequenceFlow`.
 - `protocol.py` — `DiagramConverter` protocol.
-- `registry.py` — short-name → converter instance; default chosen via `DIAGRAM_CONVERTER` env var.
+- `registry.py` — short-name -> converter instance; default chosen via `DIAGRAM_CONVERTER` env var.
 - `formats/` — one module per converter (`pydantic_ir.py` today; YAML, Mermaid, compact-JSON planned).
 
 ### validation layer — `backend/app/validation/`
@@ -247,7 +247,7 @@ Houses tier 1 deterministic rules. When tier 2 is wired, this layer will also ho
 - `client.py` — high-level entry points (`complete`, `complete_with_history`). Every LLM call routes through here.
 - `protocol.py` + `providers/` — provider abstraction. Current implementations: Anthropic, OpenAI, Ollama. Only `providers/` modules touch vendor SDKs.
 - `registry.py` — provider registration at startup.
-- `router.py` — `TaskType` → model tier → concrete provider + model id.
+- `router.py` — `TaskType` -> model tier -> concrete provider + model id.
 - `prompts/` — versioned `.txt` files (`validate.txt`, `repair.txt`, `chat_system.txt`). Hashed at load for `run.prompt_versions`.
 
 ### history layer — `backend/app/history/`
@@ -266,55 +266,55 @@ Thin adapters over service-layer functions. Current routes: `diagrams`, `validat
 
 ## data flows
 
-### live edit → tier 1
+### live edit -> tier 1
 
 ```
 user edit in bpmn-js
-  → debounce ~500 ms
-  → POST /validate { xml, ExperimentConfig, tiers: [1] }
-  → canonical converter: parse
-  → rules.validate(diagram)
-  → response { issues, run }
-  → bpmn-js marker overlay + ValidationPanel update
+  -> debounce ~500 ms
+  -> POST /validate { xml, ExperimentConfig, tiers: [1] }
+  -> canonical converter: parse
+  -> rules.validate(diagram)
+  -> response { issues, run }
+  -> bpmn-js marker overlay + ValidationPanel update
 ```
 
-### deep validate → tier 1 + 2 + 3
+### deep validate -> tier 1 + 2 + 3
 
 ```
 user clicks "Deep validate"
-  → POST /validate { xml, ExperimentConfig, tiers: [1, 2, 3] }
-  → parse → tier 1 rules
-  → fan out to tier 2 checkers in parallel, normalise to Issue
-  → tier 3 LLM call with full IR + tier 1/2 diagnostics
-  → merge into a unified Issue list
-  → response { issues, run }
+  -> POST /validate { xml, ExperimentConfig, tiers: [1, 2, 3] }
+  -> parse -> tier 1 rules
+  -> fan out to tier 2 checkers in parallel, normalise to Issue
+  -> tier 3 LLM call with full IR + tier 1/2 diagnostics
+  -> merge into a unified Issue list
+  -> response { issues, run }
 ```
 
-### repair → iterative loop (planned)
+### repair -> iterative loop (planned)
 
 ```
 user clicks "Repair" on one or more issues
-  → POST /repair { xml, issues, ExperimentConfig }
-  → dispatcher loop:
+  -> POST /repair { xml, issues, ExperimentConfig }
+  -> dispatcher loop:
       1. pick an issue
-      2. deterministic quick-fix?  → apply
-         else → LLM repair call with counterexample context
+      2. deterministic quick-fix?  -> apply
+         else -> LLM repair call with counterexample context
                 (mode=atomic emits EditOp[]; mode=regen emits full IR)
       3. apply to canonical IR
       4. revalidate via tier 1 (and tier 2 if configured)
       5. continue until converged or iterations > max
-  → response { updated_xml, iterations, applied_ops, remaining_issues, run }
-  → frontend previews diff; user accepts or rejects
+  -> response { updated_xml, iterations, applied_ops, remaining_issues, run }
+  -> frontend previews diff; user accepts or rejects
 ```
 
 ### conversational refinement
 
 ```
 user types in chat
-  → POST /chat { messages, xml, ExperimentConfig }
-  → LLM emits an EditOp plan or a fenced diagram, per repair_mode
-  → frontend renders as a proposed change
-  → change is applied only on explicit user acceptance
+  -> POST /chat { messages, xml, ExperimentConfig }
+  -> LLM emits an EditOp plan or a fenced diagram, per repair_mode
+  -> frontend renders as a proposed change
+  -> change is applied only on explicit user acceptance
 ```
 
 ---
