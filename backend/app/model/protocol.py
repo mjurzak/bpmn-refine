@@ -4,7 +4,7 @@ A DiagramConverter knows how to:
   - parse raw BPMN XML into its own diagram type
   - serialise that type back to valid BPMN XML
 
-Adding a new representation (flat JSON, NetworkX graph, …) means implementing
+Adding a new representation (flat JSON, NetworkX graph, ...) means implementing
 this protocol and registering it via registry.register().  No other code needs
 to change.
 """

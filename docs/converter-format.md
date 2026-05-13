@@ -1,52 +1,185 @@
 # converter format
 
-## the DiagramConverter protocol
+This doc covers the IR layer: the **canonical** internal representation, the **candidate** formats used for LLM I/O and comparison experiments, and the protocol they share.
 
-`backend/app/model/protocol.py` defines the contract every representation format must satisfy:
+---
+
+## the two-role model
+
+The IR layer plays two roles:
+
+1. **User I/O** — converting uploaded BPMN XML into an internal form the backend can validate, repair, and version, and back again on export.
+2. **LLM I/O** — serialising that internal form into a compact textual representation for LLM prompts, and parsing the LLM's response back into the same internal form.
+
+Both roles use the same **canonical IR** (the Pydantic-typed `BpmnDiagram`). The only thing that changes between roles is the converter that reads/writes the bytes on either side.
+
+```
+BPMN XML  ──[ PydanticConverter ]──▶   canonical IR  ──[ YamlConverter ]──▶ YAML
+(user)                                       │                              (LLM in/out)
+                                             │
+                                    tier 1/2/3 validators
+                                    repair + history
+```
+
+---
+
+## the `DiagramConverter` protocol
+
+`backend/app/model/protocol.py`:
 
 ```python
 class DiagramConverter(Protocol):
-    def parse(self, xml_bytes: bytes) -> Any: ...
-    def serialize(self, diagram: Any) -> bytes: ...
+    def parse(self, xml_bytes: bytes) -> BpmnDiagram: ...
+    def serialize(self, diagram: BpmnDiagram) -> bytes: ...
 ```
 
-`parse` turns raw BPMN XML into whatever internal object this format uses.
-`serialize` turns that object back into valid BPMN XML bytes.
-The round-trip property must hold: `serialize(parse(xml))` must produce semantically equivalent BPMN.
+Every converter, regardless of its on-wire format, produces and consumes the same canonical IR. This keeps validation, repair, and history format-agnostic.
 
-## built-in converter: `pydantic`
+> **Note:** today the protocol's return type is `Any`; it will be tightened to `BpmnDiagram` as part of adopting the canonical-IR pattern. The behavioural contract is already that every converter returns a `BpmnDiagram` — the type annotation just needs to catch up.
 
-`backend/app/model/formats/pydantic_ir.py` — `PydanticConverter`
+---
 
-Parses BPMN XML into typed Pydantic models (`BpmnDiagram`, `BpmnProcess`, `FlowNode`, `SequenceFlow`). This is the default and is what the validation rules and API endpoints work with.
+## canonical IR
+
+The canonical IR lives in `backend/app/model/schema.py`:
+
+| Class | Role |
+|---|---|
+| `BpmnDiagram` | top-level container (definitions id, namespaces, processes) |
+| `BpmnProcess` | one per `<process>`; carries `is_executable`, flow nodes, sequence flows, pools |
+| `FlowNode` | any gateway, task, or event; typed via `FlowNodeType` enum |
+| `SequenceFlow` | edge with optional `name` and `condition_expression` |
+| `Pool`, `Lane` | swimlane structure (see coverage matrix) |
+
+`FlowNode.extra: dict` preserves XML attributes the schema does not model explicitly, so round-trip fidelity holds even for elements we do not semantically understand.
+
+---
+
+## canonical IR — BPMN 2.0 coverage matrix
+
+Authoritative table for what the canonical IR and the default `PydanticConverter` support today. Other docs should link here rather than duplicate.
+
+Legend: ✅ full · ◐ partial (schema or attributes preserved via `extra`, but not semantically modelled) · ☐ not supported
+
+| Category | Element | Status | Notes |
+|---|---|---|---|
+| Process | `process` (id, name, `isExecutable`) | ✅ | |
+| Events | `startEvent` | ✅ | |
+| Events | `endEvent` | ✅ | |
+| Events | `intermediateCatchEvent` | ◐ | element recognised; event definition preserved in `extra` only |
+| Events | `intermediateThrowEvent` | ◐ | same as above |
+| Events | `boundaryEvent` | ☐ | not in `FlowNodeType`; `attachedToRef` not modelled |
+| Tasks | `task`, `userTask`, `serviceTask`, `scriptTask`, `sendTask`, `receiveTask`, `manualTask` | ✅ | |
+| Tasks | `businessRuleTask` | ☐ | not in `FlowNodeType` |
+| Activities | `subProcess` | ◐ | outer element parsed; nested flow nodes / sequence flows **inside** the sub-process body are not recursively parsed |
+| Activities | `callActivity` | ✅ | parsed as a task-shaped node; referenced process is not dereferenced |
+| Gateways | `exclusiveGateway`, `parallelGateway`, `inclusiveGateway`, `eventBasedGateway`, `complexGateway` | ✅ | |
+| Flows | `sequenceFlow` (id, source, target, name) | ✅ | |
+| Flows | `conditionExpression` on a sequence flow | ✅ | |
+| Flows | `messageFlow` | ☐ | cross-pool messages not modelled |
+| Swimlanes | `laneSet` / `lane` | ◐ | `Pool`/`Lane` classes exist in schema; parser does **not** populate them |
+| Collaboration | `participant` (pool at collaboration level) | ☐ | not parsed |
+| Data | `dataObject`, `dataObjectReference`, `dataStoreReference` | ☐ | |
+| Data | `dataInputAssociation`, `dataOutputAssociation` | ☐ | |
+| Artifacts | `textAnnotation`, `group`, `association` | ☐ | |
+| Visualization | `bpmndi:BPMNDiagram` (DI) | ✅ generate | always regenerated by a simple L→R auto-layout on serialize; original DI is **not** preserved |
+
+### closing the gaps (priority order)
+
+1. **Sub-process recursion** — parse/serialise nested flow nodes so structural validation works inside sub-processes. Blocks meaningful validation of hierarchical models.
+2. **Lane / pool parsing** — the schema is ready; only the parser step is missing. Required for role-based rules and for tier-2 collaboration checks.
+3. **Message flows** — required for any tier-2 soundness check over collaborations (S³).
+4. **Data objects / artifacts** — useful for tier-2 data-flow checks (PM4Py); lower priority for control-flow validation.
+
+---
+
+## IR–validation decoupling
+
+Validation, repair, and history all operate on `BpmnDiagram` — *not* on whichever format was loaded. This is the architectural commitment behind the canonical-IR pattern.
+
+Consequences:
+
+- Adding a candidate IR (e.g. YAML) **does not** fragment the validation code. The same R001–R011 rules, the same repair dispatcher, and the same history service work regardless of which converter ingested the bytes.
+- A candidate IR that cannot round-trip through the canonical IR for some element is simply a format with reduced coverage — not a reason to branch validation.
+- `FlowNode.extra` is the escape hatch: unknown XML attributes survive a round-trip even through converters that don't semantically understand them.
+
+This is the trade we explicitly accept: less flexibility **inside** the model layer in exchange for more flexibility **outside** it.
+
+---
+
+## candidate IRs
+
+Additional formats used primarily for LLM I/O and for thesis-level comparison experiments. Each candidate is still a `DiagramConverter` — it reads/writes bytes to/from the canonical IR.
+
+| Key | Status | Purpose | Notes |
+|---|---|---|---|
+| `pydantic` (BPMN XML) | ✅ built | user upload/export; canonical-parity baseline | the converter connecting the user's world (XML) to the canonical IR |
+| `pydantic-json` | planned | canonical IR as JSON for LLM I/O | 1:1 with the Pydantic schema; the "no information loss" baseline |
+| `yaml` | planned | **novel thesis contribution** | no prior BPMN-LLM YAML study; measures token cost and edit success vs JSON |
+| `mermaid` | planned | token-efficiency reference | literature reports ~93% reduction vs BPMN XML |
+| `compact-json` | planned | ablation | minimal-key JSON; isolates whether verbose keys hurt LLM accuracy |
+
+The active candidate IR is selected per request via `ExperimentConfig.ir_format`.
+
+### comparison axes
+
+Each candidate IR is evaluated along:
+
+- **Token cost** — input and output tokens for a fixed corpus of diagrams, with `pydantic` as baseline.
+- **Round-trip fidelity** — fraction of canonical-IR elements that survive a round trip through the candidate.
+- **Edit success** — under `repair_mode = atomic`, the percentage of LLM-emitted `EditOp` plans that apply cleanly.
+- **Generation quality** — GED / PME similarity to ground-truth when the LLM generates a diagram from a textual description.
+
+Detailed protocol and results live in [`experiments.md`](experiments.md) *(planned doc)*.
+
+---
+
+## round-trip invariant
+
+Every converter must satisfy:
+
+```
+serialize(parse(x)) ≡ x   for every valid input x in the converter's supported subset
+```
+
+For the `pydantic` (BPMN XML) converter this means BPMN XML → `BpmnDiagram` → BPMN XML produces semantically equivalent BPMN (modulo whitespace, attribute ordering, and the always-regenerated DI layout).
+
+For a candidate IR (say `yaml`) the invariant is two-sided:
+
+- `yaml → canonical → yaml` round-trips cleanly.
+- `canonical → yaml → canonical` preserves every element in the candidate's supported subset. Elements outside the subset are lost; this is a property of the candidate, not a bug in the protocol.
+
+The round-trip test is a hard gate on every `DiagramConverter` PR.
+
+---
 
 ## registry
 
-`backend/app/model/registry.py` maps short names to converter instances.
+`backend/app/model/registry.py` maps short names to converter instances:
 
 ```python
 from app.model.registry import get_converter
 
-converter = get_converter()           # uses DIAGRAM_CONVERTER from .env (default: "pydantic")
-converter = get_converter("pydantic") # explicit
+converter = get_converter()             # uses DIAGRAM_CONVERTER env var (default: "pydantic")
+converter = get_converter("pydantic")   # explicit
 ```
 
-The pydantic converter is auto-registered at import time. Additional converters can be registered at application startup.
+The default converter is registered at import time. Additional converters register themselves at application startup or via explicit `register()` calls.
+
+At request time, the active converter is resolved from `ExperimentConfig.ir_format` first, then the env var fallback, then the default.
+
+---
 
 ## adding a new converter
 
-1. Create `backend/app/model/formats/my_format.py`
-2. Implement `parse(self, xml_bytes: bytes)` and `serialize(self, diagram: Any) -> bytes`
-3. Register it in `backend/app/main.py` (or its own module imported at startup):
+1. Create `backend/app/model/formats/my_format.py`.
+2. Implement `parse(self, xml_bytes: bytes) -> BpmnDiagram` and `serialize(self, diagram: BpmnDiagram) -> bytes`. Both sides must be the canonical `BpmnDiagram` — not a format-specific type.
+3. Register it (in `backend/app/main.py` or a dedicated startup module):
    ```python
    from app.model.registry import register
-   from app.model.formats.my_format import MyConverter
-   register("my_format", MyConverter())
+   from app.model.formats.my_format import MyFormatConverter
+   register("my_format", MyFormatConverter())
    ```
-4. Set `DIAGRAM_CONVERTER=my_format` in `.env`
-
-No other code needs to change — the API routes and validation layer call `get_converter()` and are format-agnostic.
-
-## note on schema coupling
-
-The validation rules in `validation/rules.py` currently depend on `BpmnDiagram` from `model/schema.py`. If you introduce a converter that produces a different object type, you will also need a corresponding validation adapter. Keep this in mind when designing new formats.
+4. Add round-trip tests: canonical → my_format → canonical for every element the format claims to support.
+5. If the format declares reduced coverage, extend the **candidate IRs** table above with the specifics.
+6. Select it per request via `ExperimentConfig.ir_format`, or globally via `DIAGRAM_CONVERTER=my_format` in `.env`.
