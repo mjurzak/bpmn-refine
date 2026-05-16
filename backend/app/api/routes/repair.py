@@ -10,8 +10,7 @@ from app.experiments import CONVERTER_VERSION, ExperimentConfig, RunBlock, build
 from app.llm.router import TaskType, resolve_model
 from app.repair.ops import EditOp
 from app.services.diagrams import export_bpmn_xml, parse_bpmn_bytes
-from app.services.repair import repair_diagram, repair_prompt_path
-from app.services.validation import validate_diagram as run_validation
+from app.services.repair import dispatch_repair, repair_diagram, repair_prompt_path
 from app.validation.rules import RULES_VERSION, ValidationIssue
 
 router = APIRouter(prefix="/repair", tags=["repair"])
@@ -49,16 +48,11 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
 
     try:
         diagram = parse_bpmn_bytes(req.xml.encode("utf-8"))
-        repair_result = await repair_diagram(
+        repair_result = await dispatch_repair(
             diagram,
             issues=req.issues,
             config=req.config,
-            snapshot=False,
-        )
-        validation = await run_validation(
-            repair_result.repaired_diagram,
-            include_semantic=False,
-            config=req.config,
+            repair_fn=repair_diagram,
         )
         updated_xml = export_bpmn_xml(repair_result.repaired_diagram)
     except Exception as exc:
@@ -67,14 +61,14 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
             content={"detail": str(exc), "run": run.model_dump(mode="json")},
         )
 
-    iterations = 1
-    remaining_issues = validation.issues + validation.semantic_issues
-    converged = not any(issue.severity == "error" for issue in remaining_issues)
+    iterations = repair_result.iterations
+    remaining_issues = repair_result.remaining_issues
+    converged = repair_result.converged
     run = _build_repair_run(req.config, iterations=iterations, converged=converged)
 
     return RepairResponse(
         updated_xml=updated_xml,
-        applied_ops=[],
+        applied_ops=repair_result.applied_ops,
         remaining_issues=remaining_issues,
         iterations=iterations,
         converged=converged,

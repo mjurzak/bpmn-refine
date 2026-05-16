@@ -239,10 +239,12 @@ def _apply_set_condition(op: SetConditionOp, diagram: BpmnDiagram) -> None:
 def _remove_flow_by_id(diagram: BpmnDiagram, flow_id: str) -> None:
     proc, flow = _require_flow(diagram, flow_id)
     proc.sequence_flows = [item for item in proc.sequence_flows if item.id != flow_id]
-    _, source = _require_node(diagram, flow.source_ref)
-    _, target = _require_node(diagram, flow.target_ref)
-    source.outgoing = [item for item in source.outgoing if item != flow_id]
-    target.incoming = [item for item in target.incoming if item != flow_id]
+    source = _find_node(diagram, flow.source_ref)
+    target = _find_node(diagram, flow.target_ref)
+    if source is not None:
+        source[1].outgoing = [item for item in source[1].outgoing if item != flow_id]
+    if target is not None:
+        target[1].incoming = [item for item in target[1].incoming if item != flow_id]
 
 
 def _require_process(diagram: BpmnDiagram, process_id: str) -> BpmnProcess:
