@@ -28,3 +28,6 @@ frontend/dist/
 
 # OS
 .DS_Store
+
+# generated local documentation
+project-explorer.html
