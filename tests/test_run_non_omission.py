@@ -90,6 +90,7 @@ def _payload_for(endpoint: str) -> dict:
                     "message": "Process has no start event.",
                 }
             ],
+            "config": {"repair_mode": "regen"},
         }
     return {"messages": [_chat_message()]}
 

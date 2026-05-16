@@ -8,18 +8,20 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from app.experiments import ExperimentConfig
+from app.experiments import ExperimentConfig, RepairMode
 from app.history import service as hist
 from app.llm import client as llm_client
+from app.llm.prompt_context import render_prompt_template
 from app.llm.router import TaskType, resolve_model, resolve_provider
 from app.model.schema import BpmnDiagram
-from app.repair.ops import EditOp, apply_edit_ops
+from app.repair.ops import EditOp, ReplaceDiagramOp, apply_edit_ops, atomic_edit_op_list_adapter
 from app.repair.quick_fixes import propose_quick_fix
 from app.services.validation import validate_diagram
 from app.validation.rules import ValidationIssue
 
 _PROMPT_DIR = Path(__file__).parent.parent / "llm" / "prompts"
 _REPAIR_PROMPT = _PROMPT_DIR / "repair.txt"
+_ATOMIC_REPAIR_PROMPT = _PROMPT_DIR / "repair_atomic.txt"
 
 
 class UnresolvedRepair(BaseModel):
@@ -43,6 +45,7 @@ class DispatcherRepairResult(BaseModel):
 
 
 RepairFn = Callable[..., Awaitable[RepairResult]]
+AtomicRepairFn = Callable[..., Awaitable[list[EditOp]]]
 
 
 async def repair_diagram(
@@ -59,7 +62,7 @@ async def repair_diagram(
     }
     raw = await llm_client.complete(
         prompt=json.dumps(payload),
-        system=_REPAIR_PROMPT.read_text(),
+        system=render_prompt_template(_REPAIR_PROMPT, config=config),
         model=resolve_model(TaskType.REPAIR, config=config),
         provider=resolve_provider(TaskType.REPAIR, config=config),
     )
@@ -91,15 +94,39 @@ async def repair_diagram(
     )
 
 
+async def repair_with_edit_ops(
+    diagram: BpmnDiagram,
+    issues: list[ValidationIssue],
+    config: ExperimentConfig | None = None,
+) -> list[EditOp]:
+    """repair a diagram by asking the LLM for atomic EditOps"""
+    payload = {
+        "diagram": diagram.model_dump(),
+        "issues": [issue.__dict__ for issue in issues],
+        "repair_mode": RepairMode.ATOMIC,
+    }
+    raw = await llm_client.complete(
+        prompt=json.dumps(payload),
+        system=render_prompt_template(_ATOMIC_REPAIR_PROMPT, config=config),
+        model=resolve_model(TaskType.REPAIR, config=config),
+        provider=resolve_provider(TaskType.REPAIR, config=config),
+    )
+    parsed = json.loads(raw)
+    ops_data = parsed.get("ops", parsed) if isinstance(parsed, dict) else parsed
+    return atomic_edit_op_list_adapter.validate_python(ops_data)
+
+
 async def dispatch_repair(
     diagram: BpmnDiagram,
     issues: list[ValidationIssue],
     config: ExperimentConfig | None = None,
     repair_fn: RepairFn | None = None,
+    atomic_repair_fn: AtomicRepairFn | None = None,
 ) -> DispatcherRepairResult:
     """run the closed repair loop until convergence or iteration cap"""
     active_config = config or ExperimentConfig()
     active_repair_fn = repair_fn or repair_diagram
+    active_atomic_repair_fn = atomic_repair_fn or repair_with_edit_ops
     current = diagram.model_copy(deep=True)
     remaining = list(issues)
     applied_ops: list[EditOp] = []
@@ -110,12 +137,7 @@ async def dispatch_repair(
         if issue is None:
             break
 
-        quick_fix_ops = propose_quick_fix(issue, current)
-        if quick_fix_ops is not None:
-            current, op_results = apply_edit_ops(quick_fix_ops, current)
-            applied_ops.extend(result.op for result in op_results if result.applied)
-        else:
-            # until structured EditOp repair lands, fall back to the existing full-IR repair
+        if active_config.repair_mode == RepairMode.REGEN:
             result = await active_repair_fn(
                 current,
                 issues=[issue],
@@ -123,6 +145,18 @@ async def dispatch_repair(
                 snapshot=False,
             )
             current = result.repaired_diagram
+            applied_ops.append(ReplaceDiagramOp(diagram=current))
+        else:
+            quick_fix_ops = propose_quick_fix(issue, current)
+            ops = quick_fix_ops
+            if ops is None:
+                ops = await active_atomic_repair_fn(
+                    current,
+                    issues=[issue],
+                    config=active_config,
+                )
+            current, op_results = apply_edit_ops(ops, current)
+            applied_ops.extend(result.op for result in op_results if result.applied)
 
         validation = await validate_diagram(
             current,
@@ -141,11 +175,13 @@ async def dispatch_repair(
     )
 
 
-def repair_prompt_name() -> str:
-    return _REPAIR_PROMPT.name
+def repair_prompt_name(config: ExperimentConfig | None = None) -> str:
+    return repair_prompt_path(config).name
 
 
-def repair_prompt_path() -> Path:
+def repair_prompt_path(config: ExperimentConfig | None = None) -> Path:
+    if config is not None and config.repair_mode == RepairMode.ATOMIC:
+        return _ATOMIC_REPAIR_PROMPT
     return _REPAIR_PROMPT
 
 

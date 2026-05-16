@@ -29,6 +29,7 @@ def test_repair_response_includes_run_and_proposed_xml(monkeypatch):
     config = {
         "model_tier": "custom",
         "model_override": "custom-repair-model",
+        "repair_mode": "regen",
         "experiment_id": "repair-run-test",
     }
 
@@ -52,7 +53,7 @@ def test_repair_response_includes_run_and_proposed_xml(monkeypatch):
     run = payload["run"]
 
     assert payload["updated_xml"].startswith("<?xml")
-    assert payload["applied_ops"] == []
+    assert [op["op"] for op in payload["applied_ops"]] == ["replace_diagram"]
     assert payload["remaining_issues"] == []
     assert payload["iterations"] == 1
     assert payload["converged"] is True

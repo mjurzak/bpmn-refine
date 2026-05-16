@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from app.experiments import ExperimentConfig
 from app.history import service as hist
 from app.llm import client as llm_client
+from app.llm.prompt_context import render_prompt_template
 from app.llm.router import TaskType, resolve_model, resolve_provider
 from app.model.schema import BpmnDiagram
 from app.validation.rules import ValidationIssue
@@ -41,7 +42,7 @@ async def chat_diagram(
     config: ExperimentConfig | None = None,
 ) -> ChatResult:
     """run one conversational refinement turn and optionally snapshot diagram output"""
-    system_prompt = _CHAT_PROMPT.read_text()
+    system_prompt = render_prompt_template(_CHAT_PROMPT, config=config)
     issues = issues or []
 
     context_prefix = ""

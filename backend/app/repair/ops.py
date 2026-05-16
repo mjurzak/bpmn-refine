@@ -19,6 +19,7 @@ class EditOpType(StrEnum):
     CHANGE_NODE_TYPE = "change_node_type"
     CHANGE_GATEWAY_TYPE = "change_gateway_type"
     SET_CONDITION = "set_condition"
+    REPLACE_DIAGRAM = "replace_diagram"
 
 
 GATEWAY_NODE_TYPES = {
@@ -89,7 +90,12 @@ class SetConditionOp(BaseModel):
     condition_expression: str | None
 
 
-EditOp = Annotated[
+class ReplaceDiagramOp(BaseModel):
+    op: Literal[EditOpType.REPLACE_DIAGRAM] = EditOpType.REPLACE_DIAGRAM
+    diagram: BpmnDiagram
+
+
+AtomicEditOp = Annotated[
     AddNodeOp
     | RemoveNodeOp
     | AddFlowOp
@@ -101,6 +107,12 @@ EditOp = Annotated[
     Field(discriminator="op"),
 ]
 
+EditOp = Annotated[
+    AtomicEditOp | ReplaceDiagramOp,
+    Field(discriminator="op"),
+]
+
+atomic_edit_op_list_adapter = TypeAdapter(list[AtomicEditOp])
 edit_op_adapter = TypeAdapter(EditOp)
 edit_op_list_adapter = TypeAdapter(list[EditOp])
 
@@ -152,6 +164,8 @@ def _apply_one(op: EditOp, diagram: BpmnDiagram) -> None:
         _apply_change_gateway_type(op, diagram)
     elif isinstance(op, SetConditionOp):
         _apply_set_condition(op, diagram)
+    elif isinstance(op, ReplaceDiagramOp):
+        _apply_replace_diagram(op, diagram)
     else:
         raise EditOpError(f"unsupported edit operation: {op}")
 
@@ -234,6 +248,14 @@ def _apply_change_gateway_type(op: ChangeGatewayTypeOp, diagram: BpmnDiagram) ->
 def _apply_set_condition(op: SetConditionOp, diagram: BpmnDiagram) -> None:
     _, flow = _require_flow(diagram, op.flow_id)
     flow.condition_expression = op.condition_expression
+
+
+def _apply_replace_diagram(op: ReplaceDiagramOp, diagram: BpmnDiagram) -> None:
+    replacement = op.diagram.model_copy(deep=True)
+    diagram.definitions_id = replacement.definitions_id
+    diagram.target_namespace = replacement.target_namespace
+    diagram.processes = replacement.processes
+    diagram.namespaces = replacement.namespaces
 
 
 def _remove_flow_by_id(diagram: BpmnDiagram, flow_id: str) -> None:

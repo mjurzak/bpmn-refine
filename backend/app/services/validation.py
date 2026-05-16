@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.experiments import ExperimentConfig
 from app.llm import client as llm_client
+from app.llm.prompt_context import render_prompt_template
 from app.llm.router import TaskType, resolve_model, resolve_provider
 from app.model.schema import BpmnDiagram
 from app.validation.rules import ValidationIssue, ValidationReport, validate
@@ -49,7 +50,7 @@ async def _semantic_validate(
     report: ValidationReport,
     config: ExperimentConfig | None = None,
 ) -> list[ValidationIssue]:
-    system_prompt = _VALIDATE_PROMPT.read_text()
+    system_prompt = render_prompt_template(_VALIDATE_PROMPT, config=config)
     payload = {
         "diagram": diagram.model_dump(),
         "existing_issues": [issue.__dict__ for issue in report.issues],

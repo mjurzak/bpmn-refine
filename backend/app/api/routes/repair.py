@@ -86,7 +86,7 @@ def _build_repair_run(
         model_used=resolve_model(TaskType.REPAIR, config=config),
         converter=CONVERTER_VERSION,
         rules_version=RULES_VERSION,
-        prompt_files={"repair": repair_prompt_path()},
+        prompt_files={"repair": repair_prompt_path(config)},
         iterations=iterations,
         converged=converged,
     )

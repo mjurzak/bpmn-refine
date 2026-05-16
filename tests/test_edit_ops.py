@@ -5,9 +5,11 @@ from app.model.schema import BpmnDiagram, BpmnProcess, FlowNode, FlowNodeType, S
 from app.repair.ops import (
     AddNodeOp,
     ChangeGatewayTypeOp,
+    ReplaceDiagramOp,
     RemoveNodeOp,
     SetConditionOp,
     apply_edit_ops,
+    atomic_edit_op_list_adapter,
     edit_op_adapter,
     edit_op_list_adapter,
 )
@@ -73,6 +75,21 @@ def test_change_gateway_type_requires_gateway_type():
 def test_edit_op_list_adapter_rejects_unknown_operation():
     with pytest.raises(ValidationError):
         edit_op_list_adapter.validate_python([{"op": "replace_everything"}])
+
+
+def test_atomic_adapter_excludes_replace_diagram_but_full_adapter_accepts_it():
+    replacement = BpmnDiagram(
+        definitions_id="def_replacement",
+        processes=[BpmnProcess(id="replacement_proc")],
+    )
+    payload = [{"op": "replace_diagram", "diagram": replacement.model_dump()}]
+
+    with pytest.raises(ValidationError):
+        atomic_edit_op_list_adapter.validate_python(payload)
+
+    ops = edit_op_list_adapter.validate_python(payload)
+
+    assert isinstance(ops[0], ReplaceDiagramOp)
 
 
 def test_apply_edit_ops_adds_node_and_flow_without_mutating_original():
@@ -277,6 +294,22 @@ def test_apply_edit_ops_set_condition_clears_existing_condition():
 
     assert results[0].applied is True
     assert updated.processes[0].sequence_flows[1].condition_expression is None
+
+
+def test_apply_edit_ops_replaces_diagram():
+    diagram = _minimal_valid_diagram()
+    replacement = BpmnDiagram(
+        definitions_id="def_replacement",
+        processes=[BpmnProcess(id="replacement_proc")],
+    )
+    ops = [ReplaceDiagramOp(diagram=replacement)]
+
+    updated, results = apply_edit_ops(ops, diagram)
+
+    assert results[0].applied is True
+    assert updated.definitions_id == "def_replacement"
+    assert [proc.id for proc in updated.processes] == ["replacement_proc"]
+    assert diagram.definitions_id == "def_1"
 
 
 def test_apply_edit_ops_add_flow_rejects_missing_target():
