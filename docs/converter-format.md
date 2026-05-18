@@ -114,10 +114,10 @@ Additional formats used primarily for LLM I/O and for thesis-level comparison ex
 | Key | Status | Purpose | Notes |
 |---|---|---|---|
 | `pydantic` (BPMN XML) | ✅ built | user upload/export; canonical-parity baseline | the converter connecting the user's world (XML) to the canonical IR |
-| `pydantic-json` | planned | canonical IR as JSON for LLM I/O | 1:1 with the Pydantic schema; the "no information loss" baseline |
-| `yaml` | planned | **novel thesis contribution** | no prior BPMN-LLM YAML study; measures token cost and edit success vs JSON |
-| `mermaid` | planned | token-efficiency reference | literature reports ~93% reduction vs BPMN XML |
-| `compact-json` | planned | ablation | minimal-key JSON; isolates whether verbose keys hurt LLM accuracy |
+| `pydantic-json` | ✅ built | canonical IR as JSON for LLM I/O | 1:1 with the Pydantic schema; the "no information loss" baseline |
+| `yaml` | ✅ built | **novel thesis contribution** | canonical IR as deterministic YAML; measures token cost and edit success vs JSON |
+| `mermaid` | ✅ built | token-efficiency reference | Mermaid flowchart plus compact IR metadata for lossless supported-subset round-trip |
+| `compact-json` | ✅ built | ablation | minimal-key JSON; isolates whether verbose keys hurt LLM accuracy |
 
 The active candidate IR is selected per request via `ExperimentConfig.ir_format`.
 

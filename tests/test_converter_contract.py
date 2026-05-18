@@ -9,6 +9,9 @@ from tests.converter_cases import canonical_full_diagram, canonical_xml_supporte
 CONVERTER_CASES = [
     pytest.param("pydantic", canonical_xml_supported_diagram, id="pydantic-xml"),
     pytest.param("pydantic_json", canonical_full_diagram, id="pydantic-json"),
+    pytest.param("yaml", canonical_full_diagram, id="yaml"),
+    pytest.param("mermaid", canonical_full_diagram, id="mermaid"),
+    pytest.param("compact_json", canonical_full_diagram, id="compact-json"),
 ]
 
 
@@ -41,3 +44,13 @@ def test_pydantic_json_registry_alias_matches_primary_converter():
 
     assert alias_payload == primary_payload
     assert get_converter("pydantic-json").parse(alias_payload) == diagram
+
+
+def test_compact_json_registry_alias_matches_primary_converter():
+    diagram = canonical_full_diagram()
+
+    primary_payload = get_converter("compact_json").serialize(diagram)
+    alias_payload = get_converter("compact-json").serialize(diagram)
+
+    assert alias_payload == primary_payload
+    assert get_converter("compact-json").parse(alias_payload) == diagram
