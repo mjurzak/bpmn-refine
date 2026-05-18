@@ -14,6 +14,11 @@ from app.llm import client as llm_client
 from app.llm.prompt_context import render_prompt_template
 from app.llm.router import TaskType, resolve_model, resolve_provider
 from app.model.schema import BpmnDiagram
+from app.services.ir_payload import (
+    diagram_fence,
+    diagram_payload_text,
+    parse_diagram_from_fenced_reply,
+)
 from app.validation.rules import ValidationIssue
 
 logger = logging.getLogger(__name__)
@@ -47,8 +52,11 @@ async def chat_diagram(
 
     context_prefix = ""
     if diagram:
+        fence = diagram_fence(config)
+        diagram_text = diagram_payload_text(diagram, config)
         context_prefix += (
-            f"Current diagram:\n```json\n{diagram.model_dump_json(indent=2)}\n```\n\n"
+            f"Current diagram ({(config or ExperimentConfig()).ir_format}):\n"
+            f"```{fence}\n{diagram_text}\n```\n\n"
         )
     if issues:
         issues_json = json.dumps([issue.__dict__ for issue in issues], indent=2)
@@ -68,7 +76,7 @@ async def chat_diagram(
         provider=resolve_provider(TaskType.REFINEMENT, config=config),
     )
 
-    updated_diagram = _parse_diagram_from_reply(reply)
+    updated_diagram = _parse_diagram_from_reply(reply, config=config)
     rev_id: str | None = None
     new_session_id: str | None = None
 
@@ -108,17 +116,12 @@ def chat_prompt_path() -> Path:
     return _CHAT_PROMPT
 
 
-def _parse_diagram_from_reply(reply: str) -> BpmnDiagram | None:
-    # accept whichever fence name the LLM chose
-    for fence in ("```diagram", "```ir", "```json"):
-        if fence not in reply:
-            continue
-        try:
-            start = reply.index(fence) + len(fence)
-            end = reply.index("```", start)
-            diagram_json = reply[start:end].strip()
-            logger.info("parsed updated diagram from %s fence", fence)
-            return BpmnDiagram.model_validate_json(diagram_json)
-        except Exception as exc:
-            logger.warning("failed to parse diagram from %s fence: %s", fence, exc)
+def _parse_diagram_from_reply(
+    reply: str,
+    config: ExperimentConfig | None = None,
+) -> BpmnDiagram | None:
+    try:
+        return parse_diagram_from_fenced_reply(reply, config)
+    except Exception as exc:
+        logger.warning("failed to parse diagram from reply: %s", exc)
     return None

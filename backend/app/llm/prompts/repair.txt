@@ -18,7 +18,7 @@ Rules:
 - If an issue cannot be fixed without additional business context, leave it
   unchanged and note it in the "unresolved" list.
 - Return ONLY a JSON object with two keys:
-    "ir"         — the complete repaired IR object
+    "ir"         — the complete repaired diagram in the requested IR format
     "unresolved" — list of rule_ids you could not fix, with a brief reason each
 
 No prose, no markdown code fences.

@@ -15,6 +15,13 @@ from pydantic import BaseModel, Field, model_validator
 
 HASH_PREFIX_LENGTH = 12
 CONVERTER_VERSION = "pydantic_ir@v1"
+IR_FORMAT_CONVERTER_VERSIONS = {
+    "pydantic": CONVERTER_VERSION,
+    "pydantic_json": "pydantic_json@v1",
+    "yaml": "yaml@v1",
+    "mermaid": "mermaid@v1",
+    "compact_json": "compact_json@v1",
+}
 
 
 class ModelTier(StrEnum):
@@ -83,6 +90,10 @@ def canonical_config_json(config: ExperimentConfig) -> str:
 def config_hash(config: ExperimentConfig) -> str:
     encoded = canonical_config_json(config).encode("utf-8")
     return hash_bytes(encoded)
+
+
+def converter_version(config: ExperimentConfig) -> str:
+    return IR_FORMAT_CONVERTER_VERSIONS[str(config.ir_format)]
 
 
 def hash_bytes(data: bytes) -> str:

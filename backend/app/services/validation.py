@@ -12,6 +12,7 @@ from app.llm import client as llm_client
 from app.llm.prompt_context import render_prompt_template
 from app.llm.router import TaskType, resolve_model, resolve_provider
 from app.model.schema import BpmnDiagram
+from app.services.ir_payload import diagram_payload
 from app.validation.rules import ValidationIssue, ValidationReport, validate
 
 _PROMPT_DIR = Path(__file__).parent.parent / "llm" / "prompts"
@@ -52,7 +53,8 @@ async def _semantic_validate(
 ) -> list[ValidationIssue]:
     system_prompt = render_prompt_template(_VALIDATE_PROMPT, config=config)
     payload = {
-        "diagram": diagram.model_dump(),
+        "ir_format": str((config or ExperimentConfig()).ir_format),
+        "diagram": diagram_payload(diagram, config),
         "existing_issues": [issue.__dict__ for issue in report.issues],
     }
     raw = await llm_client.complete(

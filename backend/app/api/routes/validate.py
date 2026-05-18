@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.experiments import CONVERTER_VERSION, ExperimentConfig, RunBlock, build_run_block
+from app.experiments import ExperimentConfig, RunBlock, build_run_block, converter_version
 from app.llm.router import TaskType, resolve_model
 from app.model.schema import BpmnDiagram
 from app.services.validation import (
@@ -40,7 +40,7 @@ async def validate_diagram(req: ValidationRequest) -> ValidationResponse | JSONR
             if include_semantic
             else "none"
         ),
-        converter=CONVERTER_VERSION,
+        converter=converter_version(req.config),
         rules_version=RULES_VERSION,
         prompt_files={"validate": validate_prompt_path()} if include_semantic else None,
     )

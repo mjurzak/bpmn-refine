@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.experiments import CONVERTER_VERSION, ExperimentConfig, RunBlock, build_run_block
+from app.experiments import ExperimentConfig, RunBlock, build_run_block, converter_version
 from app.llm.router import TaskType, resolve_model
 from app.model.schema import BpmnDiagram
 from app.services.chat import ChatMessage as ServiceChatMessage
@@ -38,7 +38,7 @@ async def chat(req: ChatRequest) -> ChatResponse | JSONResponse:
     run = build_run_block(
         config=req.config,
         model_used=resolve_model(TaskType.REFINEMENT, config=req.config),
-        converter=CONVERTER_VERSION,
+        converter=converter_version(req.config),
         rules_version=RULES_VERSION,
         prompt_files={"chat": chat_prompt_path()},
     )

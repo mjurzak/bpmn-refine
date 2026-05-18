@@ -29,10 +29,10 @@ def _ir_context(config: ExperimentConfig | None) -> str:
     active_config = config or ExperimentConfig()
     return (
         f"Requested IR format: `{active_config.ir_format}`.\n"
-        "Current backend payload format: canonical Pydantic BPMN IR serialized "
-        "inside a JSON request envelope. The candidate IR selector is recorded "
-        "for experiments, but non-Pydantic converters are not wired into LLM "
-        "payloads yet."
+        "The request envelope carries `ir_format` and a `diagram` field. "
+        "For `pydantic`, `diagram` is the canonical BPMN IR as a JSON object. "
+        "For candidate formats, `diagram` is a string encoded in the selected "
+        "format and responses must return the same format."
     )
 
 

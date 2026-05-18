@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.experiments import CONVERTER_VERSION, ExperimentConfig, RunBlock, build_run_block
+from app.experiments import ExperimentConfig, RunBlock, build_run_block, converter_version
 from app.llm.router import TaskType, resolve_model
 from app.repair.ops import EditOp
 from app.services.diagrams import export_bpmn_xml, parse_bpmn_bytes
@@ -84,7 +84,7 @@ def _build_repair_run(
     return build_run_block(
         config=config,
         model_used=resolve_model(TaskType.REPAIR, config=config),
-        converter=CONVERTER_VERSION,
+        converter=converter_version(config),
         rules_version=RULES_VERSION,
         prompt_files={"repair": repair_prompt_path(config)},
         iterations=iterations,

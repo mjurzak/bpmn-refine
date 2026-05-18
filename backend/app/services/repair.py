@@ -16,6 +16,7 @@ from app.llm.router import TaskType, resolve_model, resolve_provider
 from app.model.schema import BpmnDiagram
 from app.repair.ops import EditOp, ReplaceDiagramOp, apply_edit_ops, atomic_edit_op_list_adapter
 from app.repair.quick_fixes import propose_quick_fix
+from app.services.ir_payload import diagram_payload, parse_diagram_payload
 from app.services.validation import validate_diagram
 from app.validation.rules import ValidationIssue
 
@@ -57,7 +58,8 @@ async def repair_diagram(
 ) -> RepairResult:
     """repair a diagram using the existing repair prompt and issue list"""
     payload = {
-        "diagram": diagram.model_dump(),
+        "ir_format": str((config or ExperimentConfig()).ir_format),
+        "diagram": diagram_payload(diagram, config),
         "issues": [issue.__dict__ for issue in issues],
     }
     raw = await llm_client.complete(
@@ -67,7 +69,7 @@ async def repair_diagram(
         provider=resolve_provider(TaskType.REPAIR, config=config),
     )
     parsed = json.loads(raw)
-    repaired_diagram = BpmnDiagram.model_validate(parsed["ir"])
+    repaired_diagram = parse_diagram_payload(parsed["ir"], config)
     unresolved = [_normalise_unresolved(item) for item in parsed.get("unresolved", [])]
 
     if not snapshot:
@@ -101,7 +103,8 @@ async def repair_with_edit_ops(
 ) -> list[EditOp]:
     """repair a diagram by asking the LLM for atomic EditOps"""
     payload = {
-        "diagram": diagram.model_dump(),
+        "ir_format": str((config or ExperimentConfig()).ir_format),
+        "diagram": diagram_payload(diagram, config),
         "issues": [issue.__dict__ for issue in issues],
         "repair_mode": RepairMode.ATOMIC,
     }
