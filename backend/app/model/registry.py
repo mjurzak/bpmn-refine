@@ -35,7 +35,11 @@ def get_converter(name: str | None = None) -> DiagramConverter:
 # enough to make get_converter() work out of the box
 def _bootstrap() -> None:
     from app.model.formats.pydantic_ir import PydanticConverter
+    from app.model.formats.pydantic_json import PydanticJsonConverter
+
     register("pydantic", PydanticConverter())
+    register("pydantic_json", PydanticJsonConverter())
+    register("pydantic-json", PydanticJsonConverter())
 
 
 _bootstrap()
