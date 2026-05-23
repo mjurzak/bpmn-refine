@@ -45,6 +45,7 @@ async def chat_diagram(
     issues: list[ValidationIssue] | None = None,
     session_id: str | None = None,
     config: ExperimentConfig | None = None,
+    snapshot_changes: bool = True,
 ) -> ChatResult:
     """run one conversational refinement turn and optionally snapshot diagram output"""
     system_prompt = render_prompt_template(_CHAT_PROMPT, config=config)
@@ -80,7 +81,7 @@ async def chat_diagram(
     rev_id: str | None = None
     new_session_id: str | None = None
 
-    if updated_diagram is not None:
+    if updated_diagram is not None and snapshot_changes:
         active_session_id = session_id
         if not active_session_id:
             active_session_id = hist.create_session()

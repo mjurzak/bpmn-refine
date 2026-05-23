@@ -14,8 +14,10 @@ def test_chat_response_includes_run_block(monkeypatch):
         issues=None,
         session_id=None,
         config=None,
+        snapshot_changes=True,
     ):
         captured["config"] = config
+        captured["snapshot_changes"] = snapshot_changes
         return ChatResult(reply="No diagram changes needed.")
 
     monkeypatch.setattr("app.api.routes.chat.chat_diagram", fake_chat_diagram)
@@ -41,6 +43,7 @@ def test_chat_response_includes_run_block(monkeypatch):
 
     assert payload["reply"] == "No diagram changes needed."
     assert captured["config"] == ExperimentConfig(**config)
+    assert captured["snapshot_changes"] is True
     assert run["model_used"] == "custom-chat-model"
     assert run["prompt_versions"]["chat"]["name"] == "chat_system.txt"
     assert len(run["prompt_versions"]["chat"]["hash"]) == 12
@@ -49,3 +52,32 @@ def test_chat_response_includes_run_block(monkeypatch):
     assert run["config_hash"] == config_hash(ExperimentConfig(**config))
     assert run["request_id"]
     assert run["timestamp"]
+
+
+def test_chat_can_return_unsnapshotted_proposal(monkeypatch):
+    captured = {}
+
+    async def fake_chat_diagram(
+        messages,
+        diagram=None,
+        issues=None,
+        session_id=None,
+        config=None,
+        snapshot_changes=True,
+    ):
+        captured["snapshot_changes"] = snapshot_changes
+        return ChatResult(reply="Proposal only.")
+
+    monkeypatch.setattr("app.api.routes.chat.chat_diagram", fake_chat_diagram)
+
+    client = TestClient(app)
+    response = client.post(
+        "/api/v1/chat",
+        json={
+            "messages": [{"role": "user", "content": "Change this process."}],
+            "snapshot_changes": False,
+        },
+    )
+
+    assert response.status_code == 200
+    assert captured["snapshot_changes"] is False

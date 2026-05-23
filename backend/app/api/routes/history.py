@@ -1,9 +1,43 @@
+from typing import Literal
+
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from app.history import service as hist
 from app.history.models import HistoryResponse, Revision, RevertResponse
+from app.model.schema import BpmnDiagram
 
 router = APIRouter(prefix="/history", tags=["history"])
+
+
+class CommitRevisionRequest(BaseModel):
+    diagram: BpmnDiagram
+    session_id: str | None = None
+    message: str = "accepted proposal"
+    author: Literal["user", "llm"] = "llm"
+
+
+class CommitRevisionResponse(BaseModel):
+    session_id: str
+    new_rev_id: str
+    diagram: BpmnDiagram
+
+
+@router.post("/commit", response_model=CommitRevisionResponse)
+def commit_revision(req: CommitRevisionRequest):
+    """commit an explicitly accepted proposal into session history"""
+    session_id = req.session_id or hist.create_session()
+    revision = hist.snapshot(
+        session_id=session_id,
+        diagram=req.diagram,
+        message=req.message,
+        author=req.author,
+    )
+    return CommitRevisionResponse(
+        session_id=session_id,
+        new_rev_id=revision.rev_id,
+        diagram=revision.diagram,
+    )
 
 
 @router.get("/{session_id}", response_model=HistoryResponse)

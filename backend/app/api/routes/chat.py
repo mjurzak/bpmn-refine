@@ -26,6 +26,7 @@ class ChatRequest(BaseModel):
     diagram: BpmnDiagram | None = None
     issues: list[ValidationIssue] = Field(default_factory=list)
     session_id: str | None = None  # when provided, diagram changes are snapshotted
+    snapshot_changes: bool = True
     config: ExperimentConfig = Field(default_factory=ExperimentConfig)
 
 
@@ -51,6 +52,7 @@ async def chat(req: ChatRequest) -> ChatResponse | JSONResponse:
             issues=req.issues,
             session_id=req.session_id,
             config=req.config,
+            snapshot_changes=req.snapshot_changes,
         )
     except Exception as exc:
         return JSONResponse(

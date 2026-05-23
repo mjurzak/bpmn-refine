@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 
 from app.experiments import ExperimentConfig, RunBlock, build_run_block, converter_version
 from app.llm.router import TaskType, resolve_model
-from app.repair.ops import EditOp
+from app.model.schema import BpmnDiagram
+from app.repair.ops import EditOp, EditOpResult, apply_edit_ops
 from app.services.diagrams import export_bpmn_xml, parse_bpmn_bytes
 from app.services.repair import dispatch_repair, repair_diagram, repair_prompt_path
 from app.validation.rules import RULES_VERSION, ValidationIssue
@@ -23,12 +24,25 @@ class RepairRequest(BaseModel):
 
 
 class RepairResponse(BaseModel):
+    input_diagram: BpmnDiagram
     updated_xml: str
+    updated_diagram: BpmnDiagram
     applied_ops: list[EditOp] = Field(default_factory=list)
     remaining_issues: list[ValidationIssue] = Field(default_factory=list)
     iterations: int
     converged: bool
     run: RunBlock
+
+
+class ApplyEditOpsRequest(BaseModel):
+    diagram: BpmnDiagram
+    ops: list[EditOp] = Field(default_factory=list)
+
+
+class ApplyEditOpsResponse(BaseModel):
+    updated_diagram: BpmnDiagram
+    updated_xml: str
+    op_results: list[EditOpResult] = Field(default_factory=list)
 
 
 @router.post("", response_model=RepairResponse)
@@ -67,12 +81,24 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
     run = _build_repair_run(req.config, iterations=iterations, converged=converged)
 
     return RepairResponse(
+        input_diagram=diagram,
         updated_xml=updated_xml,
+        updated_diagram=repair_result.repaired_diagram,
         applied_ops=repair_result.applied_ops,
         remaining_issues=remaining_issues,
         iterations=iterations,
         converged=converged,
         run=run,
+    )
+
+
+@router.post("/apply", response_model=ApplyEditOpsResponse)
+async def apply_selected_edit_ops(req: ApplyEditOpsRequest) -> ApplyEditOpsResponse:
+    updated_diagram, op_results = apply_edit_ops(req.ops, req.diagram)
+    return ApplyEditOpsResponse(
+        updated_diagram=updated_diagram,
+        updated_xml=export_bpmn_xml(updated_diagram),
+        op_results=op_results,
     )
 
 

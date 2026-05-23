@@ -53,6 +53,7 @@ def test_repair_response_includes_run_and_proposed_xml(monkeypatch):
     run = payload["run"]
 
     assert payload["updated_xml"].startswith("<?xml")
+    assert payload["input_diagram"]["processes"][0]["id"] == "proc_1"
     assert [op["op"] for op in payload["applied_ops"]] == ["replace_diagram"]
     assert payload["remaining_issues"] == []
     assert payload["iterations"] == 1
@@ -81,6 +82,31 @@ def test_repair_rejects_empty_issue_list_with_run():
     assert "run" in body
     assert body["run"]["iterations"] == 0
     assert body["run"]["converged"] is False
+
+
+def test_apply_selected_edit_ops_returns_updated_diagram():
+    response = client.post(
+        "/api/v1/repair/apply",
+        json={
+            "diagram": _minimal_valid_diagram(),
+            "ops": [
+                {
+                    "op": "rename_element",
+                    "id": "task_1",
+                    "new_name": "Reviewed task",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    process = body["updated_diagram"]["processes"][0]
+    task = next(node for node in process["flow_nodes"] if node["id"] == "task_1")
+
+    assert task["name"] == "Reviewed task"
+    assert body["op_results"][0]["applied"] is True
+    assert body["updated_xml"].startswith("<?xml")
 
 
 def _minimal_valid_xml() -> str:
