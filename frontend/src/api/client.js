@@ -31,11 +31,52 @@ export async function validateDiagram(diagram, includeSemantic = false) {
   });
 }
 
-export async function sendChatMessage(messages, diagram = null, issues = [], sessionId = null) {
+export async function sendChatMessage(
+  messages,
+  diagram = null,
+  issues = [],
+  sessionId = null,
+  snapshotChanges = true,
+) {
   return request("/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, diagram, issues, session_id: sessionId }),
+    body: JSON.stringify({
+      messages,
+      diagram,
+      issues,
+      session_id: sessionId,
+      snapshot_changes: snapshotChanges,
+    }),
+  });
+}
+
+export async function repairDiagram(xml, issues = [], config = {}) {
+  return request("/repair", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ xml, issues, config }),
+  });
+}
+
+export async function applyEditOps(diagram, ops = []) {
+  return request("/repair/apply", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ diagram, ops }),
+  });
+}
+
+export async function commitRevision(
+  diagram,
+  sessionId = null,
+  message = "accepted proposal",
+  author = "llm",
+) {
+  return request("/history/commit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ diagram, session_id: sessionId, message, author }),
   });
 }
 

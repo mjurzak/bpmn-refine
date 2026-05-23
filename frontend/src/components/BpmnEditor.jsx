@@ -22,7 +22,7 @@ const DEFAULT_DIAGRAM = `<?xml version="1.0" encoding="UTF-8"?>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>`;
 
-const DIFF_MARKERS = ["diff-added", "diff-modified"];
+const DIFF_MARKERS = ["diff-added", "diff-modified", "diff-selected"];
 
 // wraps bpmn-js Modeler as a React component
 // exposes applyDiff / clearDiff via ref for hover-based diff highlighting
@@ -92,6 +92,20 @@ const BpmnEditor = forwardRef(function BpmnEditor({ xml, onXmlChange }, ref) {
         for (const marker of DIFF_MARKERS) {
           canvas.removeMarker(id, marker);
         }
+      }
+    },
+
+    highlightElements(ids = []) {
+      const modeler = modelerRef.current;
+      if (!modeler) return;
+      const canvas = modeler.get("canvas");
+      const elementRegistry = modeler.get("elementRegistry");
+
+      for (const { id } of elementRegistry.getAll()) {
+        canvas.removeMarker(id, "diff-selected");
+      }
+      for (const id of ids) {
+        if (elementRegistry.get(id)) canvas.addMarker(id, "diff-selected");
       }
     },
   }));

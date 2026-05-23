@@ -1,20 +1,19 @@
 import React, { useState, useRef, useEffect } from "react";
 import { sendChatMessage } from "../api/client.js";
-import { summarizeDiagramDiff } from "../utils/irDiff.js";
+import DiffBlock from "./DiffBlock.jsx";
 
-function buildAssistantMessage(reply, previousDiagram, updatedDiagram) {
+function buildAssistantMessage(reply, updatedDiagram) {
   if (!updatedDiagram) {
     return { content: reply, processed: false };
   }
 
   return {
     content: reply,
-    diff: summarizeDiagramDiff(previousDiagram, updatedDiagram),
     processed: true,
   };
 }
 
-function splitProcessedReply(content) {
+function stripDiagramPayloads(content) {
   const pattern = /```(?:diagram|ir|json)\s*[\s\S]*?```/g;
   const segments = [];
   let lastIndex = 0;
@@ -22,17 +21,43 @@ function splitProcessedReply(content) {
 
   while ((match = pattern.exec(content)) !== null) {
     if (match.index > lastIndex) {
-      segments.push({ type: "markdown", content: content.slice(lastIndex, match.index) });
+      segments.push(content.slice(lastIndex, match.index));
     }
-    segments.push({ type: "diff" });
     lastIndex = match.index + match[0].length;
   }
 
   if (lastIndex < content.length) {
-    segments.push({ type: "markdown", content: content.slice(lastIndex) });
+    segments.push(content.slice(lastIndex));
   }
 
-  return segments.length > 0 ? segments : [{ type: "markdown", content }];
+  return segments.join("\n").trim() || content;
+}
+
+function opLabel(op) {
+  switch (op.op) {
+    case "add_node":
+      return `Add ${op.node_type} ${op.name ? `"${op.name}"` : op.id}`;
+    case "remove_node":
+      return `Remove node ${op.id}${op.cascade ? " and incident flows" : ""}`;
+    case "add_flow":
+      return `Add flow ${op.id}: ${op.source_ref} -> ${op.target_ref}`;
+    case "remove_flow":
+      return `Remove flow ${op.id}`;
+    case "rename_element":
+      return `Rename ${op.id} to "${op.new_name}"`;
+    case "change_node_type":
+      return `Change ${op.id} to ${op.new_type}`;
+    case "change_gateway_type":
+      return `Change gateway ${op.id} to ${op.new_type}`;
+    case "set_condition":
+      return op.condition_expression
+        ? `Set condition on ${op.flow_id}`
+        : `Clear condition on ${op.flow_id}`;
+    case "replace_diagram":
+      return "Replace full diagram";
+    default:
+      return op.op;
+  }
 }
 
 function renderInlineMarkdown(text) {
@@ -106,55 +131,48 @@ function MarkdownContent({ content }) {
   );
 }
 
-function DiffContent({ content }) {
-  return (
-    <pre className="chat-diff-block">
-      {content.split("\n").map((line, index) => {
-        let className = "chat-diff-line";
-        if (line.startsWith("+ ")) className += " chat-diff-line--added";
-        else if (line.startsWith("- ")) className += " chat-diff-line--removed";
-        else if (line.startsWith("~ ")) className += " chat-diff-line--modified";
-        else className += " chat-diff-line--detail";
-
-        return (
-          <span key={index} className={className}>
-            {line || " "}
-          </span>
-        );
-      })}
-    </pre>
-  );
-}
-
-function ProcessedAssistantContent({ content, diff }) {
-  const segments = splitProcessedReply(content);
-
-  return (
-    <div className="chat-processed-content">
-      {segments.map((segment, index) => {
-        if (segment.type === "diff") {
-          return <DiffContent key={index} content={diff} />;
-        }
-
-        if (!segment.content.trim()) {
-          return null;
-        }
-
-        return <MarkdownContent key={index} content={segment.content.trim()} />;
-      })}
-    </div>
-  );
-}
-
-export default function ChatPanel({ ir, issues, sessionId, onIrUpdate, SendIcon }) {
+export default function ChatPanel({
+  ir,
+  issues,
+  sessionId,
+  onIrUpdate,
+  onDiagramProposal,
+  SendIcon,
+  showHeader = true,
+  approvalMode = "manual",
+  onApprovalModeChange,
+  pendingProposal,
+  onApplyProposal,
+  onRejectProposal,
+  onFocusProposalOp,
+}) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedOpIndexes, setSelectedOpIndexes] = useState([]);
   const bottomRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    setSelectedOpIndexes((pendingProposal?.ops ?? []).map((_, index) => index));
+    onFocusProposalOp?.(null);
+  }, [pendingProposal]);
+
+  function toggleProposalOp(index) {
+    setSelectedOpIndexes((current) => (
+      current.includes(index)
+        ? current.filter((item) => item !== index)
+        : [...current, index].sort((a, b) => a - b)
+    ));
+  }
+
+  function selectedProposalOps() {
+    const ops = pendingProposal?.ops ?? [];
+    return selectedOpIndexes.map((index) => ops[index]).filter(Boolean);
+  }
 
   async function handleSend() {
     const text = input.trim();
@@ -165,6 +183,7 @@ export default function ChatPanel({ ir, issues, sessionId, onIrUpdate, SendIcon 
     setMessages(nextMessages);
     setInput("");
     setLoading(true);
+    const autoApprove = approvalMode === "autoapprove";
 
     try {
       const res = await sendChatMessage(
@@ -172,15 +191,24 @@ export default function ChatPanel({ ir, issues, sessionId, onIrUpdate, SendIcon 
         ir,
         issues,
         sessionId,
+        autoApprove,
       );
       console.debug("chat completion reply:", res.reply);
       const assistantMsg = {
         role: "assistant",
-        ...buildAssistantMessage(res.reply, ir, res.updated_diagram),
+        ...buildAssistantMessage(res.reply, res.updated_diagram),
       };
       setMessages((prev) => [...prev, assistantMsg]);
       if (res.updated_diagram) {
-        onIrUpdate?.(res.updated_diagram, res.rev_id ?? null, res.session_id ?? null);
+        if (autoApprove) {
+          onIrUpdate?.(res.updated_diagram, res.rev_id ?? null, res.session_id ?? null);
+        } else {
+          onDiagramProposal?.({
+            source: "chat",
+            diagram: res.updated_diagram,
+            message: "accepted chat proposal",
+          });
+        }
       }
     } catch (err) {
       setMessages((prev) => [
@@ -201,12 +229,35 @@ export default function ChatPanel({ ir, issues, sessionId, onIrUpdate, SendIcon 
 
   return (
     <>
-      <div className="panel-header">Chat</div>
+      {showHeader && <div className="panel-header">Chat</div>}
+
+      <div className="approval-mode-bar">
+        <div>
+          <div className="approval-mode-title">Change approvals</div>
+          <div className="approval-mode-subtitle">manual approval keeps model edits as proposals</div>
+        </div>
+        <div className="approval-mode-toggle" role="group" aria-label="Change approval mode">
+          <button
+            className={`approval-mode-option${approvalMode === "manual" ? " approval-mode-option--active" : ""}`}
+            onClick={() => onApprovalModeChange?.("manual")}
+            type="button"
+          >
+            Manual
+          </button>
+          <button
+            className={`approval-mode-option${approvalMode === "autoapprove" ? " approval-mode-option--active" : ""}`}
+            onClick={() => onApprovalModeChange?.("autoapprove")}
+            type="button"
+          >
+            Auto
+          </button>
+        </div>
+      </div>
 
       <div className="chat-body">
         {messages.length === 0 && !loading && (
           <div className="validation-empty" style={{ height: "auto", paddingTop: 40 }}>
-            Ask questions about your diagram or request changes.
+            Ask the AI assistant to explain, repair, or refine the current BPMN diagram.
           </div>
         )}
 
@@ -216,8 +267,8 @@ export default function ChatPanel({ ir, issues, sessionId, onIrUpdate, SendIcon 
             className={`chat-message chat-message--${m.role}`}
           >
             <div className={`chat-bubble chat-bubble--${m.role}${m.processed ? " chat-bubble--processed" : ""}`}>
-              {m.processed && <div className="chat-bubble-label">processed diff</div>}
-              {m.processed ? <ProcessedAssistantContent content={m.content} diff={m.diff} /> : m.role === "assistant" ? <MarkdownContent content={m.content} /> : m.content}
+              {m.processed && <div className="chat-bubble-label">diagram updated</div>}
+              {m.role === "assistant" ? <MarkdownContent content={m.processed ? stripDiagramPayloads(m.content) : m.content} /> : m.content}
             </div>
           </div>
         ))}
@@ -226,12 +277,61 @@ export default function ChatPanel({ ir, issues, sessionId, onIrUpdate, SendIcon 
         <div ref={bottomRef} />
       </div>
 
+      {pendingProposal && (
+        <div className="proposal-card">
+          <div className="proposal-card-header">
+            <div>
+              <div className="proposal-card-title">
+                {pendingProposal.source === "repair" ? "Repair proposal" : "Chat proposal"}
+              </div>
+              <div className="proposal-card-subtitle">review the diagram change before applying it</div>
+            </div>
+          </div>
+          {pendingProposal.ops?.length > 0 && (
+            <div className="proposal-op-list">
+              {pendingProposal.ops.map((op, index) => {
+                const selected = selectedOpIndexes.includes(index);
+                return (
+                  <label
+                    key={`${op.op}-${index}`}
+                    className={`proposal-op-row${selected ? " proposal-op-row--selected" : ""}`}
+                    onMouseEnter={() => onFocusProposalOp?.(op)}
+                    onMouseLeave={() => onFocusProposalOp?.(null)}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggleProposalOp(index)}
+                    />
+                    <span className="proposal-op-index">{index + 1}</span>
+                    <span>{opLabel(op)}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <DiffBlock content={pendingProposal.diff} />
+          <div className="proposal-card-actions">
+            <button
+              className="proposal-action proposal-action--apply"
+              onClick={() => onApplyProposal?.(pendingProposal.ops?.length > 0 ? selectedProposalOps() : null)}
+              type="button"
+            >
+              {pendingProposal.ops?.length > 0 ? `Apply selected (${selectedOpIndexes.length})` : "Apply"}
+            </button>
+            <button className="proposal-action" onClick={onRejectProposal} type="button">
+              Reject
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="chat-input-area">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask about the diagram..."
+          placeholder="Ask for an improvement, repair, or explanation..."
           rows={2}
           className="chat-textarea"
         />

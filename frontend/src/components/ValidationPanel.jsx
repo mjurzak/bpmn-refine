@@ -11,6 +11,7 @@ export default function ValidationPanel({
   semanticIssues = [],
   isValid,
   loading,
+  loadingLabel = "Running validation...",
   errorCount = 0,
 }) {
   const all = [...issues, ...semanticIssues];
@@ -37,7 +38,7 @@ export default function ValidationPanel({
 
       <div className="validation-body">
         {loading && (
-          <div className="validation-empty">Running validation...</div>
+          <div className="validation-empty">{loadingLabel}</div>
         )}
 
         {!loading && isValid === true && (
