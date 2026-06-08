@@ -37,6 +37,27 @@ def test_validate_response_includes_run_block():
     assert run["request_id"]
     assert run["timestamp"]
 
+
+def test_validate_tier2_response_records_checker_versions():
+    response = client.post(
+        "/api/v1/validate",
+        json={
+            "diagram": _minimal_valid_diagram(),
+            "include_semantic": False,
+            "config": {
+                "tiers_enabled": {"t2": True},
+                "t2_tools": ["woflan"],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    run = payload["run"]
+
+    assert payload["is_valid"] is True
+    assert run["checkers"]["woflan"].startswith("pm4py-")
+
 def _minimal_valid_diagram() -> dict:
     return {
         "definitions_id": "def_1",

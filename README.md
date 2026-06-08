@@ -43,7 +43,7 @@ docker compose up --build
 ## Running tests
 
 ```bash
-PYTHONPATH=backend .venv/bin/pytest tests/ -v
+PYTHONPATH=backend .venv/bin/pytest -v
 ```
 
 ## CLI

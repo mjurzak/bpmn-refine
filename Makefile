@@ -9,4 +9,4 @@ frontend:
 	cd $(ROOT)/frontend && npm run dev
 
 test:
-	cd $(ROOT) && PYTHONPATH=backend .venv/bin/pytest tests/ -v
+	cd $(ROOT) && PYTHONPATH=backend .venv/bin/pytest -v
