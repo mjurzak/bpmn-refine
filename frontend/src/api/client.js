@@ -23,11 +23,11 @@ export async function exportDiagram(ir) {
   });
 }
 
-export async function validateDiagram(diagram, includeSemantic = false) {
+export async function validateDiagram(diagram, includeSemantic = false, config = {}) {
   return request("/validate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ diagram, include_semantic: includeSemantic }),
+    body: JSON.stringify({ diagram, include_semantic: includeSemantic, config }),
   });
 }
 

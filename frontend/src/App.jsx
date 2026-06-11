@@ -28,6 +28,23 @@ const APPROVAL_MODES = {
   AUTO: "autoapprove",
 };
 
+const VALIDATION_MODES = {
+  STRUCTURAL: "structural",
+  DEEP: "deep",
+  SEMANTIC: "semantic",
+};
+
+const DEEP_VALIDATE_CONFIG = {
+  tiers_enabled: { t1: true, t2: true, t3: false },
+  t2_tools: ["woflan"],
+};
+
+const VALIDATION_LOADING_LABELS = {
+  [VALIDATION_MODES.STRUCTURAL]: "Running structural validation...",
+  [VALIDATION_MODES.DEEP]: "Running deep formal validation...",
+  [VALIDATION_MODES.SEMANTIC]: "Running semantic LLM validation...",
+};
+
 function readSessionBoolean(key, fallback) {
   try {
     const value = window.sessionStorage.getItem(key);
@@ -268,12 +285,14 @@ export default function App() {
     }
   }
 
-  async function handleValidate(includeSemanticPass = false) {
+  async function handleValidate(mode = VALIDATION_MODES.STRUCTURAL) {
     if (!diagram) return alert("Upload a diagram first.");
+    const includeSemanticPass = mode === VALIDATION_MODES.SEMANTIC;
+    const config = mode === VALIDATION_MODES.DEEP ? DEEP_VALIDATE_CONFIG : {};
     setValidating(true);
-    setValidationMode(includeSemanticPass ? "semantic" : "structural");
+    setValidationMode(mode);
     try {
-      const res = await validateDiagram(diagram, includeSemanticPass);
+      const res = await validateDiagram(diagram, includeSemanticPass, config);
       setValidationResult(res);
     } catch (err) {
       alert(`Validation failed: ${err.message}`);
@@ -479,7 +498,7 @@ export default function App() {
               semanticIssues={validationResult?.semantic_issues ?? []}
               isValid={validationResult?.is_valid}
               loading={validating}
-              loadingLabel={validationMode === "semantic" ? "Running semantic LLM validation..." : "Running structural validation..."}
+              loadingLabel={VALIDATION_LOADING_LABELS[validationMode] ?? "Running validation..."}
               errorCount={errorCount}
             />
           </div>
@@ -537,7 +556,7 @@ export default function App() {
             <div className="diagram-action-spacer" />
             <div className="diagram-action-group diagram-action-group--validation">
               <button
-                onClick={() => handleValidate(false)}
+                onClick={() => handleValidate(VALIDATION_MODES.STRUCTURAL)}
                 disabled={!diagram || validating}
                 className="diagram-action diagram-action--validate"
                 title="Run deterministic structural validation"
@@ -545,7 +564,15 @@ export default function App() {
                 <CheckIcon /> Validate
               </button>
               <button
-                onClick={() => handleValidate(true)}
+                onClick={() => handleValidate(VALIDATION_MODES.DEEP)}
+                disabled={!diagram || validating}
+                className="diagram-action diagram-action--deep"
+                title="Run tier-1 rules plus PM4Py Woflan formal validation"
+              >
+                <SparkIcon /> Deep Validate
+              </button>
+              <button
+                onClick={() => handleValidate(VALIDATION_MODES.SEMANTIC)}
                 disabled={!diagram || validating}
                 className="diagram-action diagram-action--ai"
                 title="Run structural validation plus LLM semantic analysis"

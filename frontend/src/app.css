@@ -469,6 +469,18 @@ html, body, #root {
   color: #fff;
 }
 
+.diagram-action--deep {
+  color: #fff;
+  background: var(--clr-info);
+  border-color: var(--clr-info);
+}
+
+.diagram-action--deep:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--clr-info) 86%, #000);
+  border-color: color-mix(in srgb, var(--clr-info) 86%, #000);
+  color: #fff;
+}
+
 .diagram-action--repair {
   background: var(--clr-warning);
   border-color: var(--clr-warning);
