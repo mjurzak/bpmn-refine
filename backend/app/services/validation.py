@@ -13,7 +13,8 @@ from app.llm.prompt_context import render_prompt_template
 from app.llm.router import TaskType, resolve_model, resolve_provider
 from app.model.schema import BpmnDiagram
 from app.services.ir_payload import diagram_payload
-from app.validation.rules import ValidationIssue, ValidationReport, validate
+from app.validation.checkers import run_tier2_checkers
+from app.validation.rules import ValidationIssue, ValidationReport, issue_to_dict, validate
 
 _PROMPT_DIR = Path(__file__).parent.parent / "llm" / "prompts"
 _VALIDATE_PROMPT = _PROMPT_DIR / "validate.txt"
@@ -28,20 +29,28 @@ class ValidationResult(BaseModel):
 async def validate_diagram(
     diagram: BpmnDiagram,
     include_semantic: bool = False,
+    include_t2: bool | None = None,
     config: ExperimentConfig | None = None,
 ) -> ValidationResult:
     """run deterministic validation and optionally an LLM semantic pass"""
+    active_config = config or ExperimentConfig()
     report: ValidationReport = validate(diagram)
+    checker_issues: list[ValidationIssue] = []
     semantic_issues: list[ValidationIssue] = []
+    should_run_t2 = include_t2 if include_t2 is not None else active_config.tiers_enabled.t2
+
+    if should_run_t2:
+        checker_issues = await run_tier2_checkers(diagram, active_config)
 
     if include_semantic:
-        semantic_issues = await _semantic_validate(diagram, report, config=config)
+        semantic_issues = await _semantic_validate(diagram, report, config=active_config)
 
-    all_issues = report.issues + semantic_issues
+    issues = report.issues + checker_issues
+    all_issues = issues + semantic_issues
     is_valid = not any(issue.severity == "error" for issue in all_issues)
     return ValidationResult(
         is_valid=is_valid,
-        issues=report.issues,
+        issues=issues,
         semantic_issues=semantic_issues,
     )
 
@@ -55,7 +64,7 @@ async def _semantic_validate(
     payload = {
         "ir_format": str((config or ExperimentConfig()).ir_format),
         "diagram": diagram_payload(diagram, config),
-        "existing_issues": [issue.__dict__ for issue in report.issues],
+        "existing_issues": [issue_to_dict(issue) for issue in report.issues],
     }
     raw = await llm_client.complete(
         prompt=json.dumps(payload),
