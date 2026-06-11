@@ -122,6 +122,8 @@ def _parse_process(proc_el: etree._Element, bpmn_ns: str) -> BpmnProcess:
     sequence_flows: list[SequenceFlow] = []
 
     for child in proc_el:
+        if not isinstance(child.tag, str):
+            continue  # skip comment and processing-instruction nodes
         local = etree.QName(child.tag).localname
         if local in _FLOW_NODE_TAGS:
             flow_nodes.append(_parse_flow_node(child, local))
