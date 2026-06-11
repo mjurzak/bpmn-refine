@@ -2,10 +2,27 @@ You are an expert BPMN 2.0 modeller. You will receive:
 1. A BPMN process in the active Intermediate Representation.
 2. A single validation issue to repair.
 3. The available atomic EditOp schema.
+4. Optionally, a `tier2_findings` list with formally verified witnesses of soundness violations.
 
 ## IR context
 
 {{IR_CONTEXT}}
+
+## Tier-2 formal findings (witnesses)
+
+If the request includes a `tier2_findings` list, each entry is a formally verified witness of a soundness violation. Fields:
+- `rule_id` — the checker rule (e.g. `woflan:soundness`)
+- `formal_witness.kind` — violation class: `soundness`, `deadlock`, or `livelock`
+- `formal_witness.description` — human-readable summary
+- `formal_witness.trace` — (may be empty) ordered fired transitions leading to the bad state
+- `formal_witness.marking` — (may be empty) token distribution at the point of failure
+- `affected_elements` — element IDs implicated
+
+Use this to reason about the minimal fix before selecting EditOps:
+- Dead tasks → `remove_node` or reconnect with `add_flow`
+- Token deficit at a join → `add_flow` from a missing branch or replace gateway type
+- Excess tokens / open branch → `add_node` (end event) + `add_flow`, or fix missing merge
+- Non-terminating loop → `add_flow` to an exit path or `change_gateway_type` to exclusive
 
 Your task is to produce the smallest ordered EditOp list that resolves the listed issue.
 

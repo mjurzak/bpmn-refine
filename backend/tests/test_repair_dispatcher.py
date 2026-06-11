@@ -5,7 +5,7 @@ from app.model.schema import BpmnDiagram, BpmnProcess, FlowNode, FlowNodeType, S
 from app.repair.ops import RenameElementOp
 from app.services import repair as repair_service
 from app.services.repair import RepairResult, dispatch_repair, repair_with_edit_ops
-from app.validation.rules import Severity, ValidationIssue
+from app.validation.rules import FormalWitness, Severity, ValidationIssue
 
 
 async def test_dispatch_repair_prefers_quick_fix_over_llm():
@@ -178,6 +178,139 @@ async def test_repair_with_edit_ops_parses_atomic_llm_output(monkeypatch):
     assert "Available atomic EditOps" in captured["system"]
     assert "replace_diagram" not in captured["system"]
     assert json.loads(captured["prompt"])["repair_mode"] == "atomic"
+
+
+async def test_repair_with_edit_ops_includes_tier2_findings_in_payload(monkeypatch):
+    captured = {}
+
+    async def fake_complete(**kwargs):
+        captured.update(kwargs)
+        return json.dumps({"ops": [], "unresolved": []})
+
+    monkeypatch.setattr(repair_service.llm_client, "complete", fake_complete)
+
+    issue_with_witness = ValidationIssue(
+        rule_id="woflan:soundness",
+        severity=Severity.ERROR,
+        message="Process is not sound.",
+        element_refs=["task_1"],
+        source="woflan",
+        formal_witness=FormalWitness(
+            kind="soundness",
+            description="task_1 is a dead task — it can never be reached.",
+        ),
+    )
+
+    await repair_with_edit_ops(
+        _minimal_valid_diagram(),
+        issues=[issue_with_witness],
+        config=ExperimentConfig(),
+    )
+
+    payload = json.loads(captured["prompt"])
+    assert "tier2_findings" in payload
+    assert len(payload["tier2_findings"]) == 1
+    finding = payload["tier2_findings"][0]
+    assert finding["rule_id"] == "woflan:soundness"
+    assert finding["formal_witness"]["kind"] == "soundness"
+    assert "task_1" in finding["affected_elements"]
+
+
+async def test_repair_diagram_includes_tier2_findings_in_payload(monkeypatch):
+    captured = {}
+
+    async def fake_complete(**kwargs):
+        captured.update(kwargs)
+        return json.dumps({"ir": _minimal_valid_diagram().model_dump(mode="json"), "unresolved": []})
+
+    monkeypatch.setattr(repair_service.llm_client, "complete", fake_complete)
+
+    issue_with_witness = ValidationIssue(
+        rule_id="woflan:soundness",
+        severity=Severity.ERROR,
+        message="Process is not sound.",
+        source="woflan",
+        formal_witness=FormalWitness(
+            kind="deadlock",
+            description="No enabled transition at marking {p2: 1}.",
+        ),
+        raw={"sound": False},
+    )
+
+    from app.services.repair import repair_diagram
+
+    await repair_diagram(
+        _minimal_valid_diagram(),
+        issues=[issue_with_witness],
+        config=ExperimentConfig(),
+        snapshot=False,
+    )
+
+    payload = json.loads(captured["prompt"])
+    assert "tier2_findings" in payload
+    finding = payload["tier2_findings"][0]
+    assert finding["formal_witness"]["kind"] == "deadlock"
+
+
+async def test_issues_without_formal_witness_omit_tier2_findings(monkeypatch):
+    captured = {}
+
+    async def fake_complete(**kwargs):
+        captured.update(kwargs)
+        return json.dumps({"ops": [], "unresolved": []})
+
+    monkeypatch.setattr(repair_service.llm_client, "complete", fake_complete)
+
+    await repair_with_edit_ops(
+        _minimal_valid_diagram(),
+        issues=[
+            ValidationIssue(
+                rule_id="R001",
+                severity=Severity.ERROR,
+                message="Process has no start event.",
+            )
+        ],
+        config=ExperimentConfig(),
+    )
+
+    payload = json.loads(captured["prompt"])
+    assert "tier2_findings" not in payload
+
+
+async def test_dispatch_repair_re_validates_with_t2_between_iterations(monkeypatch):
+    """tier 2 findings from the re-validation step are included in remaining_issues"""
+    validate_calls = []
+    original_validate = repair_service.validate_diagram
+
+    async def fake_validate(diagram, **kwargs):
+        validate_calls.append(kwargs)
+        return await original_validate(diagram, **kwargs)
+
+    monkeypatch.setattr(repair_service, "validate_diagram", fake_validate)
+
+    async def fake_atomic_repair(diagram, issues, **kwargs):
+        return [RenameElementOp(id="task_1", new_name="Fixed")]
+
+    config = ExperimentConfig(tiers_enabled={"t1": True, "t2": True, "t3": False})
+    await dispatch_repair(
+        _minimal_valid_diagram(),
+        issues=[
+            ValidationIssue(
+                rule_id="R999",
+                severity=Severity.ERROR,
+                message="Synthetic issue.",
+                element_id="task_1",
+            )
+        ],
+        config=config,
+        atomic_repair_fn=fake_atomic_repair,
+    )
+
+    # validate_diagram must have been called with a config that has t2 enabled
+    assert len(validate_calls) >= 1
+    called_config = validate_calls[0].get("config")
+    assert called_config is not None
+    assert called_config.tiers_enabled.t2 is True
 
 
 def _minimal_valid_diagram() -> BpmnDiagram:

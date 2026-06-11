@@ -19,7 +19,7 @@ from app.services.ir_payload import (
     diagram_payload_text,
     parse_diagram_from_fenced_reply,
 )
-from app.validation.rules import ValidationIssue
+from app.validation.rules import ValidationIssue, issue_to_dict
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ async def chat_diagram(
             f"```{fence}\n{diagram_text}\n```\n\n"
         )
     if issues:
-        issues_json = json.dumps([issue.__dict__ for issue in issues], indent=2)
+        issues_json = json.dumps([issue_to_dict(issue) for issue in issues], indent=2)
         context_prefix += f"Current validation issues:\n```json\n{issues_json}\n```\n\n"
 
     payload_messages: list[dict[str, str]] = []

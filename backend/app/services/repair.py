@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 from collections.abc import Awaitable, Callable
+from dataclasses import asdict
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -18,7 +20,7 @@ from app.repair.ops import EditOp, ReplaceDiagramOp, apply_edit_ops, atomic_edit
 from app.repair.quick_fixes import propose_quick_fix
 from app.services.ir_payload import diagram_payload, parse_diagram_payload
 from app.services.validation import validate_diagram
-from app.validation.rules import ValidationIssue
+from app.validation.rules import ValidationIssue, issue_to_dict
 
 _PROMPT_DIR = Path(__file__).parent.parent / "llm" / "prompts"
 _REPAIR_PROMPT = _PROMPT_DIR / "repair.txt"
@@ -57,11 +59,14 @@ async def repair_diagram(
     snapshot: bool = True,
 ) -> RepairResult:
     """repair a diagram using the existing repair prompt and issue list"""
-    payload = {
+    payload: dict[str, Any] = {
         "ir_format": str((config or ExperimentConfig()).ir_format),
         "diagram": diagram_payload(diagram, config),
-        "issues": [issue.__dict__ for issue in issues],
+        "issues": [issue_to_dict(issue) for issue in issues],
     }
+    tier2_findings = _extract_tier2_findings(issues)
+    if tier2_findings:
+        payload["tier2_findings"] = tier2_findings
     raw = await llm_client.complete(
         prompt=json.dumps(payload),
         system=render_prompt_template(_REPAIR_PROMPT, config=config),
@@ -102,12 +107,15 @@ async def repair_with_edit_ops(
     config: ExperimentConfig | None = None,
 ) -> list[EditOp]:
     """repair a diagram by asking the LLM for atomic EditOps"""
-    payload = {
+    payload: dict[str, Any] = {
         "ir_format": str((config or ExperimentConfig()).ir_format),
         "diagram": diagram_payload(diagram, config),
-        "issues": [issue.__dict__ for issue in issues],
+        "issues": [issue_to_dict(issue) for issue in issues],
         "repair_mode": RepairMode.ATOMIC,
     }
+    tier2_findings = _extract_tier2_findings(issues)
+    if tier2_findings:
+        payload["tier2_findings"] = tier2_findings
     raw = await llm_client.complete(
         prompt=json.dumps(payload),
         system=render_prompt_template(_ATOMIC_REPAIR_PROMPT, config=config),
@@ -213,3 +221,20 @@ def _normalise_unresolved(item: object) -> UnresolvedRepair:
             reason=item.get("reason") or item.get("message") or json.dumps(item),
         )
     return UnresolvedRepair(reason=str(item))
+
+
+def _extract_tier2_findings(issues: list[ValidationIssue]) -> list[dict[str, Any]]:
+    """pull formal witnesses out of T2 issues for a dedicated payload section"""
+    findings = []
+    for issue in issues:
+        if issue.formal_witness is None:
+            continue
+        element_refs = issue.element_refs or ([issue.element_id] if issue.element_id else [])
+        findings.append(
+            {
+                "rule_id": issue.rule_id,
+                "formal_witness": asdict(issue.formal_witness),
+                "affected_elements": element_refs,
+            }
+        )
+    return findings
