@@ -20,6 +20,7 @@ const UI_SESSION_KEYS = {
   darkMode: "bpmn-ai-validator.dark-mode",
   chatOpen: "bpmn-ai-validator.chat-open",
   leftPanelOpen: "bpmn-ai-validator.left-panel-open",
+  historyOpen: "bpmn-ai-validator.history-open",
   approvalMode: "bpmn-ai-validator.approval-mode",
 };
 
@@ -220,6 +221,7 @@ export default function App() {
   const [darkMode, setDarkMode] = useState(() => readSessionBoolean(UI_SESSION_KEYS.darkMode, false));
   const [chatOpen, setChatOpen] = useState(() => readSessionBoolean(UI_SESSION_KEYS.chatOpen, true));
   const [leftPanelOpen, setLeftPanelOpen] = useState(() => readSessionBoolean(UI_SESSION_KEYS.leftPanelOpen, true));
+  const [historyOpen, setHistoryOpen] = useState(() => readSessionBoolean(UI_SESSION_KEYS.historyOpen, true));
   const [approvalMode, setApprovalMode] = useState(() => readSessionString(
     UI_SESSION_KEYS.approvalMode,
     APPROVAL_MODES.MANUAL,
@@ -238,6 +240,10 @@ export default function App() {
   useEffect(() => {
     writeSessionBoolean(UI_SESSION_KEYS.leftPanelOpen, leftPanelOpen);
   }, [leftPanelOpen]);
+
+  useEffect(() => {
+    writeSessionBoolean(UI_SESSION_KEYS.historyOpen, historyOpen);
+  }, [historyOpen]);
 
   useEffect(() => {
     writeSessionString(UI_SESSION_KEYS.approvalMode, approvalMode);
@@ -492,7 +498,7 @@ export default function App() {
             </button>
           </div>
 
-          <div className="panel-section" style={{ height: validationSplit.size }}>
+          <div className="panel-section" style={historyOpen ? { height: validationSplit.size } : { flex: 1 }}>
             <ValidationPanel
               issues={validationResult?.issues ?? []}
               semanticIssues={validationResult?.semantic_issues ?? []}
@@ -503,9 +509,11 @@ export default function App() {
             />
           </div>
 
-          <div className={`resize-handle-v${validationSplit.isDragging ? " dragging" : ""}`} onMouseDown={validationSplit.handleMouseDown} />
+          {historyOpen && (
+            <div className={`resize-handle-v${validationSplit.isDragging ? " dragging" : ""}`} onMouseDown={validationSplit.handleMouseDown} />
+          )}
 
-          <div className="panel-section" style={{ flex: 1 }}>
+          <div className="panel-section" style={historyOpen ? { flex: 1 } : { flex: "0 0 auto", minHeight: 0 }}>
             <HistoryPanel
               sessionId={sessionId}
               currentRevId={currentRevId}
@@ -515,6 +523,8 @@ export default function App() {
               onPreview={handlePreview}
               onRevert={handleRevert}
               onDismissPreview={dismissPreview}
+              collapsed={!historyOpen}
+              onToggleCollapse={() => setHistoryOpen((open) => !open)}
             />
           </div>
         </div>

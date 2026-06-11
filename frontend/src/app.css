@@ -525,6 +525,30 @@ html, body, #root {
   user-select: none;
 }
 
+.panel-header--collapsible {
+  cursor: pointer;
+}
+
+.panel-header--collapsible:hover {
+  color: var(--clr-text);
+}
+
+.panel-collapse-caret {
+  display: inline-flex;
+  align-items: center;
+  margin-right: -2px;
+  color: var(--clr-text-muted);
+  transition: transform var(--transition), color var(--transition);
+}
+
+.panel-header--collapsed .panel-collapse-caret {
+  transform: rotate(180deg);
+}
+
+.panel-header--collapsible:hover .panel-collapse-caret {
+  color: var(--clr-text-secondary);
+}
+
 .panel-header .badge {
   display: inline-flex;
   align-items: center;

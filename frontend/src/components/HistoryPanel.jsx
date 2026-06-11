@@ -23,6 +23,14 @@ function historyMessage(rev) {
   return rev.message;
 }
 
+function CaretIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
 export default function HistoryPanel({
   sessionId,
   currentRevId,
@@ -32,6 +40,8 @@ export default function HistoryPanel({
   onPreview,
   onRevert,
   onDismissPreview,
+  collapsed = false,
+  onToggleCollapse,
 }) {
   const [revisions, setRevisions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -167,13 +177,26 @@ export default function HistoryPanel({
 
   return (
     <>
-      <div className="panel-header">
+      <div
+        className={`panel-header panel-header--collapsible${collapsed ? " panel-header--collapsed" : ""}`}
+        onClick={onToggleCollapse}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggleCollapse?.();
+          }
+        }}
+        title={collapsed ? "Expand history" : "Collapse history"}
+      >
+        <span className="panel-collapse-caret"><CaretIcon /></span>
         History
         {revisions.length > 0 && (
           <span className="badge">{revisions.length}</span>
         )}
         <button
-          onClick={refresh}
+          onClick={(e) => { e.stopPropagation(); refresh(); }}
           className="history-refresh-btn"
           title="Refresh history"
           style={{ marginLeft: "auto" }}
@@ -182,6 +205,7 @@ export default function HistoryPanel({
         </button>
       </div>
 
+      {!collapsed && (
       <div className="validation-body">
         {!sessionId && (
           <div className="validation-empty">Upload a diagram to start tracking changes.</div>
@@ -262,6 +286,7 @@ export default function HistoryPanel({
           );
         })}
       </div>
+      )}
     </>
   );
 }
