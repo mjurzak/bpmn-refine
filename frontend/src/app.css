@@ -347,8 +347,10 @@ html, body, #root {
 .diagram-action-bar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 12px 14px;
+  min-width: 0;
   background: color-mix(in srgb, var(--clr-surface) 92%, var(--clr-bg));
   border-bottom: 1px solid var(--clr-border);
   box-shadow: var(--shadow-sm);
@@ -359,7 +361,9 @@ html, body, #root {
 .diagram-action-group {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
   padding: 0;
   border: none;
   border-radius: 0;
