@@ -16,6 +16,7 @@ dependencies = [
     "pyyaml>=6.0.0",
     "python-multipart>=0.0.12",
     "httpx>=0.28.0",
+    "pm4py>=2.7.22.3",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +39,4 @@ packages = ["backend/app"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests"]
-
-# run tests with:  PYTHONPATH=backend .venv/bin/pytest tests/
+testpaths = ["backend/tests"]

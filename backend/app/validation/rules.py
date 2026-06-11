@@ -5,8 +5,9 @@ are always verifiable without natural language understanding.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from enum import StrEnum
+from typing import Any
 
 from app.model.schema import BpmnDiagram, BpmnProcess, FlowNodeType
 
@@ -20,12 +21,31 @@ class Severity(StrEnum):
 
 
 @dataclass
+class TraceStep:
+    step: int
+    fired: str
+    marking_after: dict[str, int] = field(default_factory=dict)
+
+
+@dataclass
+class FormalWitness:
+    kind: str
+    description: str
+    trace: list[TraceStep] = field(default_factory=list)
+    marking: dict[str, int] = field(default_factory=dict)
+
+
+@dataclass
 class ValidationIssue:
     rule_id: str
     severity: Severity
     message: str
     element_id: str | None = None
     suggestion: str | None = None
+    element_refs: list[str] = field(default_factory=list)
+    source: str | None = None
+    formal_witness: FormalWitness | None = None
+    raw: dict[str, Any] | None = None
 
 
 @dataclass
@@ -41,6 +61,11 @@ class ValidationReport:
 
     def warnings(self) -> list[ValidationIssue]:
         return [i for i in self.issues if i.severity == Severity.WARNING]
+
+
+def issue_to_dict(issue: ValidationIssue) -> dict[str, Any]:
+    """convert an issue to JSON-safe data for prompts and logs"""
+    return asdict(issue)
 
 
 _START_EVENT_TYPES = {FlowNodeType.START_EVENT}

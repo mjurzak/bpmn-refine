@@ -1,0 +1,12 @@
+woflan:
+  enabled: true
+  timeout_ms: 5000
+bpmn_analyzer:
+  enabled: false
+  binary_path: /opt/bpmn-analyzer/bpmn-analyzer
+  timeout_ms: 2000
+bpmnspector:
+  enabled: false
+  jar_path: /opt/bpmnspector/bpmnspector.jar
+  timeout_ms: 5000
+  categories: [CARD, VAL, REF, EXT]

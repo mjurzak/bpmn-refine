@@ -168,8 +168,8 @@ The `/validate` route fans out to the enabled tools and normalises their output 
 
 ## integration hooks — where tier 2 plugs in
 
-- `backend/app/validation/` — adapters per tool, each exposing `run(diagram: BpmnDiagram) -> list[CheckerIssue]`.
-- `backend/app/services/validation.py` — orchestrates tier 1 + tier 2 + tier 3 fan-out, de-duplication, and merge.
+- `backend/app/validation/` — adapters per tool, each exposing `run(diagram: BpmnDiagram) -> list[ValidationIssue]` with tier-2 metadata.
+- `backend/app/services/validation.py` — orchestrates tier 1 + tier 2 + tier 3 merge. The first implemented tier-2 slice runs Woflan; Analyzer and BPMNspector adapters remain planned.
 - `backend/app/api/routes/validate.py` — the HTTP surface; accepts `ExperimentConfig.tiers_enabled`, returns the merged `Issue[]` plus `run`.
 
-This doc names only the target shape; none of it is wired today. See `TODO.md` Phase 2d for the build-out order.
+See `TODO.md` Phase 2f for the remaining Analyzer, BPMNspector, and full fan-out work.
