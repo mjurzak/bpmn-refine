@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  CASE 03 — Missing end event: Order Fulfillment
+  Expected issues:
+    R003 ERROR  — process has no end event
+
+  Flow: Order Received → Validate Order → Allocate Stock → Ship Order
+  The process has no termination point — it is unclear when it completes.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             id="def_order"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="proc_order" name="Order Fulfillment" isExecutable="false">
+
+    <startEvent id="start1" name="Order Received">
+      <outgoing>f1</outgoing>
+    </startEvent>
+
+    <task id="task_validate" name="Validate Order">
+      <incoming>f1</incoming>
+      <outgoing>f2</outgoing>
+    </task>
+
+    <task id="task_allocate" name="Allocate Stock">
+      <incoming>f2</incoming>
+      <outgoing>f3</outgoing>
+    </task>
+
+    <task id="task_ship" name="Ship Order">
+      <incoming>f3</incoming>
+    </task>
+
+    <sequenceFlow id="f1" sourceRef="start1" targetRef="task_validate"/>
+    <sequenceFlow id="f2" sourceRef="task_validate" targetRef="task_allocate"/>
+    <sequenceFlow id="f3" sourceRef="task_allocate" targetRef="task_ship"/>
+
+  </process>
+  <bpmndi:BPMNDiagram id="diagram1">
+    <bpmndi:BPMNPlane id="plane1" bpmnElement="proc_order">
+      <bpmndi:BPMNShape id="start1_di" bpmnElement="start1">
+        <dc:Bounds x="80" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_validate_di" bpmnElement="task_validate">
+        <dc:Bounds x="176" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_allocate_di" bpmnElement="task_allocate">
+        <dc:Bounds x="336" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_ship_di" bpmnElement="task_ship">
+        <dc:Bounds x="496" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="116" y="200"/>
+        <di:waypoint x="176" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="276" y="200"/>
+        <di:waypoint x="336" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="436" y="200"/>
+        <di:waypoint x="496" y="200"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

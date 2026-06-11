@@ -1,0 +1,138 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  CASE 05 — Gateway issues: Expense Report Approval
+  Expected issues:
+    R007 WARNING — parallel gateway "Notify Parties" has only 1 outgoing flow (pointless split)
+    R008 WARNING — exclusive gateway "Approval Level?" has 2 outgoing flows with no condition expressions
+
+  Flow: Expense Submitted → Check Receipt → XOR[Approval Level?] → Senior Approval → Parallel[Notify Parties] → Notify Employee → Expense Closed
+                                                                  → Auto Approve   ↗
+  gw_approval (XOR): both branches have no condition expressions → R008
+  gw_notify (Parallel): only one outgoing branch → R007
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             id="def_expense"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="proc_expense" name="Expense Report Approval" isExecutable="false">
+
+    <startEvent id="start1" name="Expense Submitted">
+      <outgoing>f1</outgoing>
+    </startEvent>
+
+    <task id="task_check" name="Check Receipt">
+      <incoming>f1</incoming>
+      <outgoing>f2</outgoing>
+    </task>
+
+    <!-- XOR gateway with both outgoing flows missing conditions — R008 -->
+    <exclusiveGateway id="gw_approval" name="Approval Level?">
+      <incoming>f2</incoming>
+      <outgoing>f3</outgoing>
+      <outgoing>f4</outgoing>
+    </exclusiveGateway>
+
+    <task id="task_senior" name="Senior Approval">
+      <incoming>f3</incoming>
+      <outgoing>f5</outgoing>
+    </task>
+
+    <task id="task_auto" name="Auto Approve">
+      <incoming>f4</incoming>
+      <outgoing>f6</outgoing>
+    </task>
+
+    <!-- parallel gateway used as merge, then only one outgoing — R007 -->
+    <parallelGateway id="gw_notify" name="Notify Parties">
+      <incoming>f5</incoming>
+      <incoming>f6</incoming>
+      <outgoing>f7</outgoing>
+    </parallelGateway>
+
+    <task id="task_notify" name="Notify Employee">
+      <incoming>f7</incoming>
+      <outgoing>f8</outgoing>
+    </task>
+
+    <endEvent id="end1" name="Expense Closed">
+      <incoming>f8</incoming>
+    </endEvent>
+
+    <!-- no condition expressions on f3 and f4 — triggers R008 on gw_approval -->
+    <sequenceFlow id="f1" sourceRef="start1" targetRef="task_check"/>
+    <sequenceFlow id="f2" sourceRef="task_check" targetRef="gw_approval"/>
+    <sequenceFlow id="f3" name="High Amount" sourceRef="gw_approval" targetRef="task_senior"/>
+    <sequenceFlow id="f4" name="Low Amount" sourceRef="gw_approval" targetRef="task_auto"/>
+    <sequenceFlow id="f5" sourceRef="task_senior" targetRef="gw_notify"/>
+    <sequenceFlow id="f6" sourceRef="task_auto" targetRef="gw_notify"/>
+    <sequenceFlow id="f7" sourceRef="gw_notify" targetRef="task_notify"/>
+    <sequenceFlow id="f8" sourceRef="task_notify" targetRef="end1"/>
+
+  </process>
+  <bpmndi:BPMNDiagram id="diagram1">
+    <bpmndi:BPMNPlane id="plane1" bpmnElement="proc_expense">
+      <bpmndi:BPMNShape id="start1_di" bpmnElement="start1">
+        <dc:Bounds x="80" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_check_di" bpmnElement="task_check">
+        <dc:Bounds x="176" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw_approval_di" bpmnElement="gw_approval" isMarkerVisible="true">
+        <dc:Bounds x="336" y="175" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_senior_di" bpmnElement="task_senior">
+        <dc:Bounds x="446" y="60" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_auto_di" bpmnElement="task_auto">
+        <dc:Bounds x="446" y="260" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw_notify_di" bpmnElement="gw_notify">
+        <dc:Bounds x="606" y="175" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_notify_di" bpmnElement="task_notify">
+        <dc:Bounds x="716" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end1_di" bpmnElement="end1">
+        <dc:Bounds x="876" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="116" y="200"/>
+        <di:waypoint x="176" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="276" y="200"/>
+        <di:waypoint x="336" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="361" y="175"/>
+        <di:waypoint x="361" y="100"/>
+        <di:waypoint x="446" y="100"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4">
+        <di:waypoint x="361" y="225"/>
+        <di:waypoint x="361" y="300"/>
+        <di:waypoint x="446" y="300"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="546" y="100"/>
+        <di:waypoint x="631" y="100"/>
+        <di:waypoint x="631" y="175"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6">
+        <di:waypoint x="546" y="300"/>
+        <di:waypoint x="631" y="300"/>
+        <di:waypoint x="631" y="225"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7">
+        <di:waypoint x="656" y="200"/>
+        <di:waypoint x="716" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8_di" bpmnElement="f8">
+        <di:waypoint x="816" y="200"/>
+        <di:waypoint x="876" y="200"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

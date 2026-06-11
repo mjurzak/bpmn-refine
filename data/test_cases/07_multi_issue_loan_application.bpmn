@@ -1,0 +1,157 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  CASE 07 — Multiple simultaneous issues: Loan Application Processing
+  Expected issues:
+    R002 WARNING — more than one start event ("Branch Walk-in" exists alongside "Online Application")
+    R003 ERROR   — process has no end event (modeller forgot to terminate the flow)
+    R004 ERROR   — start event "Branch Walk-in" has no outgoing sequence flow
+    R006 WARNING — task "Generate Credit Report" is fully disconnected (no incoming, no outgoing)
+    R008 WARNING — exclusive gateway "Risk Assessment" has 2 outgoing flows with no condition expressions
+
+  This is a realistic "work-in-progress" model where several issues co-exist:
+  the modeller added a second start event but forgot to wire it, left an
+  analysis task floating, forgot to add conditions to the risk gateway, and
+  never added a terminating end event.
+
+  Main flow:
+    Online Application → Verify Documents → Assess Creditworthiness
+      → XOR[Risk Assessment] → Approve Loan → Disburse Funds      (no end)
+                             → Reject Application → Notify Applicant (no end)
+
+  Isolated artefacts:
+    Branch Walk-in (start event, no outgoing)
+    Generate Credit Report (task, fully disconnected)
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             id="def_loan"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="proc_loan" name="Loan Application Processing" isExecutable="false">
+
+    <!-- primary start event -->
+    <startEvent id="start_online" name="Online Application Received">
+      <outgoing>f1</outgoing>
+    </startEvent>
+
+    <!-- second start event, wired to nothing — R002 + R004 -->
+    <startEvent id="start_branch" name="Branch Walk-in"/>
+
+    <task id="task_verify" name="Verify Documents">
+      <incoming>f1</incoming>
+      <outgoing>f2</outgoing>
+    </task>
+
+    <task id="task_assess" name="Assess Creditworthiness">
+      <incoming>f2</incoming>
+      <outgoing>f3</outgoing>
+    </task>
+
+    <!-- XOR with no conditions on outgoing flows — R008 -->
+    <exclusiveGateway id="gw_risk" name="Risk Assessment">
+      <incoming>f3</incoming>
+      <outgoing>f4</outgoing>
+      <outgoing>f5</outgoing>
+    </exclusiveGateway>
+
+    <task id="task_approve" name="Approve Loan">
+      <incoming>f4</incoming>
+      <outgoing>f6</outgoing>
+    </task>
+
+    <task id="task_reject" name="Reject Application">
+      <incoming>f5</incoming>
+      <outgoing>f7</outgoing>
+    </task>
+
+    <task id="task_disburse" name="Disburse Funds">
+      <incoming>f6</incoming>
+    </task>
+
+    <task id="task_notify" name="Notify Applicant">
+      <incoming>f7</incoming>
+    </task>
+
+    <!-- fully disconnected — R006 -->
+    <task id="task_credit_report" name="Generate Credit Report"/>
+
+    <!-- intentionally no endEvent — R003 -->
+
+    <sequenceFlow id="f1" sourceRef="start_online" targetRef="task_verify"/>
+    <sequenceFlow id="f2" sourceRef="task_verify" targetRef="task_assess"/>
+    <sequenceFlow id="f3" sourceRef="task_assess" targetRef="gw_risk"/>
+    <!-- no conditionExpression on f4 and f5 — triggers R008 -->
+    <sequenceFlow id="f4" name="Low Risk" sourceRef="gw_risk" targetRef="task_approve"/>
+    <sequenceFlow id="f5" name="High Risk" sourceRef="gw_risk" targetRef="task_reject"/>
+    <sequenceFlow id="f6" sourceRef="task_approve" targetRef="task_disburse"/>
+    <sequenceFlow id="f7" sourceRef="task_reject" targetRef="task_notify"/>
+
+  </process>
+  <bpmndi:BPMNDiagram id="diagram1">
+    <bpmndi:BPMNPlane id="plane1" bpmnElement="proc_loan">
+      <!-- start_branch floats top-left -->
+      <bpmndi:BPMNShape id="start_branch_di" bpmnElement="start_branch">
+        <dc:Bounds x="80" y="62" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="start_online_di" bpmnElement="start_online">
+        <dc:Bounds x="80" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_verify_di" bpmnElement="task_verify">
+        <dc:Bounds x="176" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_assess_di" bpmnElement="task_assess">
+        <dc:Bounds x="336" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw_risk_di" bpmnElement="gw_risk" isMarkerVisible="true">
+        <dc:Bounds x="496" y="175" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_approve_di" bpmnElement="task_approve">
+        <dc:Bounds x="606" y="60" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_reject_di" bpmnElement="task_reject">
+        <dc:Bounds x="606" y="260" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_disburse_di" bpmnElement="task_disburse">
+        <dc:Bounds x="766" y="60" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_notify_di" bpmnElement="task_notify">
+        <dc:Bounds x="766" y="260" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <!-- task_credit_report floats bottom, isolated -->
+      <bpmndi:BPMNShape id="task_credit_report_di" bpmnElement="task_credit_report">
+        <dc:Bounds x="336" y="400" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="116" y="200"/>
+        <di:waypoint x="176" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="276" y="200"/>
+        <di:waypoint x="336" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="436" y="200"/>
+        <di:waypoint x="496" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4">
+        <di:waypoint x="521" y="175"/>
+        <di:waypoint x="521" y="100"/>
+        <di:waypoint x="606" y="100"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="521" y="225"/>
+        <di:waypoint x="521" y="300"/>
+        <di:waypoint x="606" y="300"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6">
+        <di:waypoint x="706" y="100"/>
+        <di:waypoint x="766" y="100"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7">
+        <di:waypoint x="706" y="300"/>
+        <di:waypoint x="766" y="300"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

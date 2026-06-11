@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  CASE 06 — Duplicate element IDs: Support Ticket Handling
+  Expected issues:
+    R011 ERROR — element ID "task_resolve" appears twice in the process
+
+  This simulates a copy-paste error where two tasks ended up with the same ID.
+  Both tasks are connected in the flow so the graph looks correct visually,
+  but the duplicate ID makes the model ambiguous.
+
+  Flow: Ticket Received → Categorise Ticket → Resolve Issue (×2 same ID) → Close Ticket → Ticket Closed
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             id="def_ticket"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="proc_ticket" name="Support Ticket Handling" isExecutable="false">
+
+    <startEvent id="start1" name="Ticket Received">
+      <outgoing>f1</outgoing>
+    </startEvent>
+
+    <task id="task_categorise" name="Categorise Ticket">
+      <incoming>f1</incoming>
+      <outgoing>f2</outgoing>
+    </task>
+
+    <!-- first occurrence of task_resolve -->
+    <task id="task_resolve" name="Resolve Issue (L1)">
+      <incoming>f2</incoming>
+      <outgoing>f3</outgoing>
+    </task>
+
+    <!-- duplicate ID — R011 fires here -->
+    <task id="task_resolve" name="Resolve Issue (L2)">
+      <incoming>f3</incoming>
+      <outgoing>f4</outgoing>
+    </task>
+
+    <task id="task_close" name="Close Ticket">
+      <incoming>f4</incoming>
+      <outgoing>f5</outgoing>
+    </task>
+
+    <endEvent id="end1" name="Ticket Closed">
+      <incoming>f5</incoming>
+    </endEvent>
+
+    <sequenceFlow id="f1" sourceRef="start1" targetRef="task_categorise"/>
+    <sequenceFlow id="f2" sourceRef="task_categorise" targetRef="task_resolve"/>
+    <sequenceFlow id="f3" sourceRef="task_resolve" targetRef="task_resolve"/>
+    <sequenceFlow id="f4" sourceRef="task_resolve" targetRef="task_close"/>
+    <sequenceFlow id="f5" sourceRef="task_close" targetRef="end1"/>
+
+  </process>
+  <bpmndi:BPMNDiagram id="diagram1">
+    <bpmndi:BPMNPlane id="plane1" bpmnElement="proc_ticket">
+      <bpmndi:BPMNShape id="start1_di" bpmnElement="start1">
+        <dc:Bounds x="80" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_categorise_di" bpmnElement="task_categorise">
+        <dc:Bounds x="176" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_resolve_di_1" bpmnElement="task_resolve">
+        <dc:Bounds x="336" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_resolve_di_2" bpmnElement="task_resolve">
+        <dc:Bounds x="496" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="task_close_di" bpmnElement="task_close">
+        <dc:Bounds x="656" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end1_di" bpmnElement="end1">
+        <dc:Bounds x="816" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="116" y="200"/>
+        <di:waypoint x="176" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="276" y="200"/>
+        <di:waypoint x="336" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="436" y="200"/>
+        <di:waypoint x="496" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4">
+        <di:waypoint x="596" y="200"/>
+        <di:waypoint x="656" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="756" y="200"/>
+        <di:waypoint x="816" y="200"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
