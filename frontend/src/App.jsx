@@ -83,6 +83,19 @@ function writeSessionString(key, value) {
   }
 }
 
+// default the validation/history split so the history panel starts as the
+// shorter section — its top edge sits below the screen midpoint — and scales
+// with viewport height instead of a fixed pixel guess
+function verticalSplitConfig() {
+  const fallback = { initial: 320, min: 60, max: 500 };
+  if (typeof window === "undefined") return fallback;
+  const body = window.innerHeight - 95; // toolbar + sidebar header + resize handle
+  if (body <= 200) return fallback;
+  const max = Math.max(500, body - 150); // keep ~150px for history on tall screens
+  const initial = Math.min(Math.round(body * 0.58), max);
+  return { initial, min: 60, max };
+}
+
 async function autoLayout(xmlString) {
   try {
     return await layoutProcess(xmlString);
@@ -252,7 +265,7 @@ export default function App() {
   const editorRef = useRef(null);
 
   const sidebar = useResize({ initial: 340, min: 260, max: 520, axis: "horizontal" });
-  const validationSplit = useResize({ initial: 220, min: 60, max: 500, axis: "vertical" });
+  const validationSplit = useResize({ ...verticalSplitConfig(), axis: "vertical" });
   const assistantPanel = useResize({ initial: 360, min: 280, max: 560, axis: "horizontal", direction: -1 });
 
   const handleXmlChange = useCallback((updatedXml) => {
