@@ -117,6 +117,16 @@ edit_op_adapter = TypeAdapter(EditOp)
 edit_op_list_adapter = TypeAdapter(list[EditOp])
 
 
+class AtomicEditOpsResult(BaseModel):
+    """Envelope for atomic repair under structured outputs.
+
+    Provider response schemas must be a top-level object, so the EditOp[] list
+    is wrapped in a single `ops` field rather than returned as a bare array.
+    """
+
+    ops: list[AtomicEditOp] = Field(default_factory=list)
+
+
 class EditOpResult(BaseModel):
     op: EditOp
     applied: bool

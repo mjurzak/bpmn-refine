@@ -144,22 +144,21 @@ async def test_dispatch_repair_does_not_iterate_when_no_errors_remain():
 async def test_repair_with_edit_ops_parses_atomic_llm_output(monkeypatch):
     captured = {}
 
-    async def fake_complete(**kwargs):
+    async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return json.dumps(
-            {
-                "ops": [
-                    {
-                        "op": "rename_element",
-                        "id": "task_1",
-                        "new_name": "Renamed task",
-                    }
-                ],
-                "unresolved": [],
-            }
-        )
+        return {
+            "ops": [
+                {
+                    "op": "rename_element",
+                    "id": "task_1",
+                    "new_name": "Renamed task",
+                }
+            ]
+        }
 
-    monkeypatch.setattr(repair_service.llm_client, "complete", fake_complete)
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
 
     ops = await repair_with_edit_ops(
         _minimal_valid_diagram(),
@@ -183,11 +182,13 @@ async def test_repair_with_edit_ops_parses_atomic_llm_output(monkeypatch):
 async def test_repair_with_edit_ops_includes_tier2_findings_in_payload(monkeypatch):
     captured = {}
 
-    async def fake_complete(**kwargs):
+    async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return json.dumps({"ops": [], "unresolved": []})
+        return {"ops": []}
 
-    monkeypatch.setattr(repair_service.llm_client, "complete", fake_complete)
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
 
     issue_with_witness = ValidationIssue(
         rule_id="woflan:soundness",
@@ -255,11 +256,13 @@ async def test_repair_diagram_includes_tier2_findings_in_payload(monkeypatch):
 async def test_issues_without_formal_witness_omit_tier2_findings(monkeypatch):
     captured = {}
 
-    async def fake_complete(**kwargs):
+    async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return json.dumps({"ops": [], "unresolved": []})
+        return {"ops": []}
 
-    monkeypatch.setattr(repair_service.llm_client, "complete", fake_complete)
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
 
     await repair_with_edit_ops(
         _minimal_valid_diagram(),

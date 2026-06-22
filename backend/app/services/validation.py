@@ -71,6 +71,7 @@ async def _semantic_validate(
         system=system_prompt,
         model=resolve_model(TaskType.SEMANTIC_VALIDATION, config=config),
         provider=resolve_provider(TaskType.SEMANTIC_VALIDATION, config=config),
+        reasoning_effort=str(config.reasoning_effort) if config and config.reasoning_effort else None,
     )
     try:
         issues_data = json.loads(raw)

@@ -34,6 +34,7 @@ class ProviderName(StrEnum):
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
     OLLAMA = "ollama"
+    GEMINI = "gemini"
 
 
 class IrFormat(StrEnum):
@@ -55,6 +56,14 @@ class RepairMode(StrEnum):
     REGEN = "regen"
 
 
+class ReasoningEffort(StrEnum):
+    NONE = "none"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    XHIGH = "xhigh"
+
+
 class TiersEnabled(BaseModel):
     t1: bool = True
     t2: bool = False
@@ -71,6 +80,7 @@ class ExperimentConfig(BaseModel):
     repair_mode: RepairMode = RepairMode.ATOMIC
     max_repair_iters: int = Field(default=5, ge=1)
     temperature: float = Field(default=0.0, ge=0.0)
+    reasoning_effort: ReasoningEffort | None = None
     seed: int | None = None
     experiment_id: str | None = None
     notes: str | None = None

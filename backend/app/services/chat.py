@@ -75,6 +75,7 @@ async def chat_diagram(
         system=system_prompt,
         model=resolve_model(TaskType.REFINEMENT, config=config),
         provider=resolve_provider(TaskType.REFINEMENT, config=config),
+        reasoning_effort=str(config.reasoning_effort) if config and config.reasoning_effort else None,
     )
 
     updated_diagram = _parse_diagram_from_reply(reply, config=config)

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     # llm provider — must match a name registered in app.llm.registry
-    # options: anthropic | openai | ollama
+    # options: anthropic | openai | ollama | gemini
     # used as the default for both tiers unless overridden below
     llm_provider: str = "openai"
 
@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     # empty string = key not set; actual values must come from .env
     anthropic_api_key: str = ""
     openai_api_key: str = ""
+    gemini_api_key: str = ""
     ollama_base_url: str = "http://localhost:11434"
 
     # diagram converter — must match a name registered in app.model.registry

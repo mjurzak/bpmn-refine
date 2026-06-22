@@ -1,16 +1,16 @@
 # llm integration
 
-All LLM usage in the system routes through a single facade (`backend/app/llm/client.py`). Concrete SDK imports are confined to `backend/app/llm/providers/`. This doc covers the client facade, the provider abstraction, model routing, prompt versioning, the planned structured-outputs migration, and how each LLM call contributes to the `run` metadata.
+All LLM usage in the system routes through a single facade (`backend/app/llm/client.py`). Concrete SDK imports are confined to `backend/app/llm/providers/`. This doc covers the client facade, the provider abstraction, model routing, prompt versioning, the structured-outputs layer, and how each LLM call contributes to the `run` metadata.
 
 ---
 
 ## client facade
 
 ```python
-from app.llm.client import complete, complete_with_history
+from app.llm.client import complete, complete_with_history, complete_structured
 ```
 
-Two async entry points; both delegate to the provider resolved for the call:
+Three async entry points; all delegate to the provider resolved for the call:
 
 ```python
 await complete(
@@ -28,15 +28,24 @@ await complete_with_history(
     provider: str | None = None,
     max_tokens: int = 4096,
 ) -> str
+
+await complete_structured(
+    prompt: str,
+    schema: dict,                  # JSON schema for the required response object
+    system: str | None = None,
+    model: str | None = None,
+    provider: str | None = None,
+    max_tokens: int = 4096,
+) -> Any                           # parsed JSON (dict/list), not a string
 ```
 
-No other module imports `anthropic`, `openai`, or any provider SDK directly. If a new feature needs vendor-specific capability (e.g. tool use, response-format enforcement), it is added here — not called from a route handler.
+No other module imports `anthropic`, `openai`, `google-genai`, or any provider SDK directly. If a new feature needs vendor-specific capability (e.g. tool use, response-format enforcement), it is added here — not called from a route handler.
 
 ---
 
 ## provider abstraction
 
-`backend/app/llm/protocol.py` defines the `LLMProvider` protocol: two async methods (`complete`, `complete_with_history`) with identical signatures to the client facade. Every provider implements it.
+`backend/app/llm/protocol.py` defines the `LLMProvider` protocol: three async methods (`complete`, `complete_with_history`, `complete_structured`) with identical signatures to the client facade. Every provider implements it.
 
 Current providers (`backend/app/llm/providers/`):
 
@@ -44,7 +53,8 @@ Current providers (`backend/app/llm/providers/`):
 |---|---|---|
 | Anthropic | `anthropic.py` | primary; strong-tier default |
 | OpenAI | `openai.py` | for cross-model comparison experiments |
-| Ollama | `ollama.py` | local/offline runs; useful for CI and for experiments that shouldn't hit a cloud |
+| Ollama | `ollama.py` | local/offline runs; subclasses `OpenAIProvider` (OpenAI-compatible endpoint) |
+| Gemini | `gemini.py` | Google models via `google-genai`; registered only when `GEMINI_API_KEY` is set (SDK imported lazily) |
 
 Adding a provider: implement the protocol in a new module under `providers/` and register it via `backend/app/llm/registry.py` at startup. No other code changes.
 
@@ -101,19 +111,38 @@ For a deliberate A/B run, rename the parallel version `prompt_v2.txt`, register 
 
 ---
 
-## structured outputs (planned migration)
+## structured outputs
 
-Today the LLM returns plain text; diagram payloads come back inside ` ```diagram ... ``` ` fences which the server parses out. This works but is brittle: the model can wrap the fence differently, add commentary, or emit invalid JSON.
+`complete_structured(prompt, schema, ...)` constrains the model's reply to a JSON schema. The four providers each map the same `schema` onto their **native structured-output mechanism** — one unified facade over four different vendor features:
 
-The planned migration is to **structured outputs / tool use**, per provider:
+| Provider | Native mechanism |
+|---|---|
+| Anthropic | `output_config.format` with `{"type": "json_schema", "schema": ...}` |
+| OpenAI | `response_format` json_schema with `strict: true` |
+| Ollama | same `response_format` (inherited from `OpenAIProvider`); served by Ollama's `format`/GBNF constrained decoding, so `strict` is left off |
+| Gemini | `responseSchema` + `response_mime_type="application/json"` |
 
-- **Anthropic** — tool use with a typed `propose_edits` tool whose input schema matches `EditOp[]`, or a single `replace_diagram` tool under `repair_mode = regen`.
-- **OpenAI** — response format with a JSON schema; same shape.
-- **Ollama** — depends on the local model's support; fall back to fenced-JSON with a strict parser.
+The provider returns a JSON **string**; the client facade decodes it so call sites get a dict/list. This replaces the old fenced-JSON convention and its best-effort string scraping.
 
-The client facade will gain a third entry point for structured calls (provisional name `complete_structured(prompt, system, schema, ...)`), returning parsed data rather than a string. Each provider implements it with its native SDK feature; Ollama uses the fence fallback.
+### schema preparation — `backend/app/llm/schema.py`
 
-Until this lands, the `/chat` flow keeps the fenced-diagram convention and `/repair` is **not** yet wired.
+Pydantic's raw `model_json_schema()` is not what the strict APIs want, so `strict_json_schema(model_or_adapter)` post-processes it:
+
+- every object gets `additionalProperties: false` and a `required` list covering all declared keys (strict providers reject anything looser);
+- pydantic's discriminated-union `oneOf` is rewritten to `anyOf` (the keyword the strict APIs accept).
+
+`inline_defs(schema)` additionally flattens `$ref`/`$defs` for Gemini, which does not resolve references. Both helpers require **non-recursive** schemas — fine for the current IR, since subprocess nesting is out of scope.
+
+### what is migrated
+
+- **`repair_mode = atomic`** (`repair_with_edit_ops`) is fully migrated. The `AtomicEditOp` union has only scalar fields (no open dicts), so `AtomicEditOpsResult` (`{"ops": EditOp[]}`) is fully strict-expressible. The constrained reply validates straight into typed `EditOp`s — no fence scraping, no JSON repair.
+
+### deliberately not migrated (yet)
+
+- **`repair_mode = regen`** returns a full `BpmnDiagram`, which carries open `dict` fields (`namespaces`, `FlowNode.extra`) that round-trip fidelity depends on. Those cannot satisfy `additionalProperties: false`, so a *strict* full-diagram schema would have to drop them and break the IR round-trip. Regen therefore keeps its current plain-JSON contract.
+- **`/chat`** is conversational: a free-text reply *with* an optional embedded diagram. That is not a pure-JSON shape, so the fenced-diagram convention (`parse_diagram_from_fenced_reply`) remains the right fit there.
+
+> Thesis note (Ch. 6, Implementation): a single `complete_structured` facade over four distinct native structured-output mechanisms is a clean illustration of the LLM abstraction layer — worth describing alongside the strict-schema limitation that scopes which call sites can adopt it.
 
 ---
 
@@ -171,16 +200,19 @@ Responses never omit `run`. If a provider call fails, the route returns an error
 
 ```
 backend/app/llm/
-├── client.py         # public entry points (complete, complete_with_history)
+├── client.py         # public entry points (complete, complete_with_history, complete_structured)
 ├── protocol.py       # LLMProvider protocol
 ├── registry.py       # provider registration + resolution
 ├── router.py         # TaskType enum, tier/provider resolvers
+├── schema.py         # strict_json_schema / inline_defs for structured outputs
 ├── providers/
 │   ├── anthropic.py
 │   ├── openai.py
-│   └── ollama.py
+│   ├── ollama.py
+│   └── gemini.py
 └── prompts/
     ├── validate.txt
     ├── repair.txt
+    ├── repair_atomic.txt
     └── chat_system.txt
 ```

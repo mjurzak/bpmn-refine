@@ -15,8 +15,15 @@ from app.history import service as hist
 from app.llm import client as llm_client
 from app.llm.prompt_context import render_prompt_template
 from app.llm.router import TaskType, resolve_model, resolve_provider
+from app.llm.schema import strict_json_schema
 from app.model.schema import BpmnDiagram
-from app.repair.ops import EditOp, ReplaceDiagramOp, apply_edit_ops, atomic_edit_op_list_adapter
+from app.repair.ops import (
+    AtomicEditOpsResult,
+    EditOp,
+    ReplaceDiagramOp,
+    apply_edit_ops,
+    atomic_edit_op_list_adapter,
+)
 from app.repair.quick_fixes import propose_quick_fix
 from app.services.ir_payload import diagram_payload, parse_diagram_payload
 from app.services.validation import validate_diagram
@@ -25,6 +32,9 @@ from app.validation.rules import ValidationIssue, issue_to_dict
 _PROMPT_DIR = Path(__file__).parent.parent / "llm" / "prompts"
 _REPAIR_PROMPT = _PROMPT_DIR / "repair.txt"
 _ATOMIC_REPAIR_PROMPT = _PROMPT_DIR / "repair_atomic.txt"
+
+# computed once — the EditOp union has no open dicts, so it is fully strict-expressible
+_ATOMIC_OPS_SCHEMA = strict_json_schema(AtomicEditOpsResult)
 
 
 class UnresolvedRepair(BaseModel):
@@ -72,6 +82,7 @@ async def repair_diagram(
         system=render_prompt_template(_REPAIR_PROMPT, config=config),
         model=resolve_model(TaskType.REPAIR, config=config),
         provider=resolve_provider(TaskType.REPAIR, config=config),
+        reasoning_effort=str(config.reasoning_effort) if config and config.reasoning_effort else None,
     )
     parsed = json.loads(raw)
     repaired_diagram = parse_diagram_payload(parsed["ir"], config)
@@ -116,13 +127,16 @@ async def repair_with_edit_ops(
     tier2_findings = _extract_tier2_findings(issues)
     if tier2_findings:
         payload["tier2_findings"] = tier2_findings
-    raw = await llm_client.complete(
+    # structured outputs constrain the reply to the EditOp schema, so no fenced
+    # scraping or best-effort JSON repair is needed
+    parsed = await llm_client.complete_structured(
         prompt=json.dumps(payload),
+        schema=_ATOMIC_OPS_SCHEMA,
         system=render_prompt_template(_ATOMIC_REPAIR_PROMPT, config=config),
         model=resolve_model(TaskType.REPAIR, config=config),
         provider=resolve_provider(TaskType.REPAIR, config=config),
+        reasoning_effort=str(config.reasoning_effort) if config and config.reasoning_effort else None,
     )
-    parsed = json.loads(raw)
     ops_data = parsed.get("ops", parsed) if isinstance(parsed, dict) else parsed
     return atomic_edit_op_list_adapter.validate_python(ops_data)
 
