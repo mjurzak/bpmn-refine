@@ -37,6 +37,7 @@ export async function sendChatMessage(
   issues = [],
   sessionId = null,
   snapshotChanges = true,
+  config = {},
 ) {
   return request("/chat", {
     method: "POST",
@@ -47,6 +48,7 @@ export async function sendChatMessage(
       issues,
       session_id: sessionId,
       snapshot_changes: snapshotChanges,
+      config,
     }),
   });
 }

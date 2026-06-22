@@ -145,6 +145,7 @@ export default function ChatPanel({
   onApplyProposal,
   onRejectProposal,
   onFocusProposalOp,
+  config = {},
 }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -192,6 +193,7 @@ export default function ChatPanel({
         issues,
         sessionId,
         autoApprove,
+        config,
       );
       console.debug("chat completion reply:", res.reply);
       const assistantMsg = {

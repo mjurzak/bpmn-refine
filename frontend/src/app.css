@@ -160,6 +160,119 @@ html, body, #root {
   flex: 1;
 }
 
+.toolbar-settings {
+  position: relative;
+  display: inline-flex;
+}
+
+.llm-settings-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(720px, calc(100vw - 32px));
+  max-height: calc(100vh - 72px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  background: var(--clr-surface);
+  color: var(--clr-text);
+  box-shadow: var(--shadow-md);
+  z-index: 30;
+}
+
+.llm-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--clr-border-subtle);
+  background: var(--clr-sidebar);
+}
+
+.llm-settings-title {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.llm-settings-subtitle {
+  margin-top: 2px;
+  color: var(--clr-text-muted);
+  font-size: 12px;
+}
+
+.llm-settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+}
+
+.llm-settings-row {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--clr-border-subtle);
+}
+
+.llm-settings-row:last-child {
+  border-bottom: none;
+}
+
+.llm-settings-row-title {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--clr-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.llm-settings-controls {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(180px, 1.2fr) minmax(180px, 1.2fr);
+  gap: 10px;
+}
+
+.llm-settings-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.llm-settings-controls span {
+  color: var(--clr-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.llm-settings-controls select,
+.llm-settings-controls input {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 9px;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-sm);
+  background: var(--clr-surface);
+  color: var(--clr-text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  outline: none;
+}
+
+.llm-settings-controls select:focus,
+.llm-settings-controls input:focus {
+  border-color: var(--clr-accent);
+}
+
+.llm-settings-controls select:disabled {
+  color: var(--clr-text-muted);
+  background: color-mix(in srgb, var(--clr-bg) 72%, var(--clr-surface));
+  cursor: default;
+}
+
 /* ── main layout ── */
 .app-layout {
   display: flex;
@@ -1510,6 +1623,11 @@ html, body, #root {
     display: none;
   }
 
+  .llm-settings-popover {
+    right: -44px;
+    width: min(640px, calc(100vw - 20px));
+  }
+
   .main-area {
     flex-direction: column;
     overflow-y: auto;
@@ -1584,6 +1702,26 @@ html, body, #root {
 @media (max-width: 620px) {
   .toolbar {
     padding: 0 10px;
+  }
+
+  .toolbar-title {
+    margin-right: 0;
+  }
+
+  .toolbar-btn {
+    padding: 6px 9px;
+  }
+
+  .llm-settings-popover {
+    position: fixed;
+    top: 56px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+  }
+
+  .llm-settings-controls {
+    grid-template-columns: 1fr;
   }
 
   .diagram-action-bar {

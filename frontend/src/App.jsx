@@ -22,6 +22,7 @@ const UI_SESSION_KEYS = {
   leftPanelOpen: "bpmn-ai-validator.left-panel-open",
   historyOpen: "bpmn-ai-validator.history-open",
   approvalMode: "bpmn-ai-validator.approval-mode",
+  llmSettings: "bpmn-ai-validator.llm-settings",
 };
 
 const APPROVAL_MODES = {
@@ -38,6 +39,59 @@ const VALIDATION_MODES = {
 const DEEP_VALIDATE_CONFIG = {
   tiers_enabled: { t1: true, t2: true, t3: false },
   t2_tools: ["woflan"],
+};
+
+const PROVIDER_OPTIONS = [
+  {
+    value: "openai",
+    label: "OpenAI",
+    models: ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano"],
+    reasoningEfforts: ["none", "low", "medium", "high", "xhigh"],
+  },
+  {
+    value: "anthropic",
+    label: "Anthropic",
+    models: ["claude-fable-5", "claude-opus-4-8", "claude-sonnet-4-6", "claude-haiku-4-5-20251001"],
+    reasoningEfforts: ["low", "medium", "high"],
+  },
+  {
+    value: "gemini",
+    label: "Gemini",
+    models: ["gemini-3.1-pro-preview", "gemini-3.5-flash", "gemini-3-flash-preview", "gemini-3.1-flash-lite"],
+    reasoningEfforts: [],
+  },
+  {
+    value: "ollama",
+    label: "Ollama",
+    models: [],
+    customOnly: true,
+    customPlaceholder: "llama3.2",
+    reasoningEfforts: [],
+  },
+];
+
+const INTERACTION_OPTIONS = [
+  { key: "validation", label: "Validation" },
+  { key: "chat", label: "Chat" },
+  { key: "repair", label: "Repair" },
+];
+
+const DEFAULT_LLM_SETTINGS = {
+  validation: { provider: "openai", model: "gpt-5.5", reasoning_effort: "medium" },
+  chat: { provider: "openai", model: "gpt-5.5", reasoning_effort: "medium" },
+  repair: { provider: "openai", model: "gpt-5.5", reasoning_effort: "high" },
+};
+
+const LEGACY_MODEL_REPLACEMENTS = {
+  "gpt-5": "gpt-5.4",
+  "gpt-5-mini": "gpt-5.4-mini",
+  "gpt-5-nano": "gpt-5.4-nano",
+  "claude-sonnet-4-5": "claude-sonnet-4-6",
+  "claude-opus-4-1": "claude-opus-4-8",
+  "claude-haiku-4-5": "claude-haiku-4-5-20251001",
+  "gemini-2.5-pro": "gemini-3.1-pro-preview",
+  "gemini-2.5-flash": "gemini-3.5-flash",
+  "gemini-2.5-flash-lite": "gemini-3.1-flash-lite",
 };
 
 const VALIDATION_LOADING_LABELS = {
@@ -81,6 +135,77 @@ function writeSessionString(key, value) {
   } catch {
     // storage can be unavailable in private or locked-down browser sessions
   }
+}
+
+function readSessionJson(key, fallback) {
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    if (!raw) return fallback;
+    return { ...fallback, ...JSON.parse(raw) };
+  } catch {
+    return fallback;
+  }
+}
+
+function writeSessionJson(key, value) {
+  try {
+    window.sessionStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // storage can be unavailable in private or locked-down browser sessions
+  }
+}
+
+function providerByValue(value) {
+  return PROVIDER_OPTIONS.find((provider) => provider.value === value) ?? PROVIDER_OPTIONS[0];
+}
+
+function normaliseLlmSettings(settings) {
+  return INTERACTION_OPTIONS.reduce((normalised, interaction) => {
+    const fallback = DEFAULT_LLM_SETTINGS[interaction.key];
+    const raw = { ...fallback, ...(settings?.[interaction.key] ?? {}) };
+    const provider = providerByValue(raw.provider);
+    const model = LEGACY_MODEL_REPLACEMENTS[raw.model] ?? raw.model;
+    const knownModel = provider.models.includes(model);
+    const reasoningEfforts = provider.reasoningEfforts ?? [];
+    normalised[interaction.key] = {
+      provider: provider.value,
+      model: provider.customOnly
+        ? (model?.trim() || provider.customPlaceholder || "")
+        : (knownModel ? model : (model?.trim() || provider.models[0])),
+      reasoning_effort: reasoningEfforts.includes(raw.reasoning_effort)
+        ? raw.reasoning_effort
+        : fallback.reasoning_effort,
+    };
+    if (!reasoningEfforts.length) {
+      normalised[interaction.key].reasoning_effort = null;
+    }
+    return normalised;
+  }, {});
+}
+
+function interactionConfig(settings) {
+  const provider = providerByValue(settings.provider);
+  const model = settings.model?.trim() || provider.models[0] || provider.customPlaceholder;
+  const config = {
+    provider_override: provider.value,
+    model_tier: "custom",
+    model_override: model,
+  };
+  if ((provider.reasoningEfforts ?? []).includes(settings.reasoning_effort)) {
+    config.reasoning_effort = settings.reasoning_effort;
+  }
+  return config;
+}
+
+function mergeExperimentConfig(...configs) {
+  return configs.reduce((merged, config) => ({
+    ...merged,
+    ...config,
+    tiers_enabled: {
+      ...(merged.tiers_enabled ?? {}),
+      ...(config.tiers_enabled ?? {}),
+    },
+  }), {});
 }
 
 // default the validation/history split so the history panel starts as the
@@ -200,6 +325,127 @@ function SidePanelIcon({ side = "right" }) {
   );
 }
 
+function SettingsIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 .9-1.5V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5.9h.2a2 2 0 1 1 0 4H21a1.7 1.7 0 0 0-1.6 1z" />
+    </svg>
+  );
+}
+
+function LlmSettingsPanel({ settings, onChange, onClose }) {
+  function updateInteraction(interaction, patch) {
+    onChange((current) => ({
+      ...current,
+      [interaction]: {
+        ...DEFAULT_LLM_SETTINGS[interaction],
+        ...current[interaction],
+        ...patch,
+      },
+    }));
+  }
+
+  function handleProviderChange(interaction, providerValue) {
+    const provider = providerByValue(providerValue);
+    const defaultEffort = DEFAULT_LLM_SETTINGS[interaction]?.reasoning_effort;
+    const reasoningEffort = provider.reasoningEfforts?.includes(defaultEffort)
+      ? defaultEffort
+      : provider.reasoningEfforts?.[0] ?? null;
+    updateInteraction(interaction, {
+      provider: provider.value,
+      model: provider.customOnly ? (provider.customPlaceholder ?? "") : provider.models[0],
+      reasoning_effort: reasoningEffort,
+    });
+  }
+
+  return (
+    <div className="llm-settings-popover" role="dialog" aria-label="LLM model settings">
+      <div className="llm-settings-header">
+        <div>
+          <div className="llm-settings-title">LLM settings</div>
+          <div className="llm-settings-subtitle">Provider and model per interaction</div>
+        </div>
+        <button className="panel-toggle-btn" onClick={onClose} type="button" aria-label="Close LLM settings">x</button>
+      </div>
+
+      <div className="llm-settings-body">
+        {INTERACTION_OPTIONS.map((interaction) => {
+          const selected = settings[interaction.key] ?? DEFAULT_LLM_SETTINGS[interaction.key];
+          const provider = providerByValue(selected.provider);
+          const modelInList = provider.models.includes(selected.model);
+          const usesCustomModel = provider.customOnly || !modelInList;
+          const reasoningEfforts = provider.reasoningEfforts ?? [];
+          return (
+            <section className="llm-settings-row" key={interaction.key}>
+              <div className="llm-settings-row-title">{interaction.label}</div>
+              <div className="llm-settings-controls">
+                <label>
+                  <span>Provider</span>
+                  <select
+                    value={selected.provider}
+                    onChange={(event) => handleProviderChange(interaction.key, event.target.value)}
+                  >
+                    {PROVIDER_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Model</span>
+                  <select
+                    value={usesCustomModel ? "__custom" : selected.model}
+                    disabled={provider.customOnly}
+                    onChange={(event) => {
+                      if (event.target.value === "__custom") {
+                        updateInteraction(interaction.key, {
+                          model: modelInList ? "" : selected.model,
+                        });
+                      } else {
+                        updateInteraction(interaction.key, {
+                          model: event.target.value,
+                        });
+                      }
+                    }}
+                  >
+                    {provider.models.map((model) => (
+                      <option key={model} value={model}>{model}</option>
+                    ))}
+                    <option value="__custom">Custom</option>
+                  </select>
+                </label>
+                {usesCustomModel && (
+                  <label className="llm-settings-custom-model">
+                    <span>Custom model</span>
+                    <input
+                      value={selected.model}
+                      placeholder={provider.customPlaceholder ?? provider.models[0]}
+                      onChange={(event) => updateInteraction(interaction.key, { model: event.target.value })}
+                    />
+                  </label>
+                )}
+                {reasoningEfforts.length > 0 && (
+                  <label>
+                    <span>Reasoning effort</span>
+                    <select
+                      value={selected.reasoning_effort ?? reasoningEfforts[0]}
+                      onChange={(event) => updateInteraction(interaction.key, { reasoning_effort: event.target.value })}
+                    >
+                      {reasoningEfforts.map((effort) => (
+                        <option key={effort} value={effort}>{effort}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function proposalOpElementIds(op) {
   if (!op) return [];
   switch (op.op) {
@@ -240,6 +486,10 @@ export default function App() {
     APPROVAL_MODES.MANUAL,
     Object.values(APPROVAL_MODES),
   ));
+  const [llmSettingsOpen, setLlmSettingsOpen] = useState(false);
+  const [llmSettings, setLlmSettings] = useState(() => normaliseLlmSettings(
+    readSessionJson(UI_SESSION_KEYS.llmSettings, DEFAULT_LLM_SETTINGS),
+  ));
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
@@ -261,6 +511,10 @@ export default function App() {
   useEffect(() => {
     writeSessionString(UI_SESSION_KEYS.approvalMode, approvalMode);
   }, [approvalMode]);
+
+  useEffect(() => {
+    writeSessionJson(UI_SESSION_KEYS.llmSettings, llmSettings);
+  }, [llmSettings]);
 
   const editorRef = useRef(null);
 
@@ -307,7 +561,10 @@ export default function App() {
   async function handleValidate(mode = VALIDATION_MODES.STRUCTURAL) {
     if (!diagram) return alert("Upload a diagram first.");
     const includeSemanticPass = mode === VALIDATION_MODES.SEMANTIC;
-    const config = mode === VALIDATION_MODES.DEEP ? DEEP_VALIDATE_CONFIG : {};
+    const config = mergeExperimentConfig(
+      interactionConfig(llmSettings.validation),
+      mode === VALIDATION_MODES.DEEP ? DEEP_VALIDATE_CONFIG : {},
+    );
     setValidating(true);
     setValidationMode(mode);
     try {
@@ -440,7 +697,7 @@ export default function App() {
     if (allIssues.length === 0) return alert("Run validation first and select a diagram with issues.");
     setRepairing(true);
     try {
-      const res = await repairDiagram(xml, allIssues);
+      const res = await repairDiagram(xml, allIssues, interactionConfig(llmSettings.repair));
       const proposedDiagram = res.updated_diagram;
       if (approvalMode === APPROVAL_MODES.AUTO) {
         const commit = await commitRevision(
@@ -491,6 +748,23 @@ export default function App() {
         </div>
         <div className="toolbar-caption">interactive BPMN validation and refinement</div>
         <div className="toolbar-spacer" />
+        <div className="toolbar-settings">
+          <button
+            onClick={() => setLlmSettingsOpen((open) => !open)}
+            className="toolbar-btn"
+            title="Choose LLM providers and models"
+            type="button"
+          >
+            <SettingsIcon /> Models
+          </button>
+          {llmSettingsOpen && (
+            <LlmSettingsPanel
+              settings={llmSettings}
+              onChange={setLlmSettings}
+              onClose={() => setLlmSettingsOpen(false)}
+            />
+          )}
+        </div>
         <button
           onClick={() => setDarkMode((d) => !d)}
           className="toolbar-btn toolbar-btn--icon"
@@ -648,6 +922,7 @@ export default function App() {
               onApplyProposal={applyAcceptedProposal}
               onRejectProposal={rejectProposal}
               onFocusProposalOp={focusProposalOperation}
+              config={interactionConfig(llmSettings.chat)}
             />
           </aside>
         </>
