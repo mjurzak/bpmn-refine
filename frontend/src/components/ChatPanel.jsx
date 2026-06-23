@@ -146,6 +146,7 @@ export default function ChatPanel({
   onRejectProposal,
   onFocusProposalOp,
   config = {},
+  onActivity,
 }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -185,6 +186,7 @@ export default function ChatPanel({
     setInput("");
     setLoading(true);
     const autoApprove = approvalMode === "autoapprove";
+    const startedAt = performance.now();
 
     try {
       const res = await sendChatMessage(
@@ -212,7 +214,27 @@ export default function ChatPanel({
           });
         }
       }
+      onActivity?.({
+        title: "Chat turn",
+        summary: res.updated_diagram ? "diagram proposal returned" : "text reply returned",
+        startedAt,
+        response: res,
+        details: {
+          messages: nextMessages.length,
+          updated_diagram: Boolean(res.updated_diagram),
+          approval_mode: approvalMode,
+        },
+      });
     } catch (err) {
+      onActivity?.({
+        title: "Chat turn",
+        startedAt,
+        error: err,
+        details: {
+          messages: nextMessages.length,
+          approval_mode: approvalMode,
+        },
+      });
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: `Error: ${err.message}`, processed: false },

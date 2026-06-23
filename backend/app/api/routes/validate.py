@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.experiments import ExperimentConfig, RunBlock, build_run_block, converter_version
 from app.llm.router import TaskType, resolve_model
+from app.llm.tracing import LlmTrace, get_traces, reset_trace_context, start_trace_context
 from app.model.schema import BpmnDiagram
 from app.services.validation import (
     ValidationResult,
@@ -28,6 +29,7 @@ class ValidationRequest(BaseModel):
 
 class ValidationResponse(ValidationResult):
     run: RunBlock
+    llm_traces: list[LlmTrace] = Field(default_factory=list)
 
 
 @router.post("", response_model=ValidationResponse)
@@ -47,6 +49,7 @@ async def validate_diagram(req: ValidationRequest) -> ValidationResponse | JSONR
         prompt_files={"validate": validate_prompt_path()} if include_semantic else None,
         checkers=checker_versions(req.config) if include_t2 else None,
     )
+    trace_token = start_trace_context()
     try:
         result = await run_validation(
             req.diagram,
@@ -55,8 +58,16 @@ async def validate_diagram(req: ValidationRequest) -> ValidationResponse | JSONR
             config=req.config,
         )
     except Exception as exc:
+        traces = get_traces()
+        reset_trace_context(trace_token)
         return JSONResponse(
             status_code=500,
-            content={"detail": str(exc), "run": run.model_dump(mode="json")},
+            content={
+                "detail": str(exc),
+                "run": run.model_dump(mode="json"),
+                "llm_traces": [trace.model_dump(mode="json") for trace in traces],
+            },
         )
-    return ValidationResponse(**result.model_dump(), run=run)
+    traces = get_traces()
+    reset_trace_context(trace_token)
+    return ValidationResponse(**result.model_dump(), run=run, llm_traces=traces)

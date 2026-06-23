@@ -4,7 +4,9 @@ async function request(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, options);
   if (!res.ok) {
     const detail = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(detail.detail ?? res.statusText);
+    const error = new Error(detail.detail ?? res.statusText);
+    error.payload = detail;
+    throw error;
   }
   return res.json();
 }

@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.experiments import ExperimentConfig, RunBlock, build_run_block, converter_version
 from app.llm.router import TaskType, resolve_model
+from app.llm.tracing import LlmTrace, get_traces, reset_trace_context, start_trace_context
 from app.model.schema import BpmnDiagram
 from app.repair.ops import EditOp, EditOpResult, apply_edit_ops
 from app.services.diagrams import export_bpmn_xml, parse_bpmn_bytes
@@ -32,6 +33,7 @@ class RepairResponse(BaseModel):
     iterations: int
     converged: bool
     run: RunBlock
+    llm_traces: list[LlmTrace] = Field(default_factory=list)
 
 
 class ApplyEditOpsRequest(BaseModel):
@@ -51,12 +53,15 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
     converged = False
     run = _build_repair_run(req.config, iterations=iterations, converged=converged)
 
+    trace_token = start_trace_context()
     if not req.issues:
+        reset_trace_context(trace_token)
         return JSONResponse(
             status_code=400,
             content={
                 "detail": "Repair requires at least one validation issue.",
                 "run": run.model_dump(mode="json"),
+                "llm_traces": [],
             },
         )
 
@@ -70,15 +75,23 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
         )
         updated_xml = export_bpmn_xml(repair_result.repaired_diagram)
     except Exception as exc:
+        traces = get_traces()
+        reset_trace_context(trace_token)
         return JSONResponse(
             status_code=500,
-            content={"detail": str(exc), "run": run.model_dump(mode="json")},
+            content={
+                "detail": str(exc),
+                "run": run.model_dump(mode="json"),
+                "llm_traces": [trace.model_dump(mode="json") for trace in traces],
+            },
         )
 
     iterations = repair_result.iterations
     remaining_issues = repair_result.remaining_issues
     converged = repair_result.converged
     run = _build_repair_run(req.config, iterations=iterations, converged=converged)
+    traces = get_traces()
+    reset_trace_context(trace_token)
 
     return RepairResponse(
         input_diagram=diagram,
@@ -89,6 +102,7 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
         iterations=iterations,
         converged=converged,
         run=run,
+        llm_traces=traces,
     )
 
 

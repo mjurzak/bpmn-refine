@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.experiments import ExperimentConfig, RunBlock, build_run_block, converter_version
 from app.llm.router import TaskType, resolve_model
+from app.llm.tracing import LlmTrace, get_traces, reset_trace_context, start_trace_context
 from app.model.schema import BpmnDiagram
 from app.services.chat import ChatMessage as ServiceChatMessage
 from app.services.chat import ChatResult, chat_diagram, chat_prompt_path
@@ -32,6 +33,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(ChatResult):
     run: RunBlock
+    llm_traces: list[LlmTrace] = Field(default_factory=list)
 
 
 @router.post("", response_model=ChatResponse)
@@ -43,6 +45,7 @@ async def chat(req: ChatRequest) -> ChatResponse | JSONResponse:
         rules_version=RULES_VERSION,
         prompt_files={"chat": chat_prompt_path()},
     )
+    trace_token = start_trace_context()
     try:
         result = await chat_diagram(
             messages=[
@@ -55,8 +58,16 @@ async def chat(req: ChatRequest) -> ChatResponse | JSONResponse:
             snapshot_changes=req.snapshot_changes,
         )
     except Exception as exc:
+        traces = get_traces()
+        reset_trace_context(trace_token)
         return JSONResponse(
             status_code=500,
-            content={"detail": str(exc), "run": run.model_dump(mode="json")},
+            content={
+                "detail": str(exc),
+                "run": run.model_dump(mode="json"),
+                "llm_traces": [trace.model_dump(mode="json") for trace in traces],
+            },
         )
-    return ChatResponse(**result.model_dump(), run=run)
+    traces = get_traces()
+    reset_trace_context(trace_token)
+    return ChatResponse(**result.model_dump(), run=run, llm_traces=traces)

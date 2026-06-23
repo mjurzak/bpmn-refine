@@ -4,6 +4,7 @@ import BpmnEditor from "./components/BpmnEditor.jsx";
 import ValidationPanel from "./components/ValidationPanel.jsx";
 import ChatPanel from "./components/ChatPanel.jsx";
 import HistoryPanel from "./components/HistoryPanel.jsx";
+import LogsPanel from "./components/LogsPanel.jsx";
 import {
   uploadDiagram,
   validateDiagram,
@@ -23,6 +24,7 @@ const UI_SESSION_KEYS = {
   historyOpen: "bpmn-ai-validator.history-open",
   approvalMode: "bpmn-ai-validator.approval-mode",
   llmSettings: "bpmn-ai-validator.llm-settings",
+  assistantTab: "bpmn-ai-validator.assistant-tab",
 };
 
 const APPROVAL_MODES = {
@@ -99,6 +101,28 @@ const VALIDATION_LOADING_LABELS = {
   [VALIDATION_MODES.DEEP]: "Running deep formal validation...",
   [VALIDATION_MODES.SEMANTIC]: "Running semantic LLM validation...",
 };
+
+const ASSISTANT_TABS = {
+  CHAT: "chat",
+  LOGS: "logs",
+};
+
+function newLogId(prefix = "log") {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function apiTraceEntries(title, traces = []) {
+  return traces.map((trace, index) => ({
+    id: trace.trace_id ?? newLogId("llm"),
+    type: "llm",
+    status: trace.error ? "error" : "success",
+    title: `${title} LLM call ${traces.length > 1 ? index + 1 : ""}`.trim(),
+    summary: `${trace.model}${trace.reasoning_effort ? ` / ${trace.reasoning_effort}` : ""}`,
+    timestamp: trace.started_at ?? new Date().toISOString(),
+    durationMs: trace.duration_ms,
+    trace,
+  }));
+}
 
 function readSessionBoolean(key, fallback) {
   try {
@@ -486,6 +510,12 @@ export default function App() {
     APPROVAL_MODES.MANUAL,
     Object.values(APPROVAL_MODES),
   ));
+  const [assistantTab, setAssistantTab] = useState(() => readSessionString(
+    UI_SESSION_KEYS.assistantTab,
+    ASSISTANT_TABS.CHAT,
+    Object.values(ASSISTANT_TABS),
+  ));
+  const [logEntries, setLogEntries] = useState([]);
   const [llmSettingsOpen, setLlmSettingsOpen] = useState(false);
   const [llmSettings, setLlmSettings] = useState(() => normaliseLlmSettings(
     readSessionJson(UI_SESSION_KEYS.llmSettings, DEFAULT_LLM_SETTINGS),
@@ -513,6 +543,10 @@ export default function App() {
   }, [approvalMode]);
 
   useEffect(() => {
+    writeSessionString(UI_SESSION_KEYS.assistantTab, assistantTab);
+  }, [assistantTab]);
+
+  useEffect(() => {
     writeSessionJson(UI_SESSION_KEYS.llmSettings, llmSettings);
   }, [llmSettings]);
 
@@ -521,6 +555,43 @@ export default function App() {
   const sidebar = useResize({ initial: 340, min: 260, max: 520, axis: "horizontal" });
   const validationSplit = useResize({ ...verticalSplitConfig(), axis: "vertical" });
   const assistantPanel = useResize({ initial: 360, min: 280, max: 560, axis: "horizontal", direction: -1 });
+
+  const appendLogEntries = useCallback((entries) => {
+    const normalised = entries.map((entry) => ({
+      ...entry,
+      id: entry.id ?? newLogId(entry.type ?? "log"),
+      timestamp: entry.timestamp ?? new Date().toISOString(),
+      status: entry.status ?? "info",
+    }));
+    setLogEntries((current) => [...current, ...normalised].slice(-300));
+  }, []);
+
+  const recordApiActivity = useCallback(({
+    title,
+    summary,
+    startedAt,
+    response = null,
+    error = null,
+    details = null,
+  }) => {
+    const traces = response?.llm_traces ?? error?.payload?.llm_traces ?? [];
+    const durationMs = startedAt ? Math.round(performance.now() - startedAt) : undefined;
+    appendLogEntries([
+      {
+        type: "action",
+        status: error ? "error" : "success",
+        title,
+        summary: error ? error.message : summary,
+        durationMs,
+        details: {
+          ...(details ?? {}),
+          run: response?.run ?? error?.payload?.run ?? null,
+          error: error?.message ?? null,
+        },
+      },
+      ...apiTraceEntries(title, traces),
+    ]);
+  }, [appendLogEntries]);
 
   const handleXmlChange = useCallback((updatedXml) => {
     // ignore canvas changes while previewing a historical snapshot
@@ -543,6 +614,7 @@ export default function App() {
   async function handleUpload(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const startedAt = performance.now();
     dismissPreview();
     try {
       const res = await uploadDiagram(file);
@@ -553,7 +625,19 @@ export default function App() {
       const exported = await exportDiagram(res.diagram);
       const laid = await autoLayout(exported.xml);
       setXml(laid);
+      recordApiActivity({
+        title: "Import BPMN",
+        summary: file.name,
+        startedAt,
+        details: { file: file.name, session_id: res.session_id },
+      });
     } catch (err) {
+      recordApiActivity({
+        title: "Import BPMN",
+        startedAt,
+        error: err,
+        details: { file: file.name },
+      });
       alert(`Upload failed: ${err.message}`);
     }
   }
@@ -567,10 +651,38 @@ export default function App() {
     );
     setValidating(true);
     setValidationMode(mode);
+    const startedAt = performance.now();
     try {
       const res = await validateDiagram(diagram, includeSemanticPass, config);
       setValidationResult(res);
+      const issueTotal = (res.issues?.length ?? 0) + (res.semantic_issues?.length ?? 0);
+      recordApiActivity({
+        title: mode === VALIDATION_MODES.SEMANTIC
+          ? "Semantic validation"
+          : mode === VALIDATION_MODES.DEEP
+            ? "Deep validation"
+            : "Structural validation",
+        summary: issueTotal === 0 ? "no issues found" : `${issueTotal} issue${issueTotal === 1 ? "" : "s"} found`,
+        startedAt,
+        response: res,
+        details: {
+          mode,
+          is_valid: res.is_valid,
+          issues: res.issues?.length ?? 0,
+          semantic_issues: res.semantic_issues?.length ?? 0,
+        },
+      });
     } catch (err) {
+      recordApiActivity({
+        title: mode === VALIDATION_MODES.SEMANTIC
+          ? "Semantic validation"
+          : mode === VALIDATION_MODES.DEEP
+            ? "Deep validation"
+            : "Structural validation",
+        startedAt,
+        error: err,
+        details: { mode },
+      });
       alert(`Validation failed: ${err.message}`);
     } finally {
       setValidating(false);
@@ -601,6 +713,7 @@ export default function App() {
 
   async function applyAcceptedProposal(selectedOps = null) {
     if (!pendingProposal) return;
+    const startedAt = performance.now();
     try {
       let acceptedDiagram = pendingProposal.diagram;
       let acceptedRemainingIssues = pendingProposal.remainingIssues;
@@ -640,14 +753,38 @@ export default function App() {
         setValidationResult(null);
       }
       editorRef.current?.clearDiff();
+      recordApiActivity({
+        title: pendingProposal.source === "repair" ? "Apply repair proposal" : "Apply chat proposal",
+        summary: pendingProposal.ops?.length > 0
+          ? `${selectedOps?.length ?? pendingProposal.ops.length} operation${(selectedOps?.length ?? pendingProposal.ops.length) === 1 ? "" : "s"} applied`
+          : "proposal accepted",
+        startedAt,
+        response: commit,
+        details: {
+          source: pendingProposal.source,
+          selected_ops: selectedOps?.length ?? null,
+          new_rev_id: commit.new_rev_id,
+        },
+      });
       setPendingProposal(null);
     } catch (err) {
+      recordApiActivity({
+        title: pendingProposal.source === "repair" ? "Apply repair proposal" : "Apply chat proposal",
+        startedAt,
+        error: err,
+        details: { source: pendingProposal.source },
+      });
       alert(`Applying proposal failed: ${err.message}`);
     }
   }
 
   function rejectProposal() {
     editorRef.current?.clearDiff();
+    recordApiActivity({
+      title: pendingProposal?.source === "repair" ? "Reject repair proposal" : "Reject chat proposal",
+      summary: "proposal discarded",
+      details: { source: pendingProposal?.source ?? null },
+    });
     setPendingProposal(null);
   }
 
@@ -683,6 +820,7 @@ export default function App() {
 
   function handleExport() {
     if (!xml) return;
+    const startedAt = performance.now();
     const blob = new Blob([xml], { type: "application/xml" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -690,12 +828,19 @@ export default function App() {
     a.download = "diagram.bpmn";
     a.click();
     URL.revokeObjectURL(url);
+    recordApiActivity({
+      title: "Export BPMN",
+      summary: "diagram.bpmn",
+      startedAt,
+      details: { bytes: blob.size },
+    });
   }
 
   async function handleRepair() {
     if (!xml) return alert("Upload a diagram first.");
     if (allIssues.length === 0) return alert("Run validation first and select a diagram with issues.");
     setRepairing(true);
+    const startedAt = performance.now();
     try {
       const res = await repairDiagram(xml, allIssues, interactionConfig(llmSettings.repair));
       const proposedDiagram = res.updated_diagram;
@@ -726,7 +871,28 @@ export default function App() {
           ops: res.applied_ops,
         });
       }
+      recordApiActivity({
+        title: "Repair proposal",
+        summary: res.converged
+          ? `converged in ${res.iterations} iteration${res.iterations === 1 ? "" : "s"}`
+          : `${res.remaining_issues.length} issue${res.remaining_issues.length === 1 ? "" : "s"} remaining`,
+        startedAt,
+        response: res,
+        details: {
+          iterations: res.iterations,
+          converged: res.converged,
+          applied_ops: res.applied_ops?.length ?? 0,
+          remaining_issues: res.remaining_issues?.length ?? 0,
+          approval_mode: approvalMode,
+        },
+      });
     } catch (err) {
+      recordApiActivity({
+        title: "Repair proposal",
+        startedAt,
+        error: err,
+        details: { issue_count: allIssues.length, approval_mode: approvalMode },
+      });
       alert(`Repair failed: ${err.message}`);
     } finally {
       setRepairing(false);
@@ -908,22 +1074,52 @@ export default function App() {
                 <SidePanelIcon side="right" />
               </button>
             </div>
-            <ChatPanel
-              ir={diagram}
-              issues={allIssues}
-              sessionId={sessionId}
-              onIrUpdate={handleChatUpdate}
-              onDiagramProposal={handleDiagramProposal}
-              SendIcon={SendIcon}
-              showHeader={false}
-              approvalMode={approvalMode}
-              onApprovalModeChange={setApprovalMode}
-              pendingProposal={pendingProposal}
-              onApplyProposal={applyAcceptedProposal}
-              onRejectProposal={rejectProposal}
-              onFocusProposalOp={focusProposalOperation}
-              config={interactionConfig(llmSettings.chat)}
-            />
+            <div className="assistant-tabs" role="tablist" aria-label="Assistant views">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={assistantTab === ASSISTANT_TABS.CHAT}
+                className={`assistant-tab${assistantTab === ASSISTANT_TABS.CHAT ? " assistant-tab--active" : ""}`}
+                onClick={() => setAssistantTab(ASSISTANT_TABS.CHAT)}
+              >
+                Chat
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={assistantTab === ASSISTANT_TABS.LOGS}
+                className={`assistant-tab${assistantTab === ASSISTANT_TABS.LOGS ? " assistant-tab--active" : ""}`}
+                onClick={() => setAssistantTab(ASSISTANT_TABS.LOGS)}
+              >
+                Logs
+                {logEntries.length > 0 && <span>{logEntries.length}</span>}
+              </button>
+            </div>
+            <div className={`assistant-tab-pane${assistantTab !== ASSISTANT_TABS.CHAT ? " assistant-tab-pane--hidden" : ""}`}>
+              <ChatPanel
+                ir={diagram}
+                issues={allIssues}
+                sessionId={sessionId}
+                onIrUpdate={handleChatUpdate}
+                onDiagramProposal={handleDiagramProposal}
+                SendIcon={SendIcon}
+                showHeader={false}
+                approvalMode={approvalMode}
+                onApprovalModeChange={setApprovalMode}
+                pendingProposal={pendingProposal}
+                onApplyProposal={applyAcceptedProposal}
+                onRejectProposal={rejectProposal}
+                onFocusProposalOp={focusProposalOperation}
+                config={interactionConfig(llmSettings.chat)}
+                onActivity={recordApiActivity}
+              />
+            </div>
+            <div className={`assistant-tab-pane${assistantTab !== ASSISTANT_TABS.LOGS ? " assistant-tab-pane--hidden" : ""}`}>
+              <LogsPanel
+                entries={logEntries}
+                onClear={() => setLogEntries([])}
+              />
+            </div>
           </aside>
         </>
 
