@@ -4,7 +4,15 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from app.model.schema import BpmnDiagram, BpmnProcess, FlowNode, FlowNodeType, SequenceFlow
+from app.model.schema import (
+    BpmnDiagram,
+    BpmnProcess,
+    FlowNode,
+    FlowNodeId,
+    FlowNodeType,
+    SequenceFlow,
+    SequenceFlowId,
+)
 from app.repair.ops import AddFlowOp, AddNodeOp, EditOp, RemoveFlowOp, RemoveNodeOp
 from app.validation.rules import ValidationIssue
 
@@ -21,12 +29,16 @@ def propose_quick_fix(
     return fix(issue, diagram)
 
 
-def _fix_missing_start(issue: ValidationIssue, diagram: BpmnDiagram) -> list[EditOp] | None:
-    proc = _process_for_issue(issue, diagram, lambda item: not _has_node_type(item, FlowNodeType.START_EVENT))
+def _fix_missing_start(
+    issue: ValidationIssue, diagram: BpmnDiagram
+) -> list[EditOp] | None:
+    proc = _process_for_issue(
+        issue, diagram, lambda item: not _has_node_type(item, FlowNodeType.START_EVENT)
+    )
     if proc is None:
         return None
 
-    start_id = _unique_id(diagram, f"start_{_safe_id(proc.id)}")
+    start_id = _unique_node_id(diagram, f"start_{_safe_id(proc.id)}")
     ops: list[EditOp] = [
         AddNodeOp(id=start_id, node_type=FlowNodeType.START_EVENT, process_id=proc.id)
     ]
@@ -34,7 +46,7 @@ def _fix_missing_start(issue: ValidationIssue, diagram: BpmnDiagram) -> list[Edi
     if target is not None:
         ops.append(
             AddFlowOp(
-                id=_unique_id(diagram, f"flow_{start_id}_to_{target.id}"),
+                id=_unique_flow_id(diagram, f"flow_{start_id}_to_{target.id}"),
                 source_ref=start_id,
                 target_ref=target.id,
             )
@@ -42,12 +54,16 @@ def _fix_missing_start(issue: ValidationIssue, diagram: BpmnDiagram) -> list[Edi
     return ops
 
 
-def _fix_missing_end(issue: ValidationIssue, diagram: BpmnDiagram) -> list[EditOp] | None:
-    proc = _process_for_issue(issue, diagram, lambda item: not _has_node_type(item, FlowNodeType.END_EVENT))
+def _fix_missing_end(
+    issue: ValidationIssue, diagram: BpmnDiagram
+) -> list[EditOp] | None:
+    proc = _process_for_issue(
+        issue, diagram, lambda item: not _has_node_type(item, FlowNodeType.END_EVENT)
+    )
     if proc is None:
         return None
 
-    end_id = _unique_id(diagram, f"end_{_safe_id(proc.id)}")
+    end_id = _unique_node_id(diagram, f"end_{_safe_id(proc.id)}")
     ops: list[EditOp] = [
         AddNodeOp(id=end_id, node_type=FlowNodeType.END_EVENT, process_id=proc.id)
     ]
@@ -55,7 +71,7 @@ def _fix_missing_end(issue: ValidationIssue, diagram: BpmnDiagram) -> list[EditO
     if source is not None:
         ops.append(
             AddFlowOp(
-                id=_unique_id(diagram, f"flow_{source.id}_to_{end_id}"),
+                id=_unique_flow_id(diagram, f"flow_{source.id}_to_{end_id}"),
                 source_ref=source.id,
                 target_ref=end_id,
             )
@@ -63,7 +79,9 @@ def _fix_missing_end(issue: ValidationIssue, diagram: BpmnDiagram) -> list[EditO
     return ops
 
 
-def _fix_start_without_outgoing(issue: ValidationIssue, diagram: BpmnDiagram) -> list[EditOp] | None:
+def _fix_start_without_outgoing(
+    issue: ValidationIssue, diagram: BpmnDiagram
+) -> list[EditOp] | None:
     found = _find_node(diagram, issue.element_id)
     if found is None:
         return None
@@ -73,14 +91,16 @@ def _fix_start_without_outgoing(issue: ValidationIssue, diagram: BpmnDiagram) ->
         return None
     return [
         AddFlowOp(
-            id=_unique_id(diagram, f"flow_{start.id}_to_{target.id}"),
+            id=_unique_flow_id(diagram, f"flow_{start.id}_to_{target.id}"),
             source_ref=start.id,
             target_ref=target.id,
         )
     ]
 
 
-def _fix_end_without_incoming(issue: ValidationIssue, diagram: BpmnDiagram) -> list[EditOp] | None:
+def _fix_end_without_incoming(
+    issue: ValidationIssue, diagram: BpmnDiagram
+) -> list[EditOp] | None:
     found = _find_node(diagram, issue.element_id)
     if found is None:
         return None
@@ -90,20 +110,30 @@ def _fix_end_without_incoming(issue: ValidationIssue, diagram: BpmnDiagram) -> l
         return None
     return [
         AddFlowOp(
-            id=_unique_id(diagram, f"flow_{source.id}_to_{end.id}"),
+            id=_unique_flow_id(diagram, f"flow_{source.id}_to_{end.id}"),
             source_ref=source.id,
             target_ref=end.id,
         )
     ]
 
 
-def _fix_dangling_flow(issue: ValidationIssue, diagram: BpmnDiagram) -> list[EditOp] | None:
-    if not issue.element_id or _find_flow(diagram, issue.element_id) is None:
+def _fix_dangling_flow(
+    issue: ValidationIssue, diagram: BpmnDiagram
+) -> list[EditOp] | None:
+    if issue.element_id is None:
         return None
-    return [RemoveFlowOp(id=issue.element_id)]
+
+    found = _find_flow(diagram, issue.element_id)
+    if found is None:
+        return None
+
+    _, flow = found
+    return [RemoveFlowOp(id=flow.id)]
 
 
-def _fix_single_branch_gateway(issue: ValidationIssue, diagram: BpmnDiagram) -> list[EditOp] | None:
+def _fix_single_branch_gateway(
+    issue: ValidationIssue, diagram: BpmnDiagram
+) -> list[EditOp] | None:
     found = _find_node(diagram, issue.element_id)
     if found is None:
         return None
@@ -120,7 +150,9 @@ def _fix_single_branch_gateway(issue: ValidationIssue, diagram: BpmnDiagram) -> 
 
     return [
         AddFlowOp(
-            id=_unique_id(diagram, f"flow_{incoming.source_ref}_to_{outgoing.target_ref}"),
+            id=_unique_flow_id(
+                diagram, f"flow_{incoming.source_ref}_to_{outgoing.target_ref}"
+            ),
             source_ref=incoming.source_ref,
             target_ref=outgoing.target_ref,
         ),
@@ -143,15 +175,27 @@ def _has_node_type(proc: BpmnProcess, node_type: FlowNodeType) -> bool:
     return any(node.type == node_type for node in proc.flow_nodes)
 
 
-def _best_entry_target(proc: BpmnProcess, exclude_id: str | None = None) -> FlowNode | None:
+def _best_entry_target(
+    proc: BpmnProcess, exclude_id: str | None = None
+) -> FlowNode | None:
     candidates = [node for node in proc.flow_nodes if node.id != exclude_id]
-    preferred = [node for node in candidates if not node.incoming and node.type != FlowNodeType.START_EVENT]
+    preferred = [
+        node
+        for node in candidates
+        if not node.incoming and node.type != FlowNodeType.START_EVENT
+    ]
     return next(iter(preferred or candidates), None)
 
 
-def _best_exit_source(proc: BpmnProcess, exclude_id: str | None = None) -> FlowNode | None:
+def _best_exit_source(
+    proc: BpmnProcess, exclude_id: str | None = None
+) -> FlowNode | None:
     candidates = [node for node in proc.flow_nodes if node.id != exclude_id]
-    preferred = [node for node in candidates if not node.outgoing and node.type != FlowNodeType.END_EVENT]
+    preferred = [
+        node
+        for node in candidates
+        if not node.outgoing and node.type != FlowNodeType.END_EVENT
+    ]
     return next(iter(preferred or candidates), None)
 
 
@@ -191,6 +235,14 @@ def _unique_id(diagram: BpmnDiagram, base: str) -> str:
         candidate = f"{base}_{index}"
         index += 1
     return candidate
+
+
+def _unique_node_id(diagram: BpmnDiagram, base: str) -> FlowNodeId:
+    return FlowNodeId(_unique_id(diagram, base))
+
+
+def _unique_flow_id(diagram: BpmnDiagram, base: str) -> SequenceFlowId:
+    return SequenceFlowId(_unique_id(diagram, base))
 
 
 def _all_ids(diagram: BpmnDiagram) -> set[str]:

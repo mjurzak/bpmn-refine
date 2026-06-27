@@ -7,7 +7,15 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, TypeAdapter, field_validator
 
-from app.model.schema import BpmnDiagram, BpmnProcess, FlowNode, FlowNodeType, SequenceFlow
+from app.model.schema import (
+    BpmnDiagram,
+    BpmnProcess,
+    FlowNode,
+    FlowNodeId,
+    FlowNodeType,
+    SequenceFlow,
+    SequenceFlowId,
+)
 
 
 class EditOpType(StrEnum):
@@ -15,7 +23,8 @@ class EditOpType(StrEnum):
     REMOVE_NODE = "remove_node"
     ADD_FLOW = "add_flow"
     REMOVE_FLOW = "remove_flow"
-    RENAME_ELEMENT = "rename_element"
+    RENAME_NODE = "rename_node"
+    RENAME_FLOW = "rename_flow"
     CHANGE_NODE_TYPE = "change_node_type"
     CHANGE_GATEWAY_TYPE = "change_gateway_type"
     SET_CONDITION = "set_condition"
@@ -30,50 +39,58 @@ GATEWAY_NODE_TYPES = {
     FlowNodeType.COMPLEX_GATEWAY,
 }
 
+# Field descriptions are for better LLM understanding of ambiguous fields
+
 
 class AddNodeOp(BaseModel):
     op: Literal[EditOpType.ADD_NODE] = EditOpType.ADD_NODE
-    id: str
+    id: FlowNodeId = Field(description="New node ID")
     node_type: FlowNodeType
-    process_id: str
+    process_id: str = Field(description="Process ID to add the node to")
     name: str | None = None
 
 
 class RemoveNodeOp(BaseModel):
     op: Literal[EditOpType.REMOVE_NODE] = EditOpType.REMOVE_NODE
-    id: str
-    cascade: bool = False
+    id: FlowNodeId = Field(description="Node ID to remove")
+    cascade: bool = Field(description="Whether to remove child nodes", default=False)
 
 
 class AddFlowOp(BaseModel):
     op: Literal[EditOpType.ADD_FLOW] = EditOpType.ADD_FLOW
-    id: str
-    source_ref: str
-    target_ref: str
+    id: SequenceFlowId = Field(description="New flow ID")
+    source_ref: FlowNodeId
+    target_ref: FlowNodeId
     name: str | None = None
     condition_expression: str | None = None
 
 
 class RemoveFlowOp(BaseModel):
     op: Literal[EditOpType.REMOVE_FLOW] = EditOpType.REMOVE_FLOW
-    id: str
+    id: SequenceFlowId = Field(description="Flow ID to remove")
 
 
-class RenameElementOp(BaseModel):
-    op: Literal[EditOpType.RENAME_ELEMENT] = EditOpType.RENAME_ELEMENT
-    id: str
+class RenameFlowOp(BaseModel):
+    op: Literal[EditOpType.RENAME_FLOW] = EditOpType.RENAME_FLOW
+    id: SequenceFlowId = Field(description="Flow ID to rename")
+    new_name: str
+
+
+class RenameNodeOp(BaseModel):
+    op: Literal[EditOpType.RENAME_NODE] = EditOpType.RENAME_NODE
+    id: FlowNodeId = Field(description="Node ID to rename")
     new_name: str
 
 
 class ChangeNodeTypeOp(BaseModel):
     op: Literal[EditOpType.CHANGE_NODE_TYPE] = EditOpType.CHANGE_NODE_TYPE
-    id: str
+    id: FlowNodeId = Field(description="Node ID to change type")
     new_type: FlowNodeType
 
 
 class ChangeGatewayTypeOp(BaseModel):
     op: Literal[EditOpType.CHANGE_GATEWAY_TYPE] = EditOpType.CHANGE_GATEWAY_TYPE
-    id: str
+    id: FlowNodeId = Field(description="Node ID to change to a gateway type")
     new_type: FlowNodeType
 
     @field_validator("new_type")
@@ -86,13 +103,13 @@ class ChangeGatewayTypeOp(BaseModel):
 
 class SetConditionOp(BaseModel):
     op: Literal[EditOpType.SET_CONDITION] = EditOpType.SET_CONDITION
-    flow_id: str
+    flow_id: SequenceFlowId = Field(description="Flow ID to set condition on")
     condition_expression: str | None
 
 
 class ReplaceDiagramOp(BaseModel):
     op: Literal[EditOpType.REPLACE_DIAGRAM] = EditOpType.REPLACE_DIAGRAM
-    diagram: BpmnDiagram
+    diagram: BpmnDiagram = Field(description="Complete BPMN Diagram to replace")
 
 
 AtomicEditOp = Annotated[
@@ -100,7 +117,8 @@ AtomicEditOp = Annotated[
     | RemoveNodeOp
     | AddFlowOp
     | RemoveFlowOp
-    | RenameElementOp
+    | RenameNodeOp
+    | RenameFlowOp
     | ChangeNodeTypeOp
     | ChangeGatewayTypeOp
     | SetConditionOp,
@@ -166,8 +184,10 @@ def _apply_one(op: EditOp, diagram: BpmnDiagram) -> None:
         _apply_add_flow(op, diagram)
     elif isinstance(op, RemoveFlowOp):
         _apply_remove_flow(op, diagram)
-    elif isinstance(op, RenameElementOp):
-        _apply_rename_element(op, diagram)
+    elif isinstance(op, RenameNodeOp):
+        _apply_rename_node(op, diagram)
+    elif isinstance(op, RenameFlowOp):
+        _apply_rename_flow(op, diagram)
     elif isinstance(op, ChangeNodeTypeOp):
         _apply_change_node_type(op, diagram)
     elif isinstance(op, ChangeGatewayTypeOp):
@@ -176,16 +196,14 @@ def _apply_one(op: EditOp, diagram: BpmnDiagram) -> None:
         _apply_set_condition(op, diagram)
     elif isinstance(op, ReplaceDiagramOp):
         _apply_replace_diagram(op, diagram)
-    else:
-        raise EditOpError(f"unsupported edit operation: {op}")
+    # else:
+    #     raise EditOpError(f"unsupported edit operation: {op}")
 
 
 def _apply_add_node(op: AddNodeOp, diagram: BpmnDiagram) -> None:
     proc = _require_process(diagram, op.process_id)
     _require_unique_id(diagram, op.id)
-    proc.flow_nodes.append(
-        FlowNode(id=op.id, type=op.node_type, name=op.name)
-    )
+    proc.flow_nodes.append(FlowNode(id=op.id, type=op.node_type, name=op.name))
 
 
 def _apply_remove_node(op: RemoveNodeOp, diagram: BpmnDiagram) -> None:
@@ -227,20 +245,24 @@ def _apply_remove_flow(op: RemoveFlowOp, diagram: BpmnDiagram) -> None:
     _remove_flow_by_id(diagram, op.id)
 
 
-def _apply_rename_element(op: RenameElementOp, diagram: BpmnDiagram) -> None:
+def _apply_rename_node(op: RenameNodeOp, diagram: BpmnDiagram) -> None:
     found = _find_node(diagram, op.id)
     if found is not None:
         _, node = found
         node.name = op.new_name
         return
 
+    raise EditOpError(f"node '{op.id}' does not exist")
+
+
+def _apply_rename_flow(op: RenameFlowOp, diagram: BpmnDiagram) -> None:
     found_flow = _find_flow(diagram, op.id)
     if found_flow is not None:
         _, flow = found_flow
         flow.name = op.new_name
         return
 
-    raise EditOpError(f"element '{op.id}' does not exist")
+    raise EditOpError(f"flow '{op.id}' does not exist")
 
 
 def _apply_change_node_type(op: ChangeNodeTypeOp, diagram: BpmnDiagram) -> None:
@@ -298,7 +320,9 @@ def _require_node(diagram: BpmnDiagram, node_id: str) -> tuple[BpmnProcess, Flow
     return found
 
 
-def _find_node(diagram: BpmnDiagram, node_id: str) -> tuple[BpmnProcess, FlowNode] | None:
+def _find_node(
+    diagram: BpmnDiagram, node_id: str
+) -> tuple[BpmnProcess, FlowNode] | None:
     for proc in diagram.processes:
         for node in proc.flow_nodes:
             if node.id == node_id:
@@ -306,7 +330,9 @@ def _find_node(diagram: BpmnDiagram, node_id: str) -> tuple[BpmnProcess, FlowNod
     return None
 
 
-def _require_flow(diagram: BpmnDiagram, flow_id: str) -> tuple[BpmnProcess, SequenceFlow]:
+def _require_flow(
+    diagram: BpmnDiagram, flow_id: str
+) -> tuple[BpmnProcess, SequenceFlow]:
     found = _find_flow(diagram, flow_id)
     if found is None:
         raise EditOpError(f"flow '{flow_id}' does not exist")

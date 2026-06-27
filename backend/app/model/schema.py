@@ -4,9 +4,11 @@ This is the canonical in-memory representation used by the default converter.
 Every piece of information needed to reconstruct valid BPMN XML must be present
 here — the round-trip property (XML -> model -> XML) must hold.
 """
+
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import NewType
 
 from pydantic import BaseModel, Field
 
@@ -32,21 +34,26 @@ class FlowNodeType(StrEnum):
     COMPLEX_GATEWAY = "complexGateway"
 
 
+# Custom type aliases
+FlowNodeId = NewType("FlowNodeId", str)
+SequenceFlowId = NewType("SequenceFlowId", str)
+
+
 class FlowNode(BaseModel):
-    id: str
+    id: FlowNodeId
     type: FlowNodeType
     name: str | None = None
     # outgoing/incoming are edge IDs — filled in by the converter
-    outgoing: list[str] = Field(default_factory=list)
-    incoming: list[str] = Field(default_factory=list)
+    outgoing: list[SequenceFlowId] = Field(default_factory=list)
+    incoming: list[SequenceFlowId] = Field(default_factory=list)
     # raw attributes preserved for round-trip
     extra: dict = Field(default_factory=dict)
 
 
 class SequenceFlow(BaseModel):
-    id: str
-    source_ref: str
-    target_ref: str
+    id: SequenceFlowId
+    source_ref: FlowNodeId
+    target_ref: FlowNodeId
     name: str | None = None
     condition_expression: str | None = None
 
@@ -54,7 +61,7 @@ class SequenceFlow(BaseModel):
 class Lane(BaseModel):
     id: str
     name: str | None = None
-    flow_node_refs: list[str] = Field(default_factory=list)
+    flow_node_refs: list[FlowNodeId] = Field(default_factory=list)
 
 
 class Pool(BaseModel):
