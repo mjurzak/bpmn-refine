@@ -1,4 +1,4 @@
-"""Default converter: BPMN XML ↔ Pydantic BpmnDiagram model.
+"""Default converter: BPMN XML <-> Pydantic BpmnDiagram model.
 
 Implements app.model.protocol.DiagramConverter.
 Keeps the round-trip property: XML -> BpmnDiagram -> XML should produce
@@ -7,14 +7,18 @@ semantically equivalent BPMN (modulo whitespace and attribute ordering).
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from lxml import etree
 
 from app.model.schema import (
     BpmnDiagram,
     BpmnProcess,
     FlowNode,
+    FlowNodeId,
     FlowNodeType,
     SequenceFlow,
+    SequenceFlowId,
 )
 
 # standard BPMN 2.0 namespaces
@@ -36,9 +40,9 @@ _FLOW_NODE_TAGS = {t.value for t in FlowNodeType}
 class PydanticConverter:
     """Converts between raw BPMN XML and the Pydantic BpmnDiagram model."""
 
-    def parse(self, xml_bytes: bytes) -> BpmnDiagram:
+    def parse(self, payload: bytes) -> BpmnDiagram:
         """Parse BPMN XML bytes and return a BpmnDiagram."""
-        root = etree.fromstring(xml_bytes)
+        root = etree.fromstring(payload)
         ns = _extract_namespaces(root)
         bpmn_ns = _resolve_bpmn_ns(root)
 
@@ -63,7 +67,7 @@ class PydanticConverter:
 
         root = etree.Element(
             f"{{{BPMN_NS}}}definitions",
-            nsmap=nsmap,
+            nsmap=cast(Any, nsmap),
             attrib={
                 "id": diagram.definitions_id,
                 "targetNamespace": diagram.target_namespace,
@@ -150,7 +154,7 @@ def _parse_process(proc_el: etree._Element, bpmn_ns: str) -> BpmnProcess:
 def _parse_flow_node(el: etree._Element, local_name: str) -> FlowNode:
     extra = {k: v for k, v in el.attrib.items() if k not in ("id", "name")}
     return FlowNode(
-        id=el.get("id", ""),
+        id=FlowNodeId(el.get("id") or ""),
         type=FlowNodeType(local_name),
         name=el.get("name"),
         extra=extra,
@@ -163,16 +167,19 @@ def _parse_sequence_flow(el: etree._Element) -> SequenceFlow:
         if etree.QName(child.tag).localname == "conditionExpression":
             cond_expr = (child.text or "").strip()
     return SequenceFlow(
-        id=el.get("id", ""),
-        source_ref=el.get("sourceRef", ""),
-        target_ref=el.get("targetRef", ""),
+        id=SequenceFlowId(el.get("id") or ""),
+        source_ref=FlowNodeId(el.get("sourceRef") or ""),
+        target_ref=FlowNodeId(el.get("targetRef") or ""),
         name=el.get("name"),
         condition_expression=cond_expr,
     )
 
 
 def _serialize_process(proc: BpmnProcess, bpmn_ns: str) -> etree._Element:
-    attrib: dict = {"id": proc.id, "isExecutable": str(proc.is_executable).lower()}
+    attrib: dict[str, str] = {
+        "id": proc.id,
+        "isExecutable": str(proc.is_executable).lower(),
+    }
     if proc.name:
         attrib["name"] = proc.name
     el = etree.Element(f"{{{bpmn_ns}}}process", attrib=attrib)
@@ -193,7 +200,7 @@ def _serialize_process(proc: BpmnProcess, bpmn_ns: str) -> etree._Element:
             etree.SubElement(node_el, f"{{{bpmn_ns}}}incoming").text = in_id
 
     for sf in proc.sequence_flows:
-        sf_attrib: dict = {
+        sf_attrib: dict[str, str] = {
             "id": sf.id,
             "sourceRef": sf.source_ref,
             "targetRef": sf.target_ref,
