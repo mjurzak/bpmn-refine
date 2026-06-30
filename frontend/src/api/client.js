@@ -25,6 +25,14 @@ export async function exportDiagram(ir) {
   });
 }
 
+export async function parseDiagramXml(xml) {
+  return request("/diagrams/parse", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ xml }),
+  });
+}
+
 export async function validateDiagram(diagram, includeSemantic = false, config = {}) {
   return request("/validate", {
     method: "POST",

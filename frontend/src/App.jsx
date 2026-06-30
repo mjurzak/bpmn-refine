@@ -9,6 +9,7 @@ import {
   uploadDiagram,
   validateDiagram,
   exportDiagram,
+  parseDiagramXml,
   repairDiagram,
   applyEditOps,
   commitRevision,
@@ -493,6 +494,8 @@ function proposalOpElementIds(op) {
 export default function App() {
   const [xml, setXml] = useState(null);
   const [diagram, setDiagram] = useState(null);
+  const [validationSourceDiagram, setValidationSourceDiagram] = useState(null);
+  const [canvasDirty, setCanvasDirty] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [currentRevId, setCurrentRevId] = useState(null);
   const [previewRev, setPreviewRev] = useState(null); // { rev_id, diagram, message, index }
@@ -598,10 +601,13 @@ export default function App() {
     if (previewRev) return;
     if (pendingProposal) setPendingProposal(null);
     setXml(updatedXml);
+    setCanvasDirty(true);
   }, [previewRev, pendingProposal]);
 
   async function applyDiagram(updatedDiagram) {
     setDiagram(updatedDiagram);
+    setValidationSourceDiagram(updatedDiagram);
+    setCanvasDirty(false);
     try {
       const exported = await exportDiagram(updatedDiagram);
       const laid = await autoLayout(exported.xml);
@@ -619,6 +625,8 @@ export default function App() {
     try {
       const res = await uploadDiagram(file);
       setDiagram(res.diagram);
+      setValidationSourceDiagram(res.diagram);
+      setCanvasDirty(false);
       setSessionId(res.session_id);
       setCurrentRevId("0000");
       setPendingProposal(null);
@@ -643,7 +651,7 @@ export default function App() {
   }
 
   async function handleValidate(mode = VALIDATION_MODES.STRUCTURAL) {
-    if (!diagram) return alert("Upload a diagram first.");
+    if (!xml) return alert("Upload a diagram first.");
     const includeSemanticPass = mode === VALIDATION_MODES.SEMANTIC;
     const config = mergeExperimentConfig(
       interactionConfig(llmSettings.validation),
@@ -653,7 +661,19 @@ export default function App() {
     setValidationMode(mode);
     const startedAt = performance.now();
     try {
-      const res = await validateDiagram(diagram, includeSemanticPass, config);
+      let diagramForValidation = validationSourceDiagram ?? diagram;
+      let validationSource = "source_diagram";
+      if (!diagramForValidation || canvasDirty) {
+        const currentXml = await editorRef.current?.getXml();
+        const parsed = await parseDiagramXml(currentXml ?? xml);
+        if (currentXml) setXml(currentXml);
+        setDiagram(parsed.diagram);
+        setValidationSourceDiagram(parsed.diagram);
+        setCanvasDirty(false);
+        diagramForValidation = parsed.diagram;
+        validationSource = "canvas_xml";
+      }
+      const res = await validateDiagram(diagramForValidation, includeSemanticPass, config);
       setValidationResult(res);
       const issueTotal = (res.issues?.length ?? 0) + (res.semantic_issues?.length ?? 0);
       recordApiActivity({
@@ -670,6 +690,7 @@ export default function App() {
           is_valid: res.is_valid,
           issues: res.issues?.length ?? 0,
           semantic_issues: res.semantic_issues?.length ?? 0,
+          source: validationSource,
         },
       });
     } catch (err) {
@@ -681,7 +702,7 @@ export default function App() {
             : "Structural validation",
         startedAt,
         error: err,
-        details: { mode },
+        details: { mode, source: canvasDirty ? "canvas_xml" : "source_diagram" },
       });
       alert(`Validation failed: ${err.message}`);
     } finally {
@@ -800,7 +821,6 @@ export default function App() {
   async function handleRevert(revertedDiagram, newRevId) {
     dismissPreview();
     await applyDiagram(revertedDiagram);
-    setDiagram(revertedDiagram);
     setCurrentRevId(newRevId);
     setValidationResult(null);
     setPendingProposal(null);
@@ -1020,7 +1040,7 @@ export default function App() {
             <div className="diagram-action-group diagram-action-group--validation">
               <button
                 onClick={() => handleValidate(VALIDATION_MODES.STRUCTURAL)}
-                disabled={!diagram || validating}
+                disabled={!xml || validating}
                 className="diagram-action diagram-action--validate"
                 title="Run deterministic structural validation"
               >
@@ -1028,7 +1048,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => handleValidate(VALIDATION_MODES.DEEP)}
-                disabled={!diagram || validating}
+                disabled={!xml || validating}
                 className="diagram-action diagram-action--deep"
                 title="Run tier-1 rules plus PM4Py Woflan formal validation"
               >
@@ -1036,7 +1056,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => handleValidate(VALIDATION_MODES.SEMANTIC)}
-                disabled={!diagram || validating}
+                disabled={!xml || validating}
                 className="diagram-action diagram-action--ai"
                 title="Run structural validation plus LLM semantic analysis"
               >

@@ -63,6 +63,12 @@ const BpmnEditor = forwardRef(function BpmnEditor({ xml, onXmlChange }, ref) {
 
   // expose diff marker controls and direct import to parent via ref
   useImperativeHandle(ref, () => ({
+    async getXml() {
+      if (!modelerRef.current) return null;
+      const { xml: currentXml } = await modelerRef.current.saveXML({ format: true });
+      return currentXml;
+    },
+
     importXml(xml) {
       if (!modelerRef.current) return;
       modelerRef.current.importXML(xml).catch(console.error);

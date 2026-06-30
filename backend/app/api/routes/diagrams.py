@@ -22,6 +22,15 @@ class DiagramExportResponse(BaseModel):
     xml: str
 
 
+class DiagramParseRequest(BaseModel):
+    xml: str
+
+
+class DiagramParseResponse(BaseModel):
+    diagram: BpmnDiagram
+    message: str = "Diagram parsed successfully"
+
+
 @router.post("/upload", response_model=DiagramUploadResponse)
 async def upload_diagram(file: UploadFile) -> DiagramUploadResponse:
     """Accept a BPMN XML file, return its diagram model and a new session ID."""
@@ -44,6 +53,18 @@ async def upload_diagram(file: UploadFile) -> DiagramUploadResponse:
     )
 
     return DiagramUploadResponse(diagram=diagram, session_id=session_id)
+
+
+@router.post("/parse", response_model=DiagramParseResponse)
+async def parse_diagram(req: DiagramParseRequest) -> DiagramParseResponse:
+    """Convert BPMN XML into the canonical diagram model without snapshotting."""
+    try:
+        diagram = parse_bpmn_bytes(req.xml.encode("utf-8"))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422, detail=f"Failed to parse BPMN XML: {exc}"
+        ) from exc
+    return DiagramParseResponse(diagram=diagram)
 
 
 @router.post("/export", response_model=DiagramExportResponse)
