@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  Valid baseline — produces NO issues. Confirms the rules do not over-fire on a
+  well-formed model. It deliberately exercises the cases that used to be flagged:
+    * two start events (multiple starts are permitted and sound — not flagged)
+    * an exclusive join with two incoming flows (no longer flagged by tier 1)
+    * an exclusive split with one condition + a declared default
+  Expected issues: none.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="def_R000" targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="proc_R000" name="Valid baseline" isExecutable="false">
+    <startEvent id="start_online" name="Online order">
+      <outgoing>f1</outgoing>
+    </startEvent>
+    <startEvent id="start_store" name="In-store order">
+      <outgoing>f2</outgoing>
+    </startEvent>
+    <exclusiveGateway id="gw_merge" name="Intake">
+      <incoming>f1</incoming>
+      <incoming>f2</incoming>
+      <outgoing>f3</outgoing>
+    </exclusiveGateway>
+    <task id="task_validate" name="Validate order">
+      <incoming>f3</incoming>
+      <outgoing>f4</outgoing>
+    </task>
+    <exclusiveGateway id="gw_decision" name="In stock?" default="f_review">
+      <incoming>f4</incoming>
+      <outgoing>f_fulfil</outgoing>
+      <outgoing>f_review</outgoing>
+    </exclusiveGateway>
+    <task id="task_fulfil" name="Fulfil order">
+      <incoming>f_fulfil</incoming>
+      <outgoing>f5</outgoing>
+    </task>
+    <task id="task_review" name="Manual review">
+      <incoming>f_review</incoming>
+      <outgoing>f6</outgoing>
+    </task>
+    <endEvent id="end_shipped" name="Shipped">
+      <incoming>f5</incoming>
+    </endEvent>
+    <endEvent id="end_held" name="Held for review">
+      <incoming>f6</incoming>
+    </endEvent>
+    <sequenceFlow id="f1" sourceRef="start_online" targetRef="gw_merge"/>
+    <sequenceFlow id="f2" sourceRef="start_store" targetRef="gw_merge"/>
+    <sequenceFlow id="f3" sourceRef="gw_merge" targetRef="task_validate"/>
+    <sequenceFlow id="f4" sourceRef="task_validate" targetRef="gw_decision"/>
+    <sequenceFlow id="f_fulfil" sourceRef="gw_decision" targetRef="task_fulfil">
+      <conditionExpression>inStock</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f_review" sourceRef="gw_decision" targetRef="task_review"/>
+    <sequenceFlow id="f5" sourceRef="task_fulfil" targetRef="end_shipped"/>
+    <sequenceFlow id="f6" sourceRef="task_review" targetRef="end_held"/>
+  </process>
+</definitions>

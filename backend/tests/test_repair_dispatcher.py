@@ -2,7 +2,7 @@ import json
 
 from app.experiments import ExperimentConfig
 from app.model.schema import BpmnDiagram, BpmnProcess, FlowNode, FlowNodeType, SequenceFlow
-from app.repair.ops import RenameElementOp
+from app.repair.ops import RenameNodeOp
 from app.services import repair as repair_service
 from app.services.repair import RepairResult, dispatch_repair, repair_with_edit_ops
 from app.validation.rules import FormalWitness, Severity, ValidationIssue
@@ -39,7 +39,7 @@ async def test_dispatch_repair_uses_atomic_llm_ops_when_no_quick_fix_exists():
 
     async def fake_atomic_repair(diagram, issues, **kwargs):
         calls.append((diagram, issues, kwargs))
-        return [RenameElementOp(id="task_1", new_name="Renamed task")]
+        return [RenameNodeOp(id="task_1", new_name="Renamed task")]
 
     result = await dispatch_repair(
         _minimal_valid_diagram(),
@@ -57,7 +57,7 @@ async def test_dispatch_repair_uses_atomic_llm_ops_when_no_quick_fix_exists():
     assert result.iterations == 1
     assert result.converged is True
     assert result.remaining_issues == []
-    assert [op.op for op in result.applied_ops] == ["rename_element"]
+    assert [op.op for op in result.applied_ops] == ["rename_node"]
     assert calls[0][1][0].rule_id == "R999"
 
 
@@ -77,7 +77,7 @@ async def test_dispatch_repair_regen_mode_uses_full_ir_replacement():
                 message="Process has no start event.",
             )
         ],
-        config=ExperimentConfig(repair_mode="regen"),
+        config=ExperimentConfig.model_validate({"repair_mode": "regen"}),
         repair_fn=fake_repair,
     )
 
@@ -96,23 +96,27 @@ async def test_dispatch_repair_respects_max_iteration_cap():
         return RepairResult(repaired_diagram=diagram)
 
     result = await dispatch_repair(
-        _duplicate_id_diagram(),
+        _diagram_without_start(),
         issues=[
             ValidationIssue(
-                rule_id="R011",
+                # a rule id with no registered quick-fix, so it routes to the LLM
+                rule_id="R999",
                 severity=Severity.ERROR,
-                message="Duplicate element ID 'task_1' in process 'proc_1'.",
-                element_id="task_1",
+                message="Process 'proc_1' has no start event.",
+                element_id=None,
             )
         ],
-        config=ExperimentConfig(repair_mode="regen", max_repair_iters=2),
+        config=ExperimentConfig.model_validate(
+            {"repair_mode": "regen", "max_repair_iters": 2}
+        ),
         repair_fn=fake_repair,
     )
 
     assert result.iterations == 2
     assert result.converged is False
-    assert calls == ["R011", "R011"]
-    assert {issue.rule_id for issue in result.remaining_issues} >= {"R011"}
+    assert calls[0] == "R999"
+    assert len(calls) == 2
+    assert result.remaining_issues
     assert [op.op for op in result.applied_ops] == ["replace_diagram", "replace_diagram"]
 
 
@@ -127,7 +131,7 @@ async def test_dispatch_repair_does_not_iterate_when_no_errors_remain():
         _minimal_valid_diagram(),
         issues=[
             ValidationIssue(
-                rule_id="R007",
+                rule_id="R999",
                 severity=Severity.WARNING,
                 message="Gateway has fewer than 2 outgoing flows.",
             )
@@ -137,7 +141,7 @@ async def test_dispatch_repair_does_not_iterate_when_no_errors_remain():
 
     assert result.iterations == 0
     assert result.converged is True
-    assert result.remaining_issues[0].rule_id == "R007"
+    assert result.remaining_issues[0].rule_id == "R999"
     assert calls == []
 
 
@@ -149,7 +153,7 @@ async def test_repair_with_edit_ops_parses_atomic_llm_output(monkeypatch):
         return {
             "ops": [
                 {
-                    "op": "rename_element",
+                    "op": "rename_node",
                     "id": "task_1",
                     "new_name": "Renamed task",
                 }
@@ -173,7 +177,7 @@ async def test_repair_with_edit_ops_parses_atomic_llm_output(monkeypatch):
         config=ExperimentConfig(),
     )
 
-    assert [op.op for op in ops] == ["rename_element"]
+    assert [op.op for op in ops] == ["rename_node"]
     assert "Available atomic EditOps" in captured["system"]
     assert "replace_diagram" not in captured["system"]
     assert json.loads(captured["prompt"])["repair_mode"] == "atomic"
@@ -292,9 +296,11 @@ async def test_dispatch_repair_re_validates_with_t2_between_iterations(monkeypat
     monkeypatch.setattr(repair_service, "validate_diagram", fake_validate)
 
     async def fake_atomic_repair(diagram, issues, **kwargs):
-        return [RenameElementOp(id="task_1", new_name="Fixed")]
+        return [RenameNodeOp(id="task_1", new_name="Fixed")]
 
-    config = ExperimentConfig(tiers_enabled={"t1": True, "t2": True, "t3": False})
+    config = ExperimentConfig.model_validate(
+        {"tiers_enabled": {"t1": True, "t2": True, "t3": False}}
+    )
     await dispatch_repair(
         _minimal_valid_diagram(),
         issues=[
@@ -344,9 +350,3 @@ def _diagram_without_start() -> BpmnDiagram:
         processes=[BpmnProcess(id="proc_1", flow_nodes=[task, end], sequence_flows=[flow])],
     )
 
-
-def _duplicate_id_diagram() -> BpmnDiagram:
-    diagram = _minimal_valid_diagram()
-    duplicate = FlowNode(id="task_1", type=FlowNodeType.TASK)
-    diagram.processes[0].flow_nodes.append(duplicate)
-    return diagram

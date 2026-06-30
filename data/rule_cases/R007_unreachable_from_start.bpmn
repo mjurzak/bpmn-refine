@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  R007 — connected node not reachable from any start event (class B, error).
+  An exact, linear-time under-approximation of soundness: a node that can never be
+  activated makes the model unsound, so firing is never a false alarm. The main
+  flow is well formed; task_island sits on its own, flowing to the end event but
+  with no path leading into it from a start.
+  Expected issues: R007 (error) on task_island.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="def_R007" targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="proc_R007" name="Unreachable from start" isExecutable="false">
+    <startEvent id="start_in" name="Start">
+      <outgoing>f1</outgoing>
+    </startEvent>
+    <task id="task_main" name="Main work">
+      <incoming>f1</incoming>
+      <outgoing>f2</outgoing>
+    </task>
+    <endEvent id="end_ok" name="Done">
+      <incoming>f2</incoming>
+      <incoming>f3</incoming>
+    </endEvent>
+    <!-- has an outgoing path to the end, but nothing leads into it -->
+    <task id="task_island" name="Orphaned step">
+      <outgoing>f3</outgoing>
+    </task>
+    <sequenceFlow id="f1" sourceRef="start_in" targetRef="task_main"/>
+    <sequenceFlow id="f2" sourceRef="task_main" targetRef="end_ok"/>
+    <sequenceFlow id="f3" sourceRef="task_island" targetRef="end_ok"/>
+  </process>
+</definitions>

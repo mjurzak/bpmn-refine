@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  R001 — process has no start event (class A: integrity / translation precondition).
+  Without a source the diagram cannot be turned into a workflow net at all.
+  Expected issues: R001 (error). Reachability (R007/R008) is suppressed because
+  there is no entry anchor to measure from.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="def_R001" targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="proc_R001" name="No start event" isExecutable="false">
+    <task id="task_handle" name="Handle request">
+      <outgoing>f1</outgoing>
+    </task>
+    <endEvent id="end_done" name="Done">
+      <incoming>f1</incoming>
+    </endEvent>
+    <sequenceFlow id="f1" sourceRef="task_handle" targetRef="end_done"/>
+  </process>
+</definitions>

@@ -175,7 +175,7 @@ return diagram, applied, issues, iteration, converged = no_errors_in(issues)
 
 Come from two sources:
 
-1. **Tier 1 category map** ([`validation-rules.md`](validation-rules.md)) — e.g. R007 -> suggest removing a single-branch gateway; R008 -> prompt the user for a condition.
+1. **Tier 1 category map** ([`validation-rules.md`](validation-rules.md)) — e.g. R005/R006 -> remove a dangling sequence flow. Structural errors that need a human decision about *where* to wire (R001-R004, R007/R008) are surfaced as suggestions, not auto-applied.
 2. **BPMN Analyzer 2.0** ([`formal-checkers.md`](formal-checkers.md)) — bundles quick-fixes for several soundness/safeness violations (mismatched gateway types, untriggered message events, unsafe sequence flows). These are lifted into `EditOp[]` by the tier-2 adapter.
 
 The dispatcher prefers a deterministic fix whenever one is available, even if the LLM could also do it — deterministic fixes are cheaper, verifiable, and always reproduce.

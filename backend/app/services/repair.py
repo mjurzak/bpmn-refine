@@ -59,6 +59,7 @@ class DispatcherRepairResult(BaseModel):
 
 RepairFn = Callable[..., Awaitable[RepairResult]]
 AtomicRepairFn = Callable[..., Awaitable[list[EditOp]]]
+AtomicEditOpList = list[EditOp]
 
 
 async def repair_diagram(
@@ -116,7 +117,7 @@ async def repair_with_edit_ops(
     diagram: BpmnDiagram,
     issues: list[ValidationIssue],
     config: ExperimentConfig | None = None,
-) -> list[EditOp]:
+) -> AtomicEditOpList:
     """repair a diagram by asking the LLM for atomic EditOps"""
     payload: dict[str, Any] = {
         "ir_format": str((config or ExperimentConfig()).ir_format),
@@ -138,7 +139,7 @@ async def repair_with_edit_ops(
         reasoning_effort=str(config.reasoning_effort) if config and config.reasoning_effort else None,
     )
     ops_data = parsed.get("ops", parsed) if isinstance(parsed, dict) else parsed
-    return atomic_edit_op_list_adapter.validate_python(ops_data)
+    return list(atomic_edit_op_list_adapter.validate_python(ops_data))
 
 
 async def dispatch_repair(
@@ -230,9 +231,11 @@ def _normalise_unresolved(item: object) -> UnresolvedRepair:
     if isinstance(item, str):
         return UnresolvedRepair(reason=item)
     if isinstance(item, dict):
+        rule_id = item.get("rule_id") or item.get("id")
+        reason = item.get("reason") or item.get("message")
         return UnresolvedRepair(
-            rule_id=item.get("rule_id") or item.get("id"),
-            reason=item.get("reason") or item.get("message") or json.dumps(item),
+            rule_id=str(rule_id) if rule_id is not None else None,
+            reason=str(reason) if reason else json.dumps(item),
         )
     return UnresolvedRepair(reason=str(item))
 

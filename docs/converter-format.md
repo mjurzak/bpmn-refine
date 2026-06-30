@@ -99,7 +99,7 @@ Validation, repair, and history all operate on `BpmnDiagram` — *not* on whiche
 
 Consequences:
 
-- Adding a candidate IR (e.g. YAML) **does not** fragment the validation code. The same R001–R011 rules, the same repair dispatcher, and the same history service work regardless of which converter ingested the bytes.
+- Adding a candidate IR (e.g. YAML) **does not** fragment the validation code. The same R001–R008 rules, the same repair dispatcher, and the same history service work regardless of which converter ingested the bytes.
 - A candidate IR that cannot round-trip through the canonical IR for some element is simply a format with reduced coverage — not a reason to branch validation.
 - `FlowNode.extra` is the escape hatch: unknown XML attributes survive a round-trip even through converters that don't semantically understand them.
 

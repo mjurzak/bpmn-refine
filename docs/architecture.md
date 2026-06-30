@@ -96,7 +96,7 @@ run {
     chat:     { name: "chat_system_v1", hash: "... 12 hex chars" }
   }
   converter:          str              // canonical IR version id
-  rules_version:      str              // e.g. "R001-R011"
+  rules_version:      str              // e.g. "R001-R008"
   config_hash:        str              // 12-char hex prefix of sha256(ExperimentConfig)
   timestamp:          iso-8601
   request_id:         uuid
@@ -116,7 +116,7 @@ A diagram passes through three independent validators. Each emits a uniform `Iss
 
 ### tier 1 — deterministic rules
 
-Pure Python, zero external dependencies, runs in <50 ms on typical diagrams. Detects *local, structural* violations: missing start/end events, disconnected nodes, gateway branch counts, dangling references, duplicate IDs. Eleven rules today (R001–R011). Runs on the **live** trigger — on every edit. See [`validation-rules.md`](validation-rules.md).
+Pure Python, zero external dependencies, runs quickly on typical diagrams. Detects *local, structural* violations: missing start/end events, dangling references; and unreachable nodes or traps (a linear-time under-approximation of soundness). Every rule is an `error` — heuristic "might be a problem" checks are deferred to tier 2 / tier 3 rather than emitted as deterministic warnings. Eight rules today (R001–R008). Runs on the **live** trigger — on every edit. See [`validation-rules.md`](validation-rules.md).
 
 ### tier 2 — formal checker stack (planned)
 

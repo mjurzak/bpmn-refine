@@ -10,71 +10,85 @@ Tier 1 is one of three validation tiers (see [`architecture.md`](architecture.md
 | 2 — formal checker stack | on demand | soundness, deadlocks, standards compliance ([`formal-checkers.md`](formal-checkers.md)) |
 | 3 — LLM semantic review | on demand | label quality, role mislabelling, process-intent issues ([`llm-integration.md`](llm-integration.md)) |
 
-Tier 1 explicitly does **not** catch deadlocks, livelocks, token-count mismatches, or unreachable states — those require the state-space exploration done by tier 2. Nor does it judge whether a task is *correctly named* for the process — that's tier 3.
+## rationale for Tier 1
 
----
+A natural objection: a soundness checker (workflow-net / Petri-net, à la van der Aalst, Corradini, Kräuter) can decide far more than these rules — so why keep a rule layer at all?
 
-## severity levels
+Because the formal checker is **not** strictly more powerful. It checks **one** family of properties (option to complete, proper completion, no dead transitions) over **one** abstraction: the control-flow graph with ids, references, labels, conditions and data thrown away. That abstraction is bracketed on both sides:
 
-| Level | Meaning |
-|---|---|
-| `error` | Diagram is structurally invalid; must be fixed before repair / export |
-| `warning` | Potentially problematic but allowed by BPMN 2.0; often worth flagging |
-| `info` | Informational; no action required |
+- **below it** — the checker *presupposes* a well-formed object. It cannot build a net from a diagram with a dangling reference, malformed import, or no source/sink. It chokes; it does not "detect". Duplicate ids are rejected by the BPMN parser before tier 1 because the canonical IR cannot represent them safely.
+- **beside it** — it abstracts conditions to nondeterministic choice, so an undecidable branch is "sound" to it while being broken at runtime.
 
-Severity choice is a *policy* decision, not a BPMN 2.0 mandate. The rationale column below records why each rule landed where it did.
+So every tier-1 rule must fall into exactly one justification **class**. If it falls into none, it is cut.
+
+| Class | Justification | Relationship to tier 2 |
+|---|---|---|
+| **A — integrity / translation precondition** | the formal checker cannot run until these hold | *enabling*, not redundant |
+| **B — live under-approximation of soundness** | linear-time, element-local; **firing implies the model is necessarily unsound** | a sound but incomplete, fast, localised proxy run on every edit |
+
+The keep/cut criterion for class B is the sharp one: **does firing the rule imply a real defect?** Equivalently, is the rule a sound under-approximation of some real property? "No start event" => no token source => unsound. "Multiple start events" => *still sound* => not a defect => **cut**. A join gateway is *sound* => a "fewer than 2 outgoing" rule would be wrong => **cut**.
+
+
+| Level | Meaning | Used in tier 1 |
+|---|---|---|
+| `error` | Diagram is structurally invalid; must be fixed before repair / export | **yes — all rules** |
+| `info` | Informational; no action required | no |
+
+The `Severity` enum still defines `warning`/`info` so tier 2 and tier 3 can use them in the shared `Issue` shape.
 
 ---
 
 ## rules
 
-Grouped by dimension:
-
-### structural — element existence and identity
+### class A — integrity / translation preconditions
 
 | ID | Severity | Condition | Rationale |
 |---|---|---|---|
-| R001 | error | process has no start event | a process with no entry point is unrunnable; explicitly prohibited in most BPMN execution semantics |
-| R003 | error | process has no end event | same as R001 for termination — an end event is required for the process to *complete* in the Petri-net sense |
-| R011 | error | duplicate element ID within a process | BPMN element IDs must be unique per document; duplicates break downstream tooling |
+| R001 | error | process has no start event | no source place; the net cannot be built and the process is unrunnable |
+| R002 | error | process has no end event | no sink place; the process can never *complete* in the Petri-net sense |
+| R003 | error | start event has no outgoing sequence flow | a start with nowhere to go is effectively missing |
+| R004 | error | end event has no incoming sequence flow | an unreachable terminator; the process can never end through it |
+| R005 | error | sequence flow references an unknown source id | dangling reference; the flow cannot be rendered, executed, or translated |
+| R006 | error | sequence flow references an unknown target id | same as R005 |
 
-### connectivity — flow wiring
+### class B — live under-approximations of soundness
 
-| ID | Severity | Condition | Rationale |
-|---|---|---|---|
-| R004 | error | start event has no outgoing sequence flow | a start event with nowhere to go is effectively missing |
-| R005 | error | end event has no incoming sequence flow | unreachable end; the process can never terminate through this node |
-| R006 | warning | element has neither incoming nor outgoing flows (fully disconnected) | may be legitimate in-progress modelling, hence warning not error |
-| R009 | error | sequence flow references an unknown source element ID | dangling reference; the flow cannot be rendered or executed |
-| R010 | error | sequence flow references an unknown target element ID | same as R009 |
-
-### gateway semantics — branch and condition sanity
+Each of these is a linear-time, exact graph check whose firing *guarantees* the model is unsound, so tier 2 would also fail — tier 1 just finds it live, localised, with no state-space walk.
 
 | ID | Severity | Condition | Rationale |
 |---|---|---|---|
-| R007 | warning | gateway has fewer than 2 outgoing flows | technically allowed but typically a modelling mistake — a gateway with one branch adds no decision logic |
-| R008 | warning | exclusive gateway has more than one outgoing flow without a condition expression | ambiguous branching; the process is non-deterministic in a way the modeller probably didn't intend |
+| R007 | error | connected element not reachable from any start event | a dead node that can never be activated => unsound |
+| R008 | error | connected element that cannot reach any end event | a trap; the process can never properly complete through it => unsound |
 
-### multi-start policy
+Reachability is suppressed in a direction whose anchor is missing (no start => no R007, no end => no R008) so these do not just echo R001/R002 across every node. Fully *disconnected* elements (no incoming and no outgoing) are skipped: in isolation they are an in-progress modelling artefact, not a defect a live deterministic rule should hard-fail on, so they are left to tier 2 / tier 3.
 
-| ID | Severity | Condition | Rationale |
-|---|---|---|---|
-| R002 | warning | process has more than one start event | BPMN 2.0 **permits** multiple start events; in practice most well-formed processes have exactly one, so this is a *soft* convention, not a violation |
+### not checked: multiple start events, gateway heuristics, disconnected fragments
+
+Several checks were considered and **cut** because they fail the class criteria:
+
+- **multiple start events** — BPMN 2.0 permits them and a sound model can have many; firing never implies a defect.
+- **gateway split/join mismatch, no-op / ambiguous gateways, implicit splits** — heuristic under-approximations that can be fooled by re-converging branches, conditions the net abstracts away, or legitimate modelling style. As deterministic rules they produced warnings, not errors; they belong to tier 2 (which confirms a real soundness violation) and tier 3 (which reasons about intent).
+- **disconnected fragments** — a stylistic / in-progress signal, not a structural error.
+
+---
+
+## worked examples
+
+`data/rule_cases/` holds one minimal fixture per rule, each isolating its target so the mapping rule->example is checkable. `R000_valid_baseline.bpmn` is well formed and fires nothing (it also exercises multi-start and a matched gateway pair to prove the rules do not over-fire). `tests/test_rule_cases.py` validates the whole folder against the expected-issue table. Parser/import preconditions that cannot be represented safely in the canonical IR, such as duplicate element ids, live under `data/import_cases/`.
 
 ---
 
 ## categories and the repair dispatcher
 
-The category axis above drives the planned repair dispatcher ([`repair-loop.md`](repair-loop.md)). For each category, a fixed set of deterministic quick-fixes is attempted before falling back to an LLM repair:
+The class axis also drives fix routing ([`repair-loop.md`](repair-loop.md)). A deterministic auto-fix is only legitimate when there is exactly **one** repair that cannot be wrong:
 
-| Category | Example deterministic fix |
-|---|---|
-| structural | insert a start / end event |
-| connectivity | rewire a dangling reference, or remove the broken flow |
-| gateway semantics | change gateway type, add a default flow, prompt the user for a condition |
-| multi-start | no deterministic fix — surfaced as a suggestion only |
+| Fix confidence | Applies to | Behaviour |
+|---|---|---|
+| **auto** (always safe) | remove a dangling flow (R005/R006) | may mutate without a human in the loop |
+| **suggest** (never auto-apply) | missing/disconnected start or end (R001/R002/R003/R004), unreachable node or trap (R007/R008) — the system cannot know *where* the process should begin, end, or rewire | surfaced for the user; auto-wiring here is what produced the old nonsensical `start->end` fix |
+| **llm** (route to tier 3) | anything needing a label, a condition, or a choice among rewirings | proposed by the LLM, human gate retained |
 
-Adding a rule therefore requires picking (or introducing) a category so the dispatcher knows where to route it.
+Only **auto** fixes ever change the diagram without confirmation.
 
 ---
 
@@ -82,7 +96,8 @@ Adding a rule therefore requires picking (or introducing) a category so the disp
 
 1. Add a `_check_*` function in `backend/app/validation/rules.py` following the existing pattern.
 2. Call it from `validate()`.
-3. Assign the next available rule ID (R012, ...) and a severity with a written rationale (same shape as the tables above).
-4. Place it under the right category header in this doc; if it does not fit an existing category, add one — but check whether it's really still tier 1 and not a tier-2 concern.
-5. Add a test case in `tests/test_validation_rules.py`.
-6. When the repair dispatcher lands, register a deterministic quick-fix for the new rule if a natural one exists.
+3. **State its class (A/B) and, for class B, the soundness-implication.** If it is not a sound under-approximation of a real property — if firing does not imply a certain defect — it does not belong in tier 1. Route the heuristic to tier 2 or tier 3 instead.
+4. Assign the next available rule id (R009, ...) with `error` severity and a written rationale.
+5. Place it under the right class header here.
+6. Add a minimal fixture under `data/rule_cases/` and a smoke test in `tests/test_validation_rules.py`.
+7. When a *safe* deterministic quick-fix exists, register it; otherwise route to suggest/llm.

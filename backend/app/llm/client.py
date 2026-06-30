@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 from time import perf_counter
-from typing import Any
+from typing import Any, Literal
 
 from app.core.config import settings
 from app.llm.registry import get_provider
@@ -189,7 +189,7 @@ async def complete_structured(
 
 def _append_trace(
     *,
-    kind: str,
+    kind: Literal["complete", "complete_with_history", "complete_structured"],
     provider: str | None,
     model: str,
     max_tokens: int,

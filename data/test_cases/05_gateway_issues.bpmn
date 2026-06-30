@@ -2,13 +2,9 @@
 <!--
   CASE 05 — Gateway issues: Expense Report Approval
   Expected issues:
-    R007 WARNING — parallel gateway "Notify Parties" has only 1 outgoing flow (pointless split)
-    R008 WARNING — exclusive gateway "Approval Level?" has 2 outgoing flows with no condition expressions
-
+        
   Flow: Expense Submitted → Check Receipt → XOR[Approval Level?] → Senior Approval → Parallel[Notify Parties] → Notify Employee → Expense Closed
                                                                   → Auto Approve   ↗
-  gw_approval (XOR): both branches have no condition expressions → R008
-  gw_notify (Parallel): only one outgoing branch → R007
 -->
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
              xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
@@ -27,7 +23,7 @@
       <outgoing>f2</outgoing>
     </task>
 
-    <!-- XOR gateway with both outgoing flows missing conditions — R008 -->
+    <!-- XOR gateway with both outgoing flows missing conditions -->
     <exclusiveGateway id="gw_approval" name="Approval Level?">
       <incoming>f2</incoming>
       <outgoing>f3</outgoing>
@@ -44,7 +40,7 @@
       <outgoing>f6</outgoing>
     </task>
 
-    <!-- parallel gateway used as merge, then only one outgoing — R007 -->
+    <!-- parallel gateway used as merge, then only one outgoing -->
     <parallelGateway id="gw_notify" name="Notify Parties">
       <incoming>f5</incoming>
       <incoming>f6</incoming>
@@ -60,7 +56,7 @@
       <incoming>f8</incoming>
     </endEvent>
 
-    <!-- no condition expressions on f3 and f4 — triggers R008 on gw_approval -->
+    <!-- no condition expressions on f3 and f4 -->
     <sequenceFlow id="f1" sourceRef="start1" targetRef="task_check"/>
     <sequenceFlow id="f2" sourceRef="task_check" targetRef="gw_approval"/>
     <sequenceFlow id="f3" name="High Amount" sourceRef="gw_approval" targetRef="task_senior"/>

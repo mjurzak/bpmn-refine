@@ -1,6 +1,6 @@
 import json
 
-from app.experiments import ExperimentConfig
+from app.experiments import ExperimentConfig, IrFormat, RepairMode
 from app.services import chat as chat_service
 from app.services import repair as repair_service
 from app.services.ir_payload import diagram_payload_text
@@ -22,7 +22,7 @@ async def test_semantic_validation_prompt_uses_selected_ir_format(monkeypatch):
     await validate_diagram(
         canonical_full_diagram(),
         include_semantic=True,
-        config=ExperimentConfig(ir_format="yaml"),
+        config=ExperimentConfig(ir_format=IrFormat.YAML),
     )
 
     prompt = json.loads(captured["prompt"])
@@ -33,7 +33,10 @@ async def test_semantic_validation_prompt_uses_selected_ir_format(monkeypatch):
 
 async def test_regen_repair_parses_selected_ir_format(monkeypatch):
     diagram = canonical_full_diagram()
-    config = ExperimentConfig(ir_format="compact_json", repair_mode="regen")
+    config = ExperimentConfig(
+        ir_format=IrFormat.COMPACT_JSON,
+        repair_mode=RepairMode.REGEN,
+    )
     captured = {}
 
     async def fake_complete(**kwargs):
@@ -69,7 +72,7 @@ async def test_regen_repair_parses_selected_ir_format(monkeypatch):
 
 async def test_chat_context_and_reply_use_selected_ir_format(monkeypatch):
     diagram = canonical_full_diagram()
-    config = ExperimentConfig(ir_format="mermaid")
+    config = ExperimentConfig(ir_format=IrFormat.MERMAID)
     captured = {}
 
     async def fake_complete_with_history(**kwargs):

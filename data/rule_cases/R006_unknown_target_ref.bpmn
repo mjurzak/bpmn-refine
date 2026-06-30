@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  R006 — sequence flow referencing an unknown target element (class A, error).
+  Flow f_bad leaves the gateway towards "ghost_task", which does not exist. The
+  dangling branch is hung off a gateway (not a task) so it does not also register
+  as an implicit split (R015); both real branches carry conditions so the gateway
+  stays well formed otherwise.
+  Expected issues: R006 (error) on f_bad.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="def_R006" targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="proc_R006" name="Unknown target ref" isExecutable="false">
+    <startEvent id="start_in" name="Start">
+      <outgoing>f1</outgoing>
+    </startEvent>
+    <task id="task_route" name="Classify">
+      <incoming>f1</incoming>
+      <outgoing>f2</outgoing>
+    </task>
+    <exclusiveGateway id="gw_route" name="Type?">
+      <incoming>f2</incoming>
+      <outgoing>f_good</outgoing>
+      <outgoing>f_bad</outgoing>
+    </exclusiveGateway>
+    <task id="task_handle" name="Handle normally">
+      <incoming>f_good</incoming>
+      <outgoing>f3</outgoing>
+    </task>
+    <endEvent id="end_ok" name="Done">
+      <incoming>f3</incoming>
+    </endEvent>
+    <sequenceFlow id="f1" sourceRef="start_in" targetRef="task_route"/>
+    <sequenceFlow id="f2" sourceRef="task_route" targetRef="gw_route"/>
+    <sequenceFlow id="f_good" sourceRef="gw_route" targetRef="task_handle">
+      <conditionExpression>type == 'normal'</conditionExpression>
+    </sequenceFlow>
+    <!-- targetRef points at a node that does not exist -->
+    <sequenceFlow id="f_bad" sourceRef="gw_route" targetRef="ghost_task">
+      <conditionExpression>type == 'special'</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f3" sourceRef="task_handle" targetRef="end_ok"/>
+  </process>
+</definitions>

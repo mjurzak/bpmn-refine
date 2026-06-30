@@ -31,8 +31,8 @@ def test_validate_response_includes_run_block():
     assert run["model_used"] == "none"
     assert run["prompt_versions"] == {}
     assert run["converter"] == CONVERTER_VERSION
-    assert run["rules_version"] == "R001-R011"
-    assert run["config_hash"] == config_hash(ExperimentConfig(**config))
+    assert run["rules_version"] == "R001-R008"
+    assert run["config_hash"] == config_hash(ExperimentConfig.model_validate(config))
     assert len(run["config_hash"]) == 12
     assert run["request_id"]
     assert run["timestamp"]

@@ -42,14 +42,15 @@ def test_chat_response_includes_run_block(monkeypatch):
     run = payload["run"]
 
     assert payload["reply"] == "No diagram changes needed."
-    assert captured["config"] == ExperimentConfig(**config)
+    expected_config = ExperimentConfig.model_validate(config)
+    assert captured["config"] == expected_config
     assert captured["snapshot_changes"] is True
     assert run["model_used"] == "custom-chat-model"
     assert run["prompt_versions"]["chat"]["name"] == "chat_system.txt"
     assert len(run["prompt_versions"]["chat"]["hash"]) == 12
     assert run["converter"] == CONVERTER_VERSION
-    assert run["rules_version"] == "R001-R011"
-    assert run["config_hash"] == config_hash(ExperimentConfig(**config))
+    assert run["rules_version"] == "R001-R008"
+    assert run["config_hash"] == config_hash(expected_config)
     assert run["request_id"]
     assert run["timestamp"]
 

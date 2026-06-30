@@ -14,7 +14,13 @@ from app.llm.router import TaskType, resolve_model, resolve_provider
 from app.model.schema import BpmnDiagram
 from app.services.ir_payload import diagram_payload
 from app.validation.checkers import run_tier2_checkers
-from app.validation.rules import ValidationIssue, ValidationReport, issue_to_dict, validate
+from app.validation.rules import (
+    Severity,
+    ValidationIssue,
+    ValidationReport,
+    issue_to_dict,
+    validate,
+)
 
 _PROMPT_DIR = Path(__file__).parent.parent / "llm" / "prompts"
 _VALIDATE_PROMPT = _PROMPT_DIR / "validate.txt"
@@ -81,7 +87,7 @@ async def _semantic_validate(
         return [
             ValidationIssue(
                 rule_id="LLM_PARSE_ERROR",
-                severity="warning",
+                severity=Severity.WARNING,
                 message="LLM semantic validation returned an unparseable response.",
             )
         ]

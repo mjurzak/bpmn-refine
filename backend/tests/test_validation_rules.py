@@ -41,15 +41,49 @@ def test_missing_end_event():
     report = validate(diagram)
     assert not report.is_valid
     rule_ids = {i.rule_id for i in report.errors()}
-    assert "R003" in rule_ids
+    assert "R002" in rule_ids
 
 
-def test_duplicate_id():
+def test_multiple_start_events_not_flagged():
+    """multiple start events are sound and deliberately not checked"""
     diagram = _minimal_valid_diagram()
     proc = diagram.processes[0]
-    # add a node with the same id as task_1
-    dup = FlowNode(id="task_1", type=FlowNodeType.TASK, name="Duplicate")
-    proc.flow_nodes.append(dup)
+    proc.flow_nodes.append(
+        FlowNode(id="start_2", type=FlowNodeType.START_EVENT, outgoing=["sf_b"])
+    )
+    proc.sequence_flows.append(
+        SequenceFlow(id="sf_b", source_ref="start_2", target_ref="task_1")
+    )
+    proc.flow_nodes[1].incoming.append("sf_b")  # task_1 now has two inbound flows
     report = validate(diagram)
-    rule_ids = {i.rule_id for i in report.errors()}
-    assert "R011" in rule_ids
+    assert report.is_valid
+    assert not report.warnings()
+
+
+def test_unreachable_node_flags_r007():
+    """a connected node with no path from a start can never be activated"""
+    diagram = _minimal_valid_diagram()
+    proc = diagram.processes[0]
+    proc.flow_nodes.append(
+        FlowNode(id="island", type=FlowNodeType.TASK, outgoing=["sf_i"])
+    )
+    proc.sequence_flows.append(
+        SequenceFlow(id="sf_i", source_ref="island", target_ref="end_1")
+    )
+    proc.flow_nodes[2].incoming.append("sf_i")  # end_1 also reachable from island
+    rule_ids = {i.rule_id for i in validate(diagram).errors()}
+    assert "R007" in rule_ids
+
+
+def test_trap_node_flags_r008():
+    """a reachable node that cannot reach any end is a trap"""
+    diagram = _minimal_valid_diagram()
+    proc = diagram.processes[0]
+    # task_1 -> dead (no outgoing); dead is reachable but cannot reach end_1
+    proc.flow_nodes.append(FlowNode(id="dead", type=FlowNodeType.TASK, incoming=["sf_d"]))
+    proc.sequence_flows.append(
+        SequenceFlow(id="sf_d", source_ref="task_1", target_ref="dead")
+    )
+    proc.flow_nodes[1].outgoing.append("sf_d")
+    rule_ids = {i.rule_id for i in validate(diagram).errors()}
+    assert "R008" in rule_ids

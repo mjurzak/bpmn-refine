@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  R002 — process has no end event (class A: integrity / translation precondition).
+  Without a sink the net can never properly complete.
+  Expected issues: R002 (error). Backward reachability (R008) is suppressed
+  because there is no exit anchor to measure from.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="def_R002" targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="proc_R002" name="No end event" isExecutable="false">
+    <startEvent id="start_in" name="Request received">
+      <outgoing>f1</outgoing>
+    </startEvent>
+    <task id="task_handle" name="Handle request">
+      <incoming>f1</incoming>
+    </task>
+    <sequenceFlow id="f1" sourceRef="start_in" targetRef="task_handle"/>
+  </process>
+</definitions>

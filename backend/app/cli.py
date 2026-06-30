@@ -6,6 +6,7 @@ import asyncio
 import json
 import time
 from pathlib import Path
+from typing import Any
 
 import typer
 
@@ -42,7 +43,7 @@ def validate_command(
         typer.secho(f"Failed to validate {file}: {exc}", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=2) from exc
 
-    payload = {
+    payload: dict[str, Any] = {
         "file": str(file),
         **result.model_dump(mode="json"),
     }
@@ -167,7 +168,7 @@ def chat_command(
         typer.secho(f"Failed to refine {file}: {exc}", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=2) from exc
 
-    payload = {
+    payload: dict[str, Any] = {
         "file": str(file),
         **result.model_dump(mode="json"),
     }
@@ -235,7 +236,7 @@ def repair_command(
         )
         issues = pre_validation.issues + pre_validation.semantic_issues
         if not issues:
-            payload = {
+            payload: dict[str, Any] = {
                 "file": str(file),
                 "repaired": False,
                 "message": "No validation issues found; nothing to repair.",
@@ -267,7 +268,7 @@ def repair_command(
         typer.secho(f"Failed to repair {file}: {exc}", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=2) from exc
 
-    payload = {
+    payload: dict[str, Any] = {
         "file": str(file),
         "repaired": True,
         "unresolved": [item.model_dump(mode="json") for item in result.unresolved],
@@ -365,7 +366,7 @@ def batch_validate_command(
         try:
             diagram = load_bpmn_file(file)
             result = asyncio.run(validate_diagram(diagram, include_semantic=semantic))
-            payload = {
+            payload: dict[str, Any] = {
                 "file": str(file),
                 **result.model_dump(mode="json"),
             }
@@ -429,9 +430,9 @@ def _build_metadata(
     started_at: float,
     task: TaskType | None = None,
     prompt_name: str | None = None,
-    extra: dict | None = None,
-) -> dict:
-    metadata = {
+    extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    metadata: dict[str, Any] = {
         "command": command,
         "dataset_path": str(dataset_path),
         "duration_ms": round((time.perf_counter() - started_at) * 1000, 3),
@@ -444,7 +445,7 @@ def _build_metadata(
     return metadata
 
 
-def _format_metadata_line(metadata: dict) -> str:
+def _format_metadata_line(metadata: dict[str, Any]) -> str:
     parts = [
         f"duration_ms={metadata['duration_ms']}",
         f"dataset_path={metadata['dataset_path']}",
@@ -458,7 +459,7 @@ def _format_metadata_line(metadata: dict) -> str:
     return "METADATA " + " ".join(parts)
 
 
-def _render_batch_output(results: list[dict], output_format: str) -> str:
+def _render_batch_output(results: list[dict[str, Any]], output_format: str) -> str:
     if output_format == "json":
         return json.dumps(results, indent=2) + "\n"
     if output_format == "jsonl":

@@ -1,8 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
   CASE 06 — Duplicate element IDs: Support Ticket Handling
-  Expected issues:
-    R011 ERROR — element ID "task_resolve" appears twice in the process
+  Expected result: import-time rejection because element ID "task_resolve" appears twice in the process
 
   This simulates a copy-paste error where two tasks ended up with the same ID.
   Both tasks are connected in the flow so the graph looks correct visually,
@@ -33,7 +32,7 @@
       <outgoing>f3</outgoing>
     </task>
 
-    <!-- duplicate ID — R011 fires here -->
+    <!-- duplicate ID — rejected at import before tier-1 validation -->
     <task id="task_resolve" name="Resolve Issue (L2)">
       <incoming>f3</incoming>
       <outgoing>f4</outgoing>

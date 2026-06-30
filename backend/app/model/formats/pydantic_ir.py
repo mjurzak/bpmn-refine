@@ -124,15 +124,20 @@ def _resolve_bpmn_ns(root: etree._Element) -> str:
 def _parse_process(proc_el: etree._Element, bpmn_ns: str) -> BpmnProcess:
     flow_nodes: list[FlowNode] = []
     sequence_flows: list[SequenceFlow] = []
+    seen_ids: set[str] = set()
 
     for child in proc_el:
         if not isinstance(child.tag, str):
             continue  # skip comment and processing-instruction nodes
         local = etree.QName(child.tag).localname
         if local in _FLOW_NODE_TAGS:
-            flow_nodes.append(_parse_flow_node(child, local))
+            node = _parse_flow_node(child, local)
+            _reject_duplicate_id(node.id, proc_el, seen_ids)
+            flow_nodes.append(node)
         elif local == "sequenceFlow":
-            sequence_flows.append(_parse_sequence_flow(child))
+            flow = _parse_sequence_flow(child)
+            _reject_duplicate_id(flow.id, proc_el, seen_ids)
+            sequence_flows.append(flow)
 
     # wire incoming/outgoing on nodes
     node_index = {n.id: n for n in flow_nodes}
@@ -149,6 +154,15 @@ def _parse_process(proc_el: etree._Element, bpmn_ns: str) -> BpmnProcess:
         flow_nodes=flow_nodes,
         sequence_flows=sequence_flows,
     )
+
+
+def _reject_duplicate_id(
+    element_id: str, proc_el: etree._Element, seen_ids: set[str]
+) -> None:
+    if element_id in seen_ids:
+        proc_id = proc_el.get("id", "process_1")
+        raise ValueError(f"Duplicate element ID '{element_id}' in process '{proc_id}'.")
+    seen_ids.add(element_id)
 
 
 def _parse_flow_node(el: etree._Element, local_name: str) -> FlowNode:

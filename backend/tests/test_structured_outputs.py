@@ -143,19 +143,19 @@ async def test_client_facade_parses_provider_json(monkeypatch):
 # ----- atomic repair migration ----------------------------------------------
 
 async def test_atomic_repair_uses_structured_outputs(monkeypatch):
-    from app.experiments import ExperimentConfig
-    from app.repair.ops import RenameElementOp
+    from app.experiments import ExperimentConfig, RepairMode
+    from app.repair.ops import RenameNodeOp
     from app.services import repair as repair_service
     from app.validation.rules import Severity, ValidationIssue
     from tests.converter_cases import canonical_full_diagram
 
     diagram = canonical_full_diagram()
-    config = ExperimentConfig(repair_mode="atomic")
+    config = ExperimentConfig(repair_mode=RepairMode.ATOMIC)
     captured = {}
 
     async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return {"ops": [{"op": "rename_element", "id": "task_1", "new_name": "Renamed"}]}
+        return {"ops": [{"op": "rename_node", "id": "task_1", "new_name": "Renamed"}]}
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured
@@ -175,5 +175,5 @@ async def test_atomic_repair_uses_structured_outputs(monkeypatch):
     # validates straight into typed ops
     assert captured["schema"]["additionalProperties"] is False
     assert len(ops) == 1
-    assert isinstance(ops[0], RenameElementOp)
+    assert isinstance(ops[0], RenameNodeOp)
     assert ops[0].new_name == "Renamed"

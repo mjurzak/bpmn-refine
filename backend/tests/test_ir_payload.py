@@ -1,6 +1,6 @@
 import json
 
-from app.experiments import ExperimentConfig, converter_version
+from app.experiments import ExperimentConfig, IrFormat, converter_version
 from app.services.ir_payload import (
     diagram_fence,
     diagram_payload,
@@ -26,7 +26,7 @@ def test_default_pydantic_payload_stays_json_object():
 
 def test_yaml_payload_uses_selected_converter():
     diagram = canonical_full_diagram()
-    config = ExperimentConfig(ir_format="yaml")
+    config = ExperimentConfig(ir_format=IrFormat.YAML)
 
     payload = diagram_payload(diagram, config)
 
@@ -39,7 +39,7 @@ def test_yaml_payload_uses_selected_converter():
 
 def test_compact_json_payload_uses_selected_converter():
     diagram = canonical_full_diagram()
-    config = ExperimentConfig(ir_format="compact_json")
+    config = ExperimentConfig(ir_format=IrFormat.COMPACT_JSON)
 
     payload = diagram_payload(diagram, config)
     data = json.loads(payload)
@@ -53,7 +53,7 @@ def test_compact_json_payload_uses_selected_converter():
 
 def test_fenced_reply_parser_uses_selected_mermaid_converter():
     diagram = canonical_full_diagram()
-    config = ExperimentConfig(ir_format="mermaid")
+    config = ExperimentConfig(ir_format=IrFormat.MERMAID)
     payload = diagram_payload_text(diagram, config)
 
     parsed = parse_diagram_from_fenced_reply(

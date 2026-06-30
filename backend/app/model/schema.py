@@ -8,7 +8,7 @@ here — the round-trip property (XML -> model -> XML) must hold.
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import NewType
+from typing import TypeAlias
 
 from pydantic import BaseModel, Field
 
@@ -34,9 +34,10 @@ class FlowNodeType(StrEnum):
     COMPLEX_GATEWAY = "complexGateway"
 
 
-# Custom type aliases
-FlowNodeId = NewType("FlowNodeId", str)
-SequenceFlowId = NewType("SequenceFlowId", str)
+# Custom type aliases. These remain strings at runtime; Pydantic enforces the
+# surrounding model shape rather than distinct ID wrapper classes.
+FlowNodeId: TypeAlias = str
+SequenceFlowId: TypeAlias = str
 
 
 class FlowNode(BaseModel):

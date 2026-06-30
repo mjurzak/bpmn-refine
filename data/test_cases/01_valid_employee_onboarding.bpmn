@@ -2,7 +2,7 @@
 <!--
   CASE 01 — Valid baseline: Employee Onboarding
   Expected issues: none
-  Rules exercised: all pass (R001–R011)
+  Rules exercised: all tier-1 rules pass (R001–R008)
 
   Flow: Application Received → Review Application → [Approved] Complete IT Setup → Employee Onboarded
                                                    → [Rejected] Send Rejection Notice → Application Rejected

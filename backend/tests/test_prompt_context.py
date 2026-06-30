@@ -1,4 +1,4 @@
-from app.experiments import ExperimentConfig
+from app.experiments import ExperimentConfig, IrFormat, RepairMode
 from app.llm.prompt_context import render_prompt_template
 from app.model.schema import FlowNodeType
 from app.services.chat import chat_prompt_path
@@ -17,8 +17,8 @@ def test_chat_prompt_renders_current_ir_schema_and_flow_node_types():
 
 def test_atomic_repair_prompt_renders_atomic_edit_op_schema():
     rendered = render_prompt_template(
-        repair_prompt_path(ExperimentConfig(repair_mode="atomic")),
-        config=ExperimentConfig(repair_mode="atomic"),
+        repair_prompt_path(ExperimentConfig(repair_mode=RepairMode.ATOMIC)),
+        config=ExperimentConfig(repair_mode=RepairMode.ATOMIC),
     )
 
     assert "{{" not in rendered
@@ -28,7 +28,7 @@ def test_atomic_repair_prompt_renders_atomic_edit_op_schema():
 
 
 def test_regen_repair_prompt_renders_requested_ir_format():
-    config = ExperimentConfig(repair_mode="regen", ir_format="yaml")
+    config = ExperimentConfig(repair_mode=RepairMode.REGEN, ir_format=IrFormat.YAML)
 
     rendered = render_prompt_template(repair_prompt_path(config), config=config)
 

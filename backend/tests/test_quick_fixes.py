@@ -18,7 +18,7 @@ def test_quick_fix_adds_missing_start_event_and_entry_flow():
 
 def test_quick_fix_removes_sequence_flow_with_unknown_target():
     diagram = _diagram_with_dangling_flow()
-    issue = next(item for item in validate(diagram).errors() if item.rule_id == "R010")
+    issue = next(item for item in validate(diagram).errors() if item.rule_id == "R006")
 
     ops = propose_quick_fix(issue, diagram)
     updated, results = apply_edit_ops(ops or [], diagram)
@@ -29,21 +29,22 @@ def test_quick_fix_removes_sequence_flow_with_unknown_target():
     assert {flow.id for flow in updated.processes[0].sequence_flows} == {"sf_1"}
 
 
-def test_quick_fix_bypasses_single_branch_gateway():
-    diagram = _single_branch_gateway_diagram()
-    issue = next(item for item in validate(diagram).warnings() if item.rule_id == "R007")
+def test_quick_fix_declines_to_feed_start_event():
+    diagram = _diagram_with_orphan_start()
+    issue = next(item for item in validate(diagram).errors() if item.rule_id == "R003")
 
     ops = propose_quick_fix(issue, diagram)
-    updated, results = apply_edit_ops(ops or [], diagram)
-    proc = updated.processes[0]
 
-    assert [op.op for op in ops or []] == ["add_flow", "remove_node"]
-    assert all(result.applied for result in results)
-    assert "gateway_1" not in {node.id for node in proc.flow_nodes}
-    assert len(proc.sequence_flows) == 1
-    assert proc.sequence_flows[0].source_ref == "start_1"
-    assert proc.sequence_flows[0].target_ref == "end_1"
-    assert validate(updated).is_valid is True
+    assert ops is None
+
+
+def test_quick_fix_declines_to_fork_start_to_orphan_end():
+    diagram = _diagram_with_orphan_end()
+    issue = next(item for item in validate(diagram).errors() if item.rule_id == "R004")
+
+    ops = propose_quick_fix(issue, diagram)
+
+    assert ops is None
 
 
 def _diagram_without_start() -> BpmnDiagram:
@@ -69,20 +70,55 @@ def _diagram_with_dangling_flow() -> BpmnDiagram:
     )
 
 
-def _single_branch_gateway_diagram() -> BpmnDiagram:
-    start = FlowNode(id="start_1", type=FlowNodeType.START_EVENT, outgoing=["sf_1"])
-    gateway = FlowNode(
-        id="gateway_1",
-        type=FlowNodeType.EXCLUSIVE_GATEWAY,
+def _diagram_with_orphan_start() -> BpmnDiagram:
+    start_main = FlowNode(
+        id="start_main", type=FlowNodeType.START_EVENT, outgoing=["sf_1"]
+    )
+    task = FlowNode(
+        id="task_review",
+        type=FlowNodeType.TASK,
         incoming=["sf_1"],
         outgoing=["sf_2"],
     )
-    end = FlowNode(id="end_1", type=FlowNodeType.END_EVENT, incoming=["sf_2"])
+    end = FlowNode(id="end_done", type=FlowNodeType.END_EVENT, incoming=["sf_2"])
+    start_orphan = FlowNode(id="start_emergency", type=FlowNodeType.START_EVENT)
     flows = [
-        SequenceFlow(id="sf_1", source_ref="start_1", target_ref="gateway_1"),
-        SequenceFlow(id="sf_2", source_ref="gateway_1", target_ref="end_1"),
+        SequenceFlow(id="sf_1", source_ref="start_main", target_ref="task_review"),
+        SequenceFlow(id="sf_2", source_ref="task_review", target_ref="end_done"),
     ]
     return BpmnDiagram(
         definitions_id="def_1",
-        processes=[BpmnProcess(id="proc_1", flow_nodes=[start, gateway, end], sequence_flows=flows)],
+        processes=[
+            BpmnProcess(
+                id="proc_1",
+                flow_nodes=[start_main, task, end, start_orphan],
+                sequence_flows=flows,
+            )
+        ],
+    )
+
+
+def _diagram_with_orphan_end() -> BpmnDiagram:
+    start = FlowNode(id="start_in", type=FlowNodeType.START_EVENT, outgoing=["sf_1"])
+    task = FlowNode(
+        id="task_main",
+        type=FlowNodeType.TASK,
+        incoming=["sf_1"],
+        outgoing=["sf_2"],
+    )
+    end_done = FlowNode(id="end_done", type=FlowNodeType.END_EVENT, incoming=["sf_2"])
+    end_cancelled = FlowNode(id="end_cancelled", type=FlowNodeType.END_EVENT)
+    flows = [
+        SequenceFlow(id="sf_1", source_ref="start_in", target_ref="task_main"),
+        SequenceFlow(id="sf_2", source_ref="task_main", target_ref="end_done"),
+    ]
+    return BpmnDiagram(
+        definitions_id="def_1",
+        processes=[
+            BpmnProcess(
+                id="proc_1",
+                flow_nodes=[start, task, end_done, end_cancelled],
+                sequence_flows=flows,
+            )
+        ],
     )

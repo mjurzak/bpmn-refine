@@ -25,7 +25,7 @@ async def test_validate_diagram_merges_tier2_checker_issues(monkeypatch):
 
     result = await validation_service.validate_diagram(
         _minimal_valid_diagram(),
-        config=ExperimentConfig(tiers_enabled={"t2": True}),
+        config=ExperimentConfig.model_validate({"tiers_enabled": {"t2": True}}),
     )
 
     assert result.is_valid is False
@@ -36,9 +36,11 @@ async def test_validate_diagram_merges_tier2_checker_issues(monkeypatch):
 
 def test_checker_versions_reports_enabled_selected_woflan():
     versions = checker_versions(
-        ExperimentConfig(
-            tiers_enabled={"t2": True},
-            t2_tools=["woflan"],
+        ExperimentConfig.model_validate(
+            {
+                "tiers_enabled": {"t2": True},
+                "t2_tools": ["woflan"],
+            }
         )
     )
 

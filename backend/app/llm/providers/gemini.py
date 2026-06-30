@@ -6,7 +6,7 @@ before being handed over.
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from google import genai
 from google.genai import types
@@ -47,8 +47,9 @@ class GeminiProvider:
             system_instruction=system,
             max_output_tokens=max_tokens,
         )
+        contents = cast(types.ContentListUnionDict, _to_contents(messages))
         response = await self._client.aio.models.generate_content(
-            model=model, contents=_to_contents(messages), config=config
+            model=model, contents=contents, config=config
         )
         return response.text or ""
 

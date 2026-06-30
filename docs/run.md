@@ -17,7 +17,7 @@ run {
     chat:     { name: "chat_system_v1", hash: "..." }
   }
   converter:        str                   // canonical IR version id, e.g. "pydantic_ir@v1"
-  rules_version:    str                   // e.g. "R001-R011"
+  rules_version:    str                   // e.g. "R001-R008"
   checkers?:        { analyzer: "2.0.3", woflan: "pm4py-2.7", bpmnspector: "1.2.0" }
   config_hash:      str                   // 12-char hex prefix of sha256(ExperimentConfig)
   timestamp:        str                   // ISO-8601 UTC
@@ -52,7 +52,7 @@ Canonical IR version id. Pins the parser/serializer code path that produced the 
 
 ### `rules_version`
 
-Tier 1 rule set id. Today: `"R001-R011"`. Mechanical — bumps when a rule is added, removed, or changed. Same shape will accommodate tier 2 once the formal-checker stack is wired; see `checkers` below.
+Tier 1 rule set id. Today: `"R001-R008"`. Mechanical — bumps when a rule is added, removed, or changed. Same shape will accommodate tier 2 once the formal-checker stack is wired; see `checkers` below.
 
 ### `checkers` *(added when tier 2 is wired)*
 
@@ -85,7 +85,7 @@ Inputs:
 
 - **Prompts**: the `.txt` file bytes, read at request time.
 - **`ExperimentConfig`**: canonical JSON serialisation (keys sorted, nulls dropped, no whitespace).
-- **Converter and rules ids**: not hashed — semantic version strings (`pydantic_ir@v1`, `R001-R011`) are clearer than hashes for code that has a proper version label.
+- **Converter and rules ids**: not hashed — semantic version strings (`pydantic_ir@v1`, `R001-R008`) are clearer than hashes for code that has a proper version label.
 
 ---
 

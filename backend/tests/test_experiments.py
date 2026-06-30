@@ -6,7 +6,9 @@ from pydantic import ValidationError
 
 from app.experiments import (
     ExperimentConfig,
+    ModelTier,
     PromptVersion,
+    ProviderName,
     RunBlock,
     build_run_block,
     canonical_config_json,
@@ -32,9 +34,12 @@ def test_experiment_config_defaults_match_current_runtime():
 
 def test_custom_model_tier_requires_model_override():
     with pytest.raises(ValidationError):
-        ExperimentConfig(model_tier="custom")
+        ExperimentConfig.model_validate({"model_tier": "custom"})
 
-    config = ExperimentConfig(model_tier="custom", model_override="local-model")
+    config = ExperimentConfig(
+        model_tier=ModelTier.CUSTOM,
+        model_override="local-model",
+    )
 
     assert config.model_override == "local-model"
 
@@ -46,7 +51,7 @@ def test_run_block_accepts_required_reproducibility_fields():
             "validate": PromptVersion(name="validate.txt", hash="012345abcdef")
         },
         converter="pydantic_ir@v1",
-        rules_version="R001-R011",
+        rules_version="R001-R008",
         config_hash="abcdef012345",
         timestamp=datetime(2026, 5, 13, tzinfo=UTC),
         request_id="request-1",
@@ -57,7 +62,7 @@ def test_run_block_accepts_required_reproducibility_fields():
 
 def test_canonical_config_json_drops_nulls_and_sorts_keys():
     config = ExperimentConfig(
-        provider_override="openai",
+        provider_override=ProviderName.OPENAI,
         seed=42,
         experiment_id="exp-1",
     )
@@ -79,7 +84,7 @@ def test_canonical_config_json_drops_nulls_and_sorts_keys():
 
 def test_config_hash_is_12_char_sha256_prefix():
     config = ExperimentConfig(
-        provider_override="openai",
+        provider_override=ProviderName.OPENAI,
         seed=42,
         experiment_id="exp-1",
     )
@@ -112,14 +117,14 @@ def test_prompt_version_hashes_file_bytes(tmp_path):
 def test_build_run_block_populates_reproducibility_fields(tmp_path):
     prompt_path = tmp_path / "chat_system.txt"
     prompt_path.write_bytes(b"chat prompt\n")
-    config = ExperimentConfig(model_tier="fast", seed=7)
+    config = ExperimentConfig(model_tier=ModelTier.FAST, seed=7)
     timestamp = datetime(2026, 5, 13, tzinfo=UTC)
 
     run = build_run_block(
         config=config,
         model_used="gpt-5-nano",
         converter="pydantic_ir@v1",
-        rules_version="R001-R011",
+        rules_version="R001-R008",
         prompt_files={"chat": prompt_path},
         checkers={"woflan": "pm4py-2.7"},
         request_id="request-123",
@@ -132,7 +137,7 @@ def test_build_run_block_populates_reproducibility_fields(tmp_path):
     assert run.prompt_versions["chat"].name == "chat_system.txt"
     assert run.prompt_versions["chat"].hash == hashlib.sha256(b"chat prompt\n").hexdigest()[:12]
     assert run.converter == "pydantic_ir@v1"
-    assert run.rules_version == "R001-R011"
+    assert run.rules_version == "R001-R008"
     assert run.checkers == {"woflan": "pm4py-2.7"}
     assert run.config_hash == config_hash(config)
     assert run.timestamp == timestamp

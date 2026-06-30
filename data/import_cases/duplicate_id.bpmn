@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  import error — duplicate element ID within a process (parser precondition). BPMN ids must be
+  unique; duplicates break every downstream tool and make the id-to-node mapping
+  ambiguous. Here a second element reuses id "task_main".
+  Expected result: parse-time rejection before tier-1 validation.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="def_import_duplicate" targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="proc_import_duplicate" name="Duplicate id" isExecutable="false">
+    <startEvent id="start_in" name="Start">
+      <outgoing>f1</outgoing>
+    </startEvent>
+    <task id="task_main" name="Process item">
+      <incoming>f1</incoming>
+      <outgoing>f2</outgoing>
+    </task>
+    <endEvent id="end_ok" name="Done">
+      <incoming>f2</incoming>
+    </endEvent>
+    <!-- id collides with the task above -->
+    <task id="task_main" name="Process item (copy)"/>
+    <sequenceFlow id="f1" sourceRef="start_in" targetRef="task_main"/>
+    <sequenceFlow id="f2" sourceRef="task_main" targetRef="end_ok"/>
+  </process>
+</definitions>

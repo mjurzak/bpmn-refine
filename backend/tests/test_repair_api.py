@@ -58,14 +58,15 @@ def test_repair_response_includes_run_and_proposed_xml(monkeypatch):
     assert payload["remaining_issues"] == []
     assert payload["iterations"] == 1
     assert payload["converged"] is True
-    assert captured["config"] == ExperimentConfig(**config)
+    expected_config = ExperimentConfig.model_validate(config)
+    assert captured["config"] == expected_config
     assert captured["snapshot"] is False
     assert run["model_used"] == "custom-repair-model"
     assert run["prompt_versions"]["repair"]["name"] == "repair.txt"
     assert len(run["prompt_versions"]["repair"]["hash"]) == 12
     assert run["converter"] == CONVERTER_VERSION
-    assert run["rules_version"] == "R001-R011"
-    assert run["config_hash"] == config_hash(ExperimentConfig(**config))
+    assert run["rules_version"] == "R001-R008"
+    assert run["config_hash"] == config_hash(expected_config)
     assert run["iterations"] == 1
     assert run["converged"] is True
 
@@ -91,7 +92,7 @@ def test_apply_selected_edit_ops_returns_updated_diagram():
             "diagram": _minimal_valid_diagram(),
             "ops": [
                 {
-                    "op": "rename_element",
+                    "op": "rename_node",
                     "id": "task_1",
                     "new_name": "Reviewed task",
                 }

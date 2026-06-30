@@ -13,7 +13,7 @@ from app.model.schema import (
     SequenceFlow,
     SequenceFlowId,
 )
-from app.repair.ops import AddFlowOp, AddNodeOp, EditOp, RemoveFlowOp, RemoveNodeOp
+from app.repair.ops import AddFlowOp, AddNodeOp, EditOp, RemoveFlowOp
 from app.validation.rules import ValidationIssue
 
 QuickFix = Callable[[ValidationIssue, BpmnDiagram], list[EditOp] | None]
@@ -131,35 +131,6 @@ def _fix_dangling_flow(
     return [RemoveFlowOp(id=flow.id)]
 
 
-def _fix_single_branch_gateway(
-    issue: ValidationIssue, diagram: BpmnDiagram
-) -> list[EditOp] | None:
-    found = _find_node(diagram, issue.element_id)
-    if found is None:
-        return None
-    proc, gateway = found
-    if len(gateway.incoming) != 1 or len(gateway.outgoing) != 1:
-        return None
-
-    incoming = _flow_in_process(proc, gateway.incoming[0])
-    outgoing = _flow_in_process(proc, gateway.outgoing[0])
-    if incoming is None or outgoing is None:
-        return None
-    if incoming.source_ref == gateway.id or outgoing.target_ref == gateway.id:
-        return None
-
-    return [
-        AddFlowOp(
-            id=_unique_flow_id(
-                diagram, f"flow_{incoming.source_ref}_to_{outgoing.target_ref}"
-            ),
-            source_ref=incoming.source_ref,
-            target_ref=outgoing.target_ref,
-        ),
-        RemoveNodeOp(id=gateway.id, cascade=True),
-    ]
-
-
 def _process_for_issue(
     issue: ValidationIssue,
     diagram: BpmnDiagram,
@@ -178,24 +149,28 @@ def _has_node_type(proc: BpmnProcess, node_type: FlowNodeType) -> bool:
 def _best_entry_target(
     proc: BpmnProcess, exclude_id: str | None = None
 ) -> FlowNode | None:
-    candidates = [node for node in proc.flow_nodes if node.id != exclude_id]
-    preferred = [
+    candidates = [
         node
-        for node in candidates
-        if not node.incoming and node.type != FlowNodeType.START_EVENT
+        for node in proc.flow_nodes
+        if node.id != exclude_id and node.type != FlowNodeType.START_EVENT
     ]
+    preferred = [node for node in candidates if not node.incoming]
+    if exclude_id is not None:
+        return next(iter(preferred), None)
     return next(iter(preferred or candidates), None)
 
 
 def _best_exit_source(
     proc: BpmnProcess, exclude_id: str | None = None
 ) -> FlowNode | None:
-    candidates = [node for node in proc.flow_nodes if node.id != exclude_id]
-    preferred = [
+    candidates = [
         node
-        for node in candidates
-        if not node.outgoing and node.type != FlowNodeType.END_EVENT
+        for node in proc.flow_nodes
+        if node.id != exclude_id and node.type != FlowNodeType.END_EVENT
     ]
+    preferred = [node for node in candidates if not node.outgoing]
+    if exclude_id is not None:
+        return next(iter(preferred), None)
     return next(iter(preferred or candidates), None)
 
 
@@ -262,11 +237,10 @@ def _safe_id(value: str) -> str:
 
 
 _REGISTRY: dict[str, QuickFix] = {
-    "R001": _fix_missing_start,
-    "R003": _fix_missing_end,
-    "R004": _fix_start_without_outgoing,
-    "R005": _fix_end_without_incoming,
-    "R007": _fix_single_branch_gateway,
-    "R009": _fix_dangling_flow,
-    "R010": _fix_dangling_flow,
+    "R001": _fix_missing_start,            # no start event
+    "R002": _fix_missing_end,              # no end event
+    "R003": _fix_start_without_outgoing,   # start event has no outgoing
+    "R004": _fix_end_without_incoming,     # end event has no incoming
+    "R005": _fix_dangling_flow,            # sequence flow unknown source
+    "R006": _fix_dangling_flow,            # sequence flow unknown target
 }

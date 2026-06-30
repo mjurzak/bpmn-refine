@@ -7,6 +7,8 @@ from app.repair.ops import (
     ChangeGatewayTypeOp,
     ReplaceDiagramOp,
     RemoveNodeOp,
+    RenameFlowOp,
+    RenameNodeOp,
     SetConditionOp,
     apply_edit_ops,
     atomic_edit_op_list_adapter,
@@ -48,6 +50,24 @@ def test_set_condition_accepts_null_to_clear_condition():
 
     assert isinstance(op, SetConditionOp)
     assert op.condition_expression is None
+
+
+def test_edit_op_adapter_validates_rename_node():
+    op = edit_op_adapter.validate_python(
+        {"op": "rename_node", "id": "task_1", "new_name": "Renamed task"}
+    )
+
+    assert isinstance(op, RenameNodeOp)
+    assert op.new_name == "Renamed task"
+
+
+def test_edit_op_adapter_validates_rename_flow():
+    op = edit_op_adapter.validate_python(
+        {"op": "rename_flow", "id": "sf_1", "new_name": "handoff"}
+    )
+
+    assert isinstance(op, RenameFlowOp)
+    assert op.new_name == "handoff"
 
 
 def test_change_gateway_type_requires_gateway_type():
@@ -133,7 +153,7 @@ def test_apply_edit_ops_rolls_back_failed_op_and_continues():
                 "node_type": "task",
                 "process_id": "proc_1",
             },
-            {"op": "rename_element", "id": "task_1", "new_name": "Renamed task"},
+            {"op": "rename_node", "id": "task_1", "new_name": "Renamed task"},
         ]
     )
 
@@ -204,16 +224,54 @@ def test_apply_edit_ops_remove_flow_rejects_missing_flow():
     assert [flow.id for flow in updated.processes[0].sequence_flows] == ["sf_1", "sf_2"]
 
 
+def test_apply_edit_ops_renames_node():
+    diagram = _minimal_valid_diagram()
+    ops = edit_op_list_adapter.validate_python(
+        [{"op": "rename_node", "id": "task_1", "new_name": "Renamed task"}]
+    )
+
+    updated, results = apply_edit_ops(ops, diagram)
+
+    assert results[0].applied is True
+    assert _node(updated.processes[0], "task_1").name == "Renamed task"
+
+
+def test_apply_edit_ops_rename_node_rejects_flow_id():
+    diagram = _minimal_valid_diagram()
+    ops = edit_op_list_adapter.validate_python(
+        [{"op": "rename_node", "id": "sf_1", "new_name": "handoff"}]
+    )
+
+    updated, results = apply_edit_ops(ops, diagram)
+
+    assert results[0].applied is False
+    assert "node 'sf_1' does not exist" in (results[0].error or "")
+    assert updated.processes[0].sequence_flows[0].name is None
+
+
 def test_apply_edit_ops_renames_sequence_flow():
     diagram = _minimal_valid_diagram()
     ops = edit_op_list_adapter.validate_python(
-        [{"op": "rename_element", "id": "sf_1", "new_name": "handoff"}]
+        [{"op": "rename_flow", "id": "sf_1", "new_name": "handoff"}]
     )
 
     updated, results = apply_edit_ops(ops, diagram)
 
     assert results[0].applied is True
     assert updated.processes[0].sequence_flows[0].name == "handoff"
+
+
+def test_apply_edit_ops_rename_flow_rejects_node_id():
+    diagram = _minimal_valid_diagram()
+    ops = edit_op_list_adapter.validate_python(
+        [{"op": "rename_flow", "id": "task_1", "new_name": "Renamed task"}]
+    )
+
+    updated, results = apply_edit_ops(ops, diagram)
+
+    assert results[0].applied is False
+    assert "flow 'task_1' does not exist" in (results[0].error or "")
+    assert _node(updated.processes[0], "task_1").name == "Do something"
 
 
 def test_apply_edit_ops_changes_node_type():
@@ -302,7 +360,9 @@ def test_apply_edit_ops_replaces_diagram():
         definitions_id="def_replacement",
         processes=[BpmnProcess(id="replacement_proc")],
     )
-    ops = [ReplaceDiagramOp(diagram=replacement)]
+    ops = edit_op_list_adapter.validate_python(
+        [ReplaceDiagramOp(diagram=replacement).model_dump(mode="json")]
+    )
 
     updated, results = apply_edit_ops(ops, diagram)
 
