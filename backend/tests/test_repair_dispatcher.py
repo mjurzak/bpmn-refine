@@ -1,7 +1,14 @@
 import json
 
+import pytest
 from app.experiments import ExperimentConfig
-from app.model.schema import BpmnDiagram, BpmnProcess, FlowNode, FlowNodeType, SequenceFlow
+from app.model.schema import (
+    BpmnDiagram,
+    BpmnProcess,
+    FlowNode,
+    FlowNodeType,
+    SequenceFlow,
+)
 from app.repair.ops import RenameNodeOp
 from app.services import repair as repair_service
 from app.services.repair import RepairResult, dispatch_repair, repair_with_edit_ops
@@ -117,7 +124,10 @@ async def test_dispatch_repair_respects_max_iteration_cap():
     assert calls[0] == "R999"
     assert len(calls) == 2
     assert result.remaining_issues
-    assert [op.op for op in result.applied_ops] == ["replace_diagram", "replace_diagram"]
+    assert [op.op for op in result.applied_ops] == [
+        "replace_diagram",
+        "replace_diagram",
+    ]
 
 
 async def test_dispatch_repair_does_not_iterate_when_no_errors_remain():
@@ -183,6 +193,75 @@ async def test_repair_with_edit_ops_parses_atomic_llm_output(monkeypatch):
     assert json.loads(captured["prompt"])["repair_mode"] == "atomic"
 
 
+async def test_repair_with_edit_ops_sends_diagram_specific_id_enums(monkeypatch):
+    captured = {}
+
+    async def fake_complete_structured(**kwargs):
+        captured.update(kwargs)
+        return {"ops": []}
+
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
+
+    await repair_with_edit_ops(
+        _minimal_valid_diagram(),
+        issues=[
+            ValidationIssue(
+                rule_id="R999",
+                severity=Severity.ERROR,
+                message="Synthetic atomic repair issue.",
+            )
+        ],
+        config=ExperimentConfig(),
+    )
+
+    schema_defs = captured["schema"]["$defs"]
+    assert schema_defs["RemoveFlowOp"]["properties"]["id"]["enum"] == ["sf_1", "sf_2"]
+    assert schema_defs["RemoveNodeOp"]["properties"]["id"]["enum"] == [
+        "end_1",
+        "start_1",
+        "task_1",
+    ]
+    assert schema_defs["AddFlowOp"]["properties"]["source_ref"]["enum"] == [
+        "end_1",
+        "start_1",
+        "task_1",
+    ]
+    payload = json.loads(captured["prompt"])
+    assert payload["id_constraints"]["flow_ids"] == ["sf_1", "sf_2"]
+    assert (
+        '"enum": [\n            "sf_1",\n            "sf_2"\n          ]'
+        in captured["system"]
+    )
+    assert (
+        '"enum": [\n            "end_1",\n            "start_1",\n            "task_1"\n          ]'
+        in captured["system"]
+    )
+
+
+async def test_repair_with_edit_ops_rejects_flow_op_targeting_node_id(monkeypatch):
+    async def fake_complete_structured(**kwargs):
+        return {"ops": [{"op": "remove_flow", "id": "task_1"}]}
+
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
+
+    with pytest.raises(ValueError, match="expected an existing flow ID"):
+        await repair_with_edit_ops(
+            _minimal_valid_diagram(),
+            issues=[
+                ValidationIssue(
+                    rule_id="R999",
+                    severity=Severity.ERROR,
+                    message="Synthetic atomic repair issue.",
+                )
+            ],
+            config=ExperimentConfig(),
+        )
+
+
 async def test_repair_with_edit_ops_includes_tier2_findings_in_payload(monkeypatch):
     captured = {}
 
@@ -226,7 +305,9 @@ async def test_repair_diagram_includes_tier2_findings_in_payload(monkeypatch):
 
     async def fake_complete(**kwargs):
         captured.update(kwargs)
-        return json.dumps({"ir": _minimal_valid_diagram().model_dump(mode="json"), "unresolved": []})
+        return json.dumps(
+            {"ir": _minimal_valid_diagram().model_dump(mode="json"), "unresolved": []}
+        )
 
     monkeypatch.setattr(repair_service.llm_client, "complete", fake_complete)
 
@@ -337,7 +418,11 @@ def _minimal_valid_diagram() -> BpmnDiagram:
     ]
     return BpmnDiagram(
         definitions_id="def_1",
-        processes=[BpmnProcess(id="proc_1", flow_nodes=[start, task, end], sequence_flows=flows)],
+        processes=[
+            BpmnProcess(
+                id="proc_1", flow_nodes=[start, task, end], sequence_flows=flows
+            )
+        ],
     )
 
 
@@ -347,6 +432,7 @@ def _diagram_without_start() -> BpmnDiagram:
     flow = SequenceFlow(id="sf_1", source_ref="task_1", target_ref="end_1")
     return BpmnDiagram(
         definitions_id="def_1",
-        processes=[BpmnProcess(id="proc_1", flow_nodes=[task, end], sequence_flows=[flow])],
+        processes=[
+            BpmnProcess(id="proc_1", flow_nodes=[task, end], sequence_flows=[flow])
+        ],
     )
-

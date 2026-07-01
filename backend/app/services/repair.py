@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Awaitable, Callable
+from copy import deepcopy
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
@@ -83,7 +84,9 @@ async def repair_diagram(
         system=render_prompt_template(_REPAIR_PROMPT, config=config),
         model=resolve_model(TaskType.REPAIR, config=config),
         provider=resolve_provider(TaskType.REPAIR, config=config),
-        reasoning_effort=str(config.reasoning_effort) if config and config.reasoning_effort else None,
+        reasoning_effort=str(config.reasoning_effort)
+        if config and config.reasoning_effort
+        else None,
     )
     parsed = json.loads(raw)
     repaired_diagram = parse_diagram_payload(parsed["ir"], config)
@@ -124,21 +127,32 @@ async def repair_with_edit_ops(
         "diagram": diagram_payload(diagram, config),
         "issues": [issue_to_dict(issue) for issue in issues],
         "repair_mode": RepairMode.ATOMIC,
+        "id_constraints": _diagram_id_constraints(diagram),
     }
     tier2_findings = _extract_tier2_findings(issues)
     if tier2_findings:
         payload["tier2_findings"] = tier2_findings
+    response_schema = _atomic_ops_schema_for_diagram(diagram)
     # structured outputs constrain the reply to the EditOp schema, so no fenced
     # scraping or best-effort JSON repair is needed
     parsed = await llm_client.complete_structured(
         prompt=json.dumps(payload),
-        schema=_ATOMIC_OPS_SCHEMA,
-        system=render_prompt_template(_ATOMIC_REPAIR_PROMPT, config=config),
+        schema=response_schema,
+        system=render_prompt_template(
+            _ATOMIC_REPAIR_PROMPT,
+            config=config,
+            replacements_override={
+                "{{ATOMIC_EDIT_OP_SCHEMA}}": _json_schema_block(response_schema),
+            },
+        ),
         model=resolve_model(TaskType.REPAIR, config=config),
         provider=resolve_provider(TaskType.REPAIR, config=config),
-        reasoning_effort=str(config.reasoning_effort) if config and config.reasoning_effort else None,
+        reasoning_effort=str(config.reasoning_effort)
+        if config and config.reasoning_effort
+        else None,
     )
     ops_data = parsed.get("ops", parsed) if isinstance(parsed, dict) else parsed
+    _validate_atomic_op_ids(ops_data, diagram)
     return list(atomic_edit_op_list_adapter.validate_python(ops_data))
 
 
@@ -211,6 +225,150 @@ def repair_prompt_path(config: ExperimentConfig | None = None) -> Path:
     return _REPAIR_PROMPT
 
 
+def _atomic_ops_schema_for_diagram(diagram: BpmnDiagram) -> dict[str, Any]:
+    schema = deepcopy(_ATOMIC_OPS_SCHEMA)
+    constraints = _diagram_id_constraints(diagram)
+    node_ids = constraints["node_ids"]
+    flow_ids = constraints["flow_ids"]
+    process_ids = constraints["process_ids"]
+
+    for def_name, field_name, enum_values in [
+        ("RemoveNodeOp", "id", node_ids),
+        ("RenameNodeOp", "id", node_ids),
+        ("ChangeNodeTypeOp", "id", node_ids),
+        ("ChangeGatewayTypeOp", "id", node_ids),
+        ("AddFlowOp", "source_ref", node_ids),
+        ("AddFlowOp", "target_ref", node_ids),
+        ("RemoveFlowOp", "id", flow_ids),
+        ("RenameFlowOp", "id", flow_ids),
+        ("SetConditionOp", "flow_id", flow_ids),
+        ("AddNodeOp", "process_id", process_ids),
+    ]:
+        _set_schema_enum(schema, def_name, field_name, enum_values)
+
+    return schema
+
+
+def _json_schema_block(schema: dict[str, Any]) -> str:
+    return "```json\n" + json.dumps(schema, indent=2, sort_keys=True) + "\n```"
+
+
+def _set_schema_enum(
+    schema: dict[str, Any],
+    def_name: str,
+    field_name: str,
+    enum_values: list[str],
+) -> None:
+    if not enum_values:
+        return
+    field_schema = schema["$defs"][def_name]["properties"][field_name]
+    field_schema["enum"] = enum_values
+    field_schema["description"] = f"{field_schema.get('description', field_name)}. "
+
+
+def _diagram_id_constraints(diagram: BpmnDiagram) -> dict[str, list[str]]:
+    return {
+        "process_ids": sorted(proc.id for proc in diagram.processes),
+        "node_ids": sorted(
+            node.id for proc in diagram.processes for node in proc.flow_nodes
+        ),
+        "flow_ids": sorted(
+            flow.id for proc in diagram.processes for flow in proc.sequence_flows
+        ),
+    }
+
+
+def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
+    if not isinstance(ops_data, list):
+        return
+
+    constraints = _diagram_id_constraints(diagram)
+    node_ids = set(constraints["node_ids"])
+    flow_ids = set(constraints["flow_ids"])
+    process_ids = set(constraints["process_ids"])
+
+    for index, op_data in enumerate(ops_data):
+        if not isinstance(op_data, dict):
+            continue
+        op = op_data.get("op")
+        if op in {
+            "remove_node",
+            "rename_node",
+            "change_node_type",
+            "change_gateway_type",
+        }:
+            _require_id_in_enum(
+                op_data.get("id"),
+                node_ids,
+                "node",
+                index,
+                "id",
+                constraints["node_ids"],
+            )
+        elif op == "add_flow":
+            _require_id_in_enum(
+                op_data.get("source_ref"),
+                node_ids,
+                "node",
+                index,
+                "source_ref",
+                constraints["node_ids"],
+            )
+            _require_id_in_enum(
+                op_data.get("target_ref"),
+                node_ids,
+                "node",
+                index,
+                "target_ref",
+                constraints["node_ids"],
+            )
+        elif op in {"remove_flow", "rename_flow"}:
+            _require_id_in_enum(
+                op_data.get("id"),
+                flow_ids,
+                "flow",
+                index,
+                "id",
+                constraints["flow_ids"],
+            )
+        elif op == "set_condition":
+            _require_id_in_enum(
+                op_data.get("flow_id"),
+                flow_ids,
+                "flow",
+                index,
+                "flow_id",
+                constraints["flow_ids"],
+            )
+        elif op == "add_node":
+            _require_id_in_enum(
+                op_data.get("process_id"),
+                process_ids,
+                "process",
+                index,
+                "process_id",
+                constraints["process_ids"],
+            )
+
+
+def _require_id_in_enum(
+    value: Any,
+    allowed: set[str],
+    kind: str,
+    index: int,
+    field_name: str,
+    allowed_values: list[str],
+) -> None:
+    if not isinstance(value, str) or value in allowed:
+        return
+    options = ", ".join(allowed_values) if allowed_values else "<none>"
+    raise ValueError(
+        f"Invalid repair operation at ops[{index}].{field_name}: "
+        f"expected an existing {kind} ID, got '{value}'. "
+        f"Allowed {kind} IDs: {options}."
+    )
+
+
 def _highest_priority_issue(issues: list[ValidationIssue]) -> ValidationIssue | None:
     actionable = [issue for issue in issues if issue.severity == "error"]
     if not actionable:
@@ -246,7 +404,9 @@ def _extract_tier2_findings(issues: list[ValidationIssue]) -> list[dict[str, Any
     for issue in issues:
         if issue.formal_witness is None:
             continue
-        element_refs = issue.element_refs or ([issue.element_id] if issue.element_id else [])
+        element_refs = issue.element_refs or (
+            [issue.element_id] if issue.element_id else []
+        )
         findings.append(
             {
                 "rule_id": issue.rule_id,

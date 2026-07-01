@@ -121,6 +121,24 @@ SetCondition {
 - Every successful op is appended to `applied_ops` in the response.
 - The server re-runs tier 1 (and tier 2 if `tiers_enabled.t2`) after each dispatcher iteration — not after each op.
 
+### structured-output constraints
+
+Atomic LLM repair uses provider-level structured outputs with a top-level
+`{"ops": [...]}` envelope. The schema is generated per repair request from the
+current diagram so existing-reference fields are narrowed to the correct ID set:
+node-targeting operations accept only current `node_ids`, flow-targeting
+operations accept only current `flow_ids`, `add_flow.source_ref` /
+`add_flow.target_ref` accept current node IDs, and `add_node.process_id` accepts
+current process IDs. New IDs (`add_node.id`, `add_flow.id`) remain free strings
+because they must not already exist; duplicate prevention is enforced by the
+server when applying ops.
+
+The same `id_constraints` object is included in the LLM payload for readability,
+and the backend validates returned ops against the current diagram before
+Pydantic conversion. This turns common schema-valid but domain-invalid plans
+such as `remove_flow(id=<node id>)` into explicit repair-generation errors
+instead of silent no-op proposals.
+
 ### why ops, not a full IR by default
 
 Benchmarks from BPMN Assistant (Licardo et al., 2025) report roughly 43% lower latency and 75% fewer output tokens for atomic editing versus full-XML regeneration, with higher edit-success rates across Claude, GPT, and DeepSeek. More importantly, op-level edits are **localisable**: the frontend can show the user a compact diff, and the history service can record a meaningful revision reason.

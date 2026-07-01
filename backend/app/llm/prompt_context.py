@@ -10,7 +10,11 @@ from app.model.schema import BpmnDiagram, FlowNodeType
 from app.repair.ops import atomic_edit_op_list_adapter, edit_op_list_adapter
 
 
-def render_prompt_template(path: Path, config: ExperimentConfig | None = None) -> str:
+def render_prompt_template(
+    path: Path,
+    config: ExperimentConfig | None = None,
+    replacements_override: dict[str, str] | None = None,
+) -> str:
     """render a prompt template with schema/context placeholders filled in"""
     template = path.read_text()
     replacements = {
@@ -20,6 +24,8 @@ def render_prompt_template(path: Path, config: ExperimentConfig | None = None) -
         "{{ATOMIC_EDIT_OP_SCHEMA}}": _atomic_edit_op_schema(),
         "{{EDIT_OP_SCHEMA}}": _edit_op_schema(),
     }
+    if replacements_override:
+        replacements.update(replacements_override)
     for placeholder, value in replacements.items():
         template = template.replace(placeholder, value)
     return template
