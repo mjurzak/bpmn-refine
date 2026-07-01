@@ -71,6 +71,14 @@ export async function repairDiagram(xml, issues = [], config = {}) {
   });
 }
 
+export async function repairXml(xml, instruction = null, config = {}) {
+  return request("/repair/xml", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ xml, instruction, config }),
+  });
+}
+
 export async function applyEditOps(diagram, ops = []) {
   return request("/repair/apply", {
     method: "POST",

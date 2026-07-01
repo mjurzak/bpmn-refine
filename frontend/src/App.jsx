@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { layoutProcess } from "bpmn-auto-layout";
 import BpmnEditor from "./components/BpmnEditor.jsx";
+import CodeView from "./components/CodeView.jsx";
 import ValidationPanel from "./components/ValidationPanel.jsx";
 import ChatPanel from "./components/ChatPanel.jsx";
 import HistoryPanel from "./components/HistoryPanel.jsx";
@@ -11,6 +12,7 @@ import {
   exportDiagram,
   parseDiagramXml,
   repairDiagram,
+  repairXml,
   applyEditOps,
   commitRevision,
 } from "./api/client.js";
@@ -26,6 +28,12 @@ const UI_SESSION_KEYS = {
   approvalMode: "bpmn-ai-validator.approval-mode",
   llmSettings: "bpmn-ai-validator.llm-settings",
   assistantTab: "bpmn-ai-validator.assistant-tab",
+  editorTab: "bpmn-ai-validator.editor-tab",
+};
+
+const EDITOR_TABS = {
+  DIAGRAM: "diagram",
+  CODE: "code",
 };
 
 const APPROVAL_MODES = {
@@ -54,13 +62,23 @@ const PROVIDER_OPTIONS = [
   {
     value: "anthropic",
     label: "Anthropic",
-    models: ["claude-fable-5", "claude-opus-4-8", "claude-sonnet-4-6", "claude-haiku-4-5-20251001"],
+    models: [
+      "claude-fable-5",
+      "claude-opus-4-8",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5-20251001",
+    ],
     reasoningEfforts: ["low", "medium", "high"],
   },
   {
     value: "gemini",
     label: "Gemini",
-    models: ["gemini-3.1-pro-preview", "gemini-3.5-flash", "gemini-3-flash-preview", "gemini-3.1-flash-lite"],
+    models: [
+      "gemini-3.1-pro-preview",
+      "gemini-3.5-flash",
+      "gemini-3-flash-preview",
+      "gemini-3.1-flash-lite",
+    ],
     reasoningEfforts: [],
   },
   {
@@ -80,21 +98,13 @@ const INTERACTION_OPTIONS = [
 ];
 
 const DEFAULT_LLM_SETTINGS = {
-  validation: { provider: "openai", model: "gpt-5.5", reasoning_effort: "medium" },
+  validation: {
+    provider: "openai",
+    model: "gpt-5.5",
+    reasoning_effort: "medium",
+  },
   chat: { provider: "openai", model: "gpt-5.5", reasoning_effort: "medium" },
   repair: { provider: "openai", model: "gpt-5.5", reasoning_effort: "high" },
-};
-
-const LEGACY_MODEL_REPLACEMENTS = {
-  "gpt-5": "gpt-5.4",
-  "gpt-5-mini": "gpt-5.4-mini",
-  "gpt-5-nano": "gpt-5.4-nano",
-  "claude-sonnet-4-5": "claude-sonnet-4-6",
-  "claude-opus-4-1": "claude-opus-4-8",
-  "claude-haiku-4-5": "claude-haiku-4-5-20251001",
-  "gemini-2.5-pro": "gemini-3.1-pro-preview",
-  "gemini-2.5-flash": "gemini-3.5-flash",
-  "gemini-2.5-flash-lite": "gemini-3.1-flash-lite",
 };
 
 const VALIDATION_LOADING_LABELS = {
@@ -147,7 +157,8 @@ function writeSessionBoolean(key, value) {
 function readSessionString(key, fallback, allowedValues) {
   try {
     const value = window.sessionStorage.getItem(key);
-    if (!allowedValues || allowedValues.includes(value)) return value ?? fallback;
+    if (!allowedValues || allowedValues.includes(value))
+      return value ?? fallback;
   } catch {
     return fallback;
   }
@@ -181,7 +192,10 @@ function writeSessionJson(key, value) {
 }
 
 function providerByValue(value) {
-  return PROVIDER_OPTIONS.find((provider) => provider.value === value) ?? PROVIDER_OPTIONS[0];
+  return (
+    PROVIDER_OPTIONS.find((provider) => provider.value === value) ??
+    PROVIDER_OPTIONS[0]
+  );
 }
 
 function normaliseLlmSettings(settings) {
@@ -189,14 +203,16 @@ function normaliseLlmSettings(settings) {
     const fallback = DEFAULT_LLM_SETTINGS[interaction.key];
     const raw = { ...fallback, ...(settings?.[interaction.key] ?? {}) };
     const provider = providerByValue(raw.provider);
-    const model = LEGACY_MODEL_REPLACEMENTS[raw.model] ?? raw.model;
+    const model = raw.model;
     const knownModel = provider.models.includes(model);
     const reasoningEfforts = provider.reasoningEfforts ?? [];
     normalised[interaction.key] = {
       provider: provider.value,
       model: provider.customOnly
-        ? (model?.trim() || provider.customPlaceholder || "")
-        : (knownModel ? model : (model?.trim() || provider.models[0])),
+        ? model?.trim() || provider.customPlaceholder || ""
+        : knownModel
+          ? model
+          : model?.trim() || provider.models[0],
       reasoning_effort: reasoningEfforts.includes(raw.reasoning_effort)
         ? raw.reasoning_effort
         : fallback.reasoning_effort,
@@ -210,7 +226,8 @@ function normaliseLlmSettings(settings) {
 
 function interactionConfig(settings) {
   const provider = providerByValue(settings.provider);
-  const model = settings.model?.trim() || provider.models[0] || provider.customPlaceholder;
+  const model =
+    settings.model?.trim() || provider.models[0] || provider.customPlaceholder;
   const config = {
     provider_override: provider.value,
     model_tier: "custom",
@@ -223,14 +240,17 @@ function interactionConfig(settings) {
 }
 
 function mergeExperimentConfig(...configs) {
-  return configs.reduce((merged, config) => ({
-    ...merged,
-    ...config,
-    tiers_enabled: {
-      ...(merged.tiers_enabled ?? {}),
-      ...(config.tiers_enabled ?? {}),
-    },
-  }), {});
+  return configs.reduce(
+    (merged, config) => ({
+      ...merged,
+      ...config,
+      tiers_enabled: {
+        ...(merged.tiers_enabled ?? {}),
+        ...(config.tiers_enabled ?? {}),
+      },
+    }),
+    {},
+  );
 }
 
 // default the validation/history split so the history panel starts as the
@@ -257,7 +277,16 @@ async function autoLayout(xmlString) {
 
 function SendIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <line x1="22" y1="2" x2="11" y2="13" />
       <polygon points="22 2 15 22 11 13 2 9 22 2" />
     </svg>
@@ -266,7 +295,16 @@ function SendIcon() {
 
 function MoonIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </svg>
   );
@@ -274,7 +312,16 @@ function MoonIcon() {
 
 function SunIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <circle cx="12" cy="12" r="5" />
       <line x1="12" y1="1" x2="12" y2="3" />
       <line x1="12" y1="21" x2="12" y2="23" />
@@ -290,7 +337,16 @@ function SunIcon() {
 
 function DownloadIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="7 10 12 15 17 10" />
       <line x1="12" y1="15" x2="12" y2="3" />
@@ -300,7 +356,16 @@ function DownloadIcon() {
 
 function UploadIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="17 8 12 3 7 8" />
       <line x1="12" y1="3" x2="12" y2="15" />
@@ -310,7 +375,16 @@ function UploadIcon() {
 
 function CheckIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
@@ -318,7 +392,16 @@ function CheckIcon() {
 
 function SparkIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M13 2 3 14h8l-1 8 10-12h-8l1-8z" />
     </svg>
   );
@@ -326,7 +409,16 @@ function SparkIcon() {
 
 function RepairIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-3-3 2.8-2.8z" />
     </svg>
   );
@@ -334,7 +426,16 @@ function RepairIcon() {
 
 function ChatIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
     </svg>
   );
@@ -343,7 +444,17 @@ function ChatIcon() {
 function SidePanelIcon({ side = "right" }) {
   const dividerX = side === "left" ? 8 : 16;
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <rect x="3" y="4" width="18" height="16" rx="2" />
       <line x1={dividerX} y1="4" x2={dividerX} y2="20" />
     </svg>
@@ -352,7 +463,17 @@ function SidePanelIcon({ side = "right" }) {
 
 function SettingsIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 .9-1.5V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5.9h.2a2 2 0 1 1 0 4H21a1.7 1.7 0 0 0-1.6 1z" />
     </svg>
@@ -376,27 +497,43 @@ function LlmSettingsPanel({ settings, onChange, onClose }) {
     const defaultEffort = DEFAULT_LLM_SETTINGS[interaction]?.reasoning_effort;
     const reasoningEffort = provider.reasoningEfforts?.includes(defaultEffort)
       ? defaultEffort
-      : provider.reasoningEfforts?.[0] ?? null;
+      : (provider.reasoningEfforts?.[0] ?? null);
     updateInteraction(interaction, {
       provider: provider.value,
-      model: provider.customOnly ? (provider.customPlaceholder ?? "") : provider.models[0],
+      model: provider.customOnly
+        ? (provider.customPlaceholder ?? "")
+        : provider.models[0],
       reasoning_effort: reasoningEffort,
     });
   }
 
   return (
-    <div className="llm-settings-popover" role="dialog" aria-label="LLM model settings">
+    <div
+      className="llm-settings-popover"
+      role="dialog"
+      aria-label="LLM model settings"
+    >
       <div className="llm-settings-header">
         <div>
           <div className="llm-settings-title">LLM settings</div>
-          <div className="llm-settings-subtitle">Provider and model per interaction</div>
+          <div className="llm-settings-subtitle">
+            Provider and model per interaction
+          </div>
         </div>
-        <button className="panel-toggle-btn" onClick={onClose} type="button" aria-label="Close LLM settings">x</button>
+        <button
+          className="panel-toggle-btn"
+          onClick={onClose}
+          type="button"
+          aria-label="Close LLM settings"
+        >
+          x
+        </button>
       </div>
 
       <div className="llm-settings-body">
         {INTERACTION_OPTIONS.map((interaction) => {
-          const selected = settings[interaction.key] ?? DEFAULT_LLM_SETTINGS[interaction.key];
+          const selected =
+            settings[interaction.key] ?? DEFAULT_LLM_SETTINGS[interaction.key];
           const provider = providerByValue(selected.provider);
           const modelInList = provider.models.includes(selected.model);
           const usesCustomModel = provider.customOnly || !modelInList;
@@ -409,10 +546,14 @@ function LlmSettingsPanel({ settings, onChange, onClose }) {
                   <span>Provider</span>
                   <select
                     value={selected.provider}
-                    onChange={(event) => handleProviderChange(interaction.key, event.target.value)}
+                    onChange={(event) =>
+                      handleProviderChange(interaction.key, event.target.value)
+                    }
                   >
                     {PROVIDER_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
                     ))}
                   </select>
                 </label>
@@ -434,7 +575,9 @@ function LlmSettingsPanel({ settings, onChange, onClose }) {
                     }}
                   >
                     {provider.models.map((model) => (
-                      <option key={model} value={model}>{model}</option>
+                      <option key={model} value={model}>
+                        {model}
+                      </option>
                     ))}
                     <option value="__custom">Custom</option>
                   </select>
@@ -444,8 +587,14 @@ function LlmSettingsPanel({ settings, onChange, onClose }) {
                     <span>Custom model</span>
                     <input
                       value={selected.model}
-                      placeholder={provider.customPlaceholder ?? provider.models[0]}
-                      onChange={(event) => updateInteraction(interaction.key, { model: event.target.value })}
+                      placeholder={
+                        provider.customPlaceholder ?? provider.models[0]
+                      }
+                      onChange={(event) =>
+                        updateInteraction(interaction.key, {
+                          model: event.target.value,
+                        })
+                      }
                     />
                   </label>
                 )}
@@ -454,10 +603,16 @@ function LlmSettingsPanel({ settings, onChange, onClose }) {
                     <span>Reasoning effort</span>
                     <select
                       value={selected.reasoning_effort ?? reasoningEfforts[0]}
-                      onChange={(event) => updateInteraction(interaction.key, { reasoning_effort: event.target.value })}
+                      onChange={(event) =>
+                        updateInteraction(interaction.key, {
+                          reasoning_effort: event.target.value,
+                        })
+                      }
                     >
                       {reasoningEfforts.map((effort) => (
-                        <option key={effort} value={effort}>{effort}</option>
+                        <option key={effort} value={effort}>
+                          {effort}
+                        </option>
                       ))}
                     </select>
                   </label>
@@ -504,28 +659,55 @@ export default function App() {
   const [repairing, setRepairing] = useState(false);
   const [validationMode, setValidationMode] = useState(null);
   const [pendingProposal, setPendingProposal] = useState(null);
-  const [darkMode, setDarkMode] = useState(() => readSessionBoolean(UI_SESSION_KEYS.darkMode, false));
-  const [chatOpen, setChatOpen] = useState(() => readSessionBoolean(UI_SESSION_KEYS.chatOpen, true));
-  const [leftPanelOpen, setLeftPanelOpen] = useState(() => readSessionBoolean(UI_SESSION_KEYS.leftPanelOpen, true));
-  const [historyOpen, setHistoryOpen] = useState(() => readSessionBoolean(UI_SESSION_KEYS.historyOpen, true));
-  const [approvalMode, setApprovalMode] = useState(() => readSessionString(
-    UI_SESSION_KEYS.approvalMode,
-    APPROVAL_MODES.MANUAL,
-    Object.values(APPROVAL_MODES),
-  ));
-  const [assistantTab, setAssistantTab] = useState(() => readSessionString(
-    UI_SESSION_KEYS.assistantTab,
-    ASSISTANT_TABS.CHAT,
-    Object.values(ASSISTANT_TABS),
-  ));
+  const [darkMode, setDarkMode] = useState(() =>
+    readSessionBoolean(UI_SESSION_KEYS.darkMode, false),
+  );
+  const [chatOpen, setChatOpen] = useState(() =>
+    readSessionBoolean(UI_SESSION_KEYS.chatOpen, true),
+  );
+  const [leftPanelOpen, setLeftPanelOpen] = useState(() =>
+    readSessionBoolean(UI_SESSION_KEYS.leftPanelOpen, true),
+  );
+  const [historyOpen, setHistoryOpen] = useState(() =>
+    readSessionBoolean(UI_SESSION_KEYS.historyOpen, true),
+  );
+  const [approvalMode, setApprovalMode] = useState(() =>
+    readSessionString(
+      UI_SESSION_KEYS.approvalMode,
+      APPROVAL_MODES.MANUAL,
+      Object.values(APPROVAL_MODES),
+    ),
+  );
+  const [assistantTab, setAssistantTab] = useState(() =>
+    readSessionString(
+      UI_SESSION_KEYS.assistantTab,
+      ASSISTANT_TABS.CHAT,
+      Object.values(ASSISTANT_TABS),
+    ),
+  );
+  const [editorTab, setEditorTab] = useState(() =>
+    readSessionString(
+      UI_SESSION_KEYS.editorTab,
+      EDITOR_TABS.DIAGRAM,
+      Object.values(EDITOR_TABS),
+    ),
+  );
+  // set when an imported file cannot be parsed into the IR (e.g. duplicate ids);
+  // the diagram falls back to a code-only view with LLM repair as the way out
+  const [parseError, setParseError] = useState(null);
   const [logEntries, setLogEntries] = useState([]);
   const [llmSettingsOpen, setLlmSettingsOpen] = useState(false);
-  const [llmSettings, setLlmSettings] = useState(() => normaliseLlmSettings(
-    readSessionJson(UI_SESSION_KEYS.llmSettings, DEFAULT_LLM_SETTINGS),
-  ));
+  const [llmSettings, setLlmSettings] = useState(() =>
+    normaliseLlmSettings(
+      readSessionJson(UI_SESSION_KEYS.llmSettings, DEFAULT_LLM_SETTINGS),
+    ),
+  );
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
+    document.documentElement.setAttribute(
+      "data-theme",
+      darkMode ? "dark" : "light",
+    );
     writeSessionBoolean(UI_SESSION_KEYS.darkMode, darkMode);
   }, [darkMode]);
 
@@ -550,14 +732,39 @@ export default function App() {
   }, [assistantTab]);
 
   useEffect(() => {
+    writeSessionString(UI_SESSION_KEYS.editorTab, editorTab);
+  }, [editorTab]);
+
+  useEffect(() => {
     writeSessionJson(UI_SESSION_KEYS.llmSettings, llmSettings);
   }, [llmSettings]);
 
   const editorRef = useRef(null);
 
-  const sidebar = useResize({ initial: 340, min: 260, max: 520, axis: "horizontal" });
-  const validationSplit = useResize({ ...verticalSplitConfig(), axis: "vertical" });
-  const assistantPanel = useResize({ initial: 360, min: 280, max: 560, axis: "horizontal", direction: -1 });
+  // bpmn-js measures zero while hidden, so refit the canvas when its tab returns
+  useEffect(() => {
+    if (editorTab === EDITOR_TABS.DIAGRAM) {
+      requestAnimationFrame(() => editorRef.current?.resize());
+    }
+  }, [editorTab]);
+
+  const sidebar = useResize({
+    initial: 340,
+    min: 260,
+    max: 520,
+    axis: "horizontal",
+  });
+  const validationSplit = useResize({
+    ...verticalSplitConfig(),
+    axis: "vertical",
+  });
+  const assistantPanel = useResize({
+    initial: 360,
+    min: 280,
+    max: 560,
+    axis: "horizontal",
+    direction: -1,
+  });
 
   const appendLogEntries = useCallback((entries) => {
     const normalised = entries.map((entry) => ({
@@ -569,45 +776,54 @@ export default function App() {
     setLogEntries((current) => [...current, ...normalised].slice(-300));
   }, []);
 
-  const recordApiActivity = useCallback(({
-    title,
-    summary,
-    startedAt,
-    response = null,
-    error = null,
-    details = null,
-  }) => {
-    const traces = response?.llm_traces ?? error?.payload?.llm_traces ?? [];
-    const durationMs = startedAt ? Math.round(performance.now() - startedAt) : undefined;
-    appendLogEntries([
-      {
-        type: "action",
-        status: error ? "error" : "success",
-        title,
-        summary: error ? error.message : summary,
-        durationMs,
-        details: {
-          ...(details ?? {}),
-          run: response?.run ?? error?.payload?.run ?? null,
-          error: error?.message ?? null,
+  const recordApiActivity = useCallback(
+    ({
+      title,
+      summary,
+      startedAt,
+      response = null,
+      error = null,
+      details = null,
+    }) => {
+      const traces = response?.llm_traces ?? error?.payload?.llm_traces ?? [];
+      const durationMs = startedAt
+        ? Math.round(performance.now() - startedAt)
+        : undefined;
+      appendLogEntries([
+        {
+          type: "action",
+          status: error ? "error" : "success",
+          title,
+          summary: error ? error.message : summary,
+          durationMs,
+          details: {
+            ...(details ?? {}),
+            run: response?.run ?? error?.payload?.run ?? null,
+            error: error?.message ?? null,
+          },
         },
-      },
-      ...apiTraceEntries(title, traces),
-    ]);
-  }, [appendLogEntries]);
+        ...apiTraceEntries(title, traces),
+      ]);
+    },
+    [appendLogEntries],
+  );
 
-  const handleXmlChange = useCallback((updatedXml) => {
-    // ignore canvas changes while previewing a historical snapshot
-    if (previewRev) return;
-    if (pendingProposal) setPendingProposal(null);
-    setXml(updatedXml);
-    setCanvasDirty(true);
-  }, [previewRev, pendingProposal]);
+  const handleXmlChange = useCallback(
+    (updatedXml) => {
+      // ignore canvas changes while previewing a historical snapshot
+      if (previewRev) return;
+      if (pendingProposal) setPendingProposal(null);
+      setXml(updatedXml);
+      setCanvasDirty(true);
+    },
+    [previewRev, pendingProposal],
+  );
 
   async function applyDiagram(updatedDiagram) {
     setDiagram(updatedDiagram);
     setValidationSourceDiagram(updatedDiagram);
     setCanvasDirty(false);
+    setParseError(null);
     try {
       const exported = await exportDiagram(updatedDiagram);
       const laid = await autoLayout(exported.xml);
@@ -622,6 +838,10 @@ export default function App() {
     if (!file) return;
     const startedAt = performance.now();
     dismissPreview();
+    // keep the raw text so the file is always viewable, even if it cannot parse
+    const rawText = await file.text().catch(() => null);
+    // allow re-importing the same file after a fix by clearing the input value
+    e.target.value = "";
     try {
       const res = await uploadDiagram(file);
       setDiagram(res.diagram);
@@ -630,6 +850,9 @@ export default function App() {
       setSessionId(res.session_id);
       setCurrentRevId("0000");
       setPendingProposal(null);
+      setParseError(null);
+      setValidationResult(null);
+      setEditorTab(EDITOR_TABS.DIAGRAM);
       const exported = await exportDiagram(res.diagram);
       const laid = await autoLayout(exported.xml);
       setXml(laid);
@@ -640,13 +863,27 @@ export default function App() {
         details: { file: file.name, session_id: res.session_id },
       });
     } catch (err) {
+      // unparseable file (e.g. duplicate ids): fall back to a code-only view so
+      // the user can still inspect the source and run free-form LLM repair
+      if (rawText) {
+        setDiagram(null);
+        setValidationSourceDiagram(null);
+        setCanvasDirty(false);
+        setSessionId(null);
+        setCurrentRevId(null);
+        setPendingProposal(null);
+        setValidationResult(null);
+        setParseError(err.message);
+        setXml(rawText);
+        setEditorTab(EDITOR_TABS.CODE);
+      }
       recordApiActivity({
         title: "Import BPMN",
         startedAt,
         error: err,
-        details: { file: file.name },
+        details: { file: file.name, code_only: Boolean(rawText) },
       });
-      alert(`Upload failed: ${err.message}`);
+      if (!rawText) alert(`Upload failed: ${err.message}`);
     }
   }
 
@@ -673,16 +910,25 @@ export default function App() {
         diagramForValidation = parsed.diagram;
         validationSource = "canvas_xml";
       }
-      const res = await validateDiagram(diagramForValidation, includeSemanticPass, config);
+      const res = await validateDiagram(
+        diagramForValidation,
+        includeSemanticPass,
+        config,
+      );
       setValidationResult(res);
-      const issueTotal = (res.issues?.length ?? 0) + (res.semantic_issues?.length ?? 0);
+      const issueTotal =
+        (res.issues?.length ?? 0) + (res.semantic_issues?.length ?? 0);
       recordApiActivity({
-        title: mode === VALIDATION_MODES.SEMANTIC
-          ? "Semantic validation"
-          : mode === VALIDATION_MODES.DEEP
-            ? "Deep validation"
-            : "Structural validation",
-        summary: issueTotal === 0 ? "no issues found" : `${issueTotal} issue${issueTotal === 1 ? "" : "s"} found`,
+        title:
+          mode === VALIDATION_MODES.SEMANTIC
+            ? "Semantic validation"
+            : mode === VALIDATION_MODES.DEEP
+              ? "Deep validation"
+              : "Structural validation",
+        summary:
+          issueTotal === 0
+            ? "no issues found"
+            : `${issueTotal} issue${issueTotal === 1 ? "" : "s"} found`,
         startedAt,
         response: res,
         details: {
@@ -695,14 +941,18 @@ export default function App() {
       });
     } catch (err) {
       recordApiActivity({
-        title: mode === VALIDATION_MODES.SEMANTIC
-          ? "Semantic validation"
-          : mode === VALIDATION_MODES.DEEP
-            ? "Deep validation"
-            : "Structural validation",
+        title:
+          mode === VALIDATION_MODES.SEMANTIC
+            ? "Semantic validation"
+            : mode === VALIDATION_MODES.DEEP
+              ? "Deep validation"
+              : "Structural validation",
         startedAt,
         error: err,
-        details: { mode, source: canvasDirty ? "canvas_xml" : "source_diagram" },
+        details: {
+          mode,
+          source: canvasDirty ? "canvas_xml" : "source_diagram",
+        },
       });
       alert(`Validation failed: ${err.message}`);
     } finally {
@@ -718,7 +968,14 @@ export default function App() {
     if (newRevId) setCurrentRevId(newRevId);
   }
 
-  function handleDiagramProposal({ source, diagram: proposedDiagram, baseDiagram = diagram, message, remainingIssues = null, ops = [] }) {
+  function handleDiagramProposal({
+    source,
+    diagram: proposedDiagram,
+    baseDiagram = diagram,
+    message,
+    remainingIssues = null,
+    ops = [],
+  }) {
     if (!baseDiagram || !proposedDiagram) return;
     setPendingProposal({
       source,
@@ -743,10 +1000,15 @@ export default function App() {
           alert("Select at least one operation to apply.");
           return;
         }
-        const applied = await applyEditOps(pendingProposal.baseDiagram, selectedOps);
+        const applied = await applyEditOps(
+          pendingProposal.baseDiagram,
+          selectedOps,
+        );
         const failed = applied.op_results.filter((result) => !result.applied);
         if (failed.length > 0) {
-          alert(`Could not apply selected operation: ${failed[0].error ?? "unknown error"}`);
+          alert(
+            `Could not apply selected operation: ${failed[0].error ?? "unknown error"}`,
+          );
           return;
         }
         acceptedDiagram = applied.updated_diagram;
@@ -775,10 +1037,14 @@ export default function App() {
       }
       editorRef.current?.clearDiff();
       recordApiActivity({
-        title: pendingProposal.source === "repair" ? "Apply repair proposal" : "Apply chat proposal",
-        summary: pendingProposal.ops?.length > 0
-          ? `${selectedOps?.length ?? pendingProposal.ops.length} operation${(selectedOps?.length ?? pendingProposal.ops.length) === 1 ? "" : "s"} applied`
-          : "proposal accepted",
+        title:
+          pendingProposal.source === "repair"
+            ? "Apply repair proposal"
+            : "Apply chat proposal",
+        summary:
+          pendingProposal.ops?.length > 0
+            ? `${selectedOps?.length ?? pendingProposal.ops.length} operation${(selectedOps?.length ?? pendingProposal.ops.length) === 1 ? "" : "s"} applied`
+            : "proposal accepted",
         startedAt,
         response: commit,
         details: {
@@ -790,7 +1056,10 @@ export default function App() {
       setPendingProposal(null);
     } catch (err) {
       recordApiActivity({
-        title: pendingProposal.source === "repair" ? "Apply repair proposal" : "Apply chat proposal",
+        title:
+          pendingProposal.source === "repair"
+            ? "Apply repair proposal"
+            : "Apply chat proposal",
         startedAt,
         error: err,
         details: { source: pendingProposal.source },
@@ -802,7 +1071,10 @@ export default function App() {
   function rejectProposal() {
     editorRef.current?.clearDiff();
     recordApiActivity({
-      title: pendingProposal?.source === "repair" ? "Reject repair proposal" : "Reject chat proposal",
+      title:
+        pendingProposal?.source === "repair"
+          ? "Reject repair proposal"
+          : "Reject chat proposal",
       summary: "proposal discarded",
       details: { source: pendingProposal?.source ?? null },
     });
@@ -856,13 +1128,74 @@ export default function App() {
     });
   }
 
-  async function handleRepair() {
-    if (!xml) return alert("Upload a diagram first.");
-    if (allIssues.length === 0) return alert("Run validation first and select a diagram with issues.");
+  // free-form repair for files that could not be parsed into the IR — the LLM
+  // rewrites the raw XML (e.g. to dedupe ids); on success we re-enter normal mode
+  async function handleXmlRepair() {
+    if (!xml) return alert("Import a file first.");
     setRepairing(true);
     const startedAt = performance.now();
     try {
-      const res = await repairDiagram(xml, allIssues, interactionConfig(llmSettings.repair));
+      const res = await repairXml(
+        xml,
+        null,
+        interactionConfig(llmSettings.repair),
+      );
+      if (res.parseable && res.diagram) {
+        const commit = await commitRevision(
+          res.diagram,
+          sessionId,
+          "llm xml repair",
+          "llm",
+        );
+        await applyDiagram(commit.diagram);
+        setSessionId(commit.session_id);
+        setCurrentRevId(commit.new_rev_id);
+        setValidationResult(null);
+        setEditorTab(EDITOR_TABS.DIAGRAM);
+      } else {
+        // still broken — keep the corrected source in the code view for inspection
+        setXml(res.updated_xml);
+        setParseError(
+          res.parse_error ?? "Repaired XML still could not be parsed.",
+        );
+        setEditorTab(EDITOR_TABS.CODE);
+      }
+      recordApiActivity({
+        title: "Repair XML",
+        summary: res.parseable
+          ? "file now parses as a diagram"
+          : "still unparseable",
+        startedAt,
+        response: res,
+        details: {
+          parseable: res.parseable,
+          parse_error: res.parse_error ?? null,
+        },
+      });
+    } catch (err) {
+      recordApiActivity({
+        title: "Repair XML",
+        startedAt,
+        error: err,
+      });
+      alert(`XML repair failed: ${err.message}`);
+    } finally {
+      setRepairing(false);
+    }
+  }
+
+  async function handleRepair() {
+    if (!xml) return alert("Upload a diagram first.");
+    if (allIssues.length === 0)
+      return alert("Run validation first and select a diagram with issues.");
+    setRepairing(true);
+    const startedAt = performance.now();
+    try {
+      const res = await repairDiagram(
+        xml,
+        allIssues,
+        interactionConfig(llmSettings.repair),
+      );
       const proposedDiagram = res.updated_diagram;
       if (approvalMode === APPROVAL_MODES.AUTO) {
         const commit = await commitRevision(
@@ -911,7 +1244,10 @@ export default function App() {
         title: "Repair proposal",
         startedAt,
         error: err,
-        details: { issue_count: allIssues.length, approval_mode: approvalMode },
+        details: {
+          issue_count: allIssues.length,
+          approval_mode: approvalMode,
+        },
       });
       alert(`Repair failed: ${err.message}`);
     } finally {
@@ -924,6 +1260,8 @@ export default function App() {
     ...(validationResult?.semantic_issues ?? []),
   ];
   const errorCount = allIssues.filter((i) => i.severity === "error").length;
+  // code-only mode: file loaded but not parseable into the IR
+  const isUnparsed = parseError !== null;
 
   return (
     <div className="app-layout">
@@ -932,7 +1270,9 @@ export default function App() {
         <div className="toolbar-title">
           BPMN <span>AI</span> Validator
         </div>
-        <div className="toolbar-caption">interactive BPMN validation and refinement</div>
+        <div className="toolbar-caption">
+          interactive BPMN validation and refinement
+        </div>
         <div className="toolbar-spacer" />
         <div className="toolbar-settings">
           <button
@@ -963,30 +1303,52 @@ export default function App() {
       {/* main area */}
       <div className="main-area">
         {/* left sidebar */}
-        <div className={`sidebar${!leftPanelOpen ? " sidebar--hidden" : ""}`} style={leftPanelOpen ? { width: sidebar.size } : undefined}>
+        <div
+          className={`sidebar${!leftPanelOpen ? " sidebar--hidden" : ""}`}
+          style={leftPanelOpen ? { width: sidebar.size } : undefined}
+        >
           <div className="sidebar-header">
             <span>Diagram panels</span>
-            <button className="panel-toggle-btn" onClick={() => setLeftPanelOpen(false)} title="Hide left panel" aria-label="Hide left panel">
+            <button
+              className="panel-toggle-btn"
+              onClick={() => setLeftPanelOpen(false)}
+              title="Hide left panel"
+              aria-label="Hide left panel"
+            >
               <SidePanelIcon side="left" />
             </button>
           </div>
 
-          <div className="panel-section" style={historyOpen ? { height: validationSplit.size } : { flex: 1 }}>
+          <div
+            className="panel-section"
+            style={historyOpen ? { height: validationSplit.size } : { flex: 1 }}
+          >
             <ValidationPanel
               issues={validationResult?.issues ?? []}
               semanticIssues={validationResult?.semantic_issues ?? []}
               isValid={validationResult?.is_valid}
               loading={validating}
-              loadingLabel={VALIDATION_LOADING_LABELS[validationMode] ?? "Running validation..."}
+              loadingLabel={
+                VALIDATION_LOADING_LABELS[validationMode] ??
+                "Running validation..."
+              }
               errorCount={errorCount}
             />
           </div>
 
           {historyOpen && (
-            <div className={`resize-handle-v${validationSplit.isDragging ? " dragging" : ""}`} onMouseDown={validationSplit.handleMouseDown} />
+            <div
+              className={`resize-handle-v${validationSplit.isDragging ? " dragging" : ""}`}
+              onMouseDown={validationSplit.handleMouseDown}
+            />
           )}
 
-          <div className="panel-section" style={historyOpen ? { flex: 1 } : { flex: "0 0 auto", minHeight: 0 }}>
+          <div
+            className="panel-section"
+            style={
+              historyOpen ? { flex: 1 } : { flex: "0 0 auto", minHeight: 0 }
+            }
+          >
             <HistoryPanel
               sessionId={sessionId}
               currentRevId={currentRevId}
@@ -1004,7 +1366,11 @@ export default function App() {
 
         {!leftPanelOpen && (
           <div className="left-panel-rail">
-            <button className="left-panel-rail-btn" onClick={() => setLeftPanelOpen(true)} title="Show validation and history panels">
+            <button
+              className="left-panel-rail-btn"
+              onClick={() => setLeftPanelOpen(true)}
+              title="Show validation and history panels"
+            >
               <SidePanelIcon side="left" />
               <span>Panels</span>
             </button>
@@ -1025,7 +1391,12 @@ export default function App() {
             <div className="diagram-action-group diagram-action-group--file">
               <label className="diagram-action diagram-action--primary">
                 <UploadIcon /> Import BPMN
-                <input type="file" accept=".bpmn" onChange={handleUpload} style={{ display: "none" }} />
+                <input
+                  type="file"
+                  accept=".bpmn"
+                  onChange={handleUpload}
+                  style={{ display: "none" }}
+                />
               </label>
               <button
                 onClick={handleExport}
@@ -1040,40 +1411,120 @@ export default function App() {
             <div className="diagram-action-group diagram-action-group--validation">
               <button
                 onClick={() => handleValidate(VALIDATION_MODES.STRUCTURAL)}
-                disabled={!xml || validating}
+                disabled={!xml || validating || isUnparsed}
                 className="diagram-action diagram-action--validate"
-                title="Run deterministic structural validation"
+                title={
+                  isUnparsed
+                    ? "Unavailable: file is not a parseable diagram"
+                    : "Run deterministic structural validation"
+                }
               >
                 <CheckIcon /> Validate
               </button>
               <button
                 onClick={() => handleValidate(VALIDATION_MODES.DEEP)}
-                disabled={!xml || validating}
+                disabled={!xml || validating || isUnparsed}
                 className="diagram-action diagram-action--deep"
-                title="Run tier-1 rules plus PM4Py Woflan formal validation"
+                title={
+                  isUnparsed
+                    ? "Unavailable: file is not a parseable diagram"
+                    : "Run tier-1 rules plus PM4Py Woflan formal validation"
+                }
               >
                 <SparkIcon /> Deep Validate
               </button>
               <button
                 onClick={() => handleValidate(VALIDATION_MODES.SEMANTIC)}
-                disabled={!xml || validating}
+                disabled={!xml || validating || isUnparsed}
                 className="diagram-action diagram-action--ai"
-                title="Run structural validation plus LLM semantic analysis"
+                title={
+                  isUnparsed
+                    ? "Unavailable: file is not a parseable diagram"
+                    : "Run structural validation plus LLM semantic analysis"
+                }
               >
                 <SparkIcon /> Semantic LLM
               </button>
               <button
-                onClick={handleRepair}
-                disabled={!xml || repairing || allIssues.length === 0}
+                onClick={isUnparsed ? handleXmlRepair : handleRepair}
+                disabled={
+                  !xml || repairing || (!isUnparsed && allIssues.length === 0)
+                }
                 className="diagram-action diagram-action--repair"
-                title="Propose repairs for current validation issues"
+                title={
+                  isUnparsed
+                    ? "Ask the LLM to fix the broken XML so it parses as a diagram"
+                    : "Propose repairs for current validation issues"
+                }
               >
-                <RepairIcon /> {repairing ? "Repairing..." : "Repair"}
+                <RepairIcon />{" "}
+                {repairing ? "Repairing..." : isUnparsed ? "Fix XML" : "Repair"}
               </button>
             </div>
           </div>
-          <div style={{ flex: 1 }}>
-            <BpmnEditor ref={editorRef} xml={xml} onXmlChange={handleXmlChange} />
+          <div className="editor-tabs" role="tablist" aria-label="Editor views">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={editorTab === EDITOR_TABS.DIAGRAM}
+              className={`editor-tab${editorTab === EDITOR_TABS.DIAGRAM ? " editor-tab--active" : ""}`}
+              onClick={() => setEditorTab(EDITOR_TABS.DIAGRAM)}
+            >
+              Diagram
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={editorTab === EDITOR_TABS.CODE}
+              className={`editor-tab${editorTab === EDITOR_TABS.CODE ? " editor-tab--active" : ""}`}
+              onClick={() => setEditorTab(EDITOR_TABS.CODE)}
+            >
+              Code
+              {isUnparsed && (
+                <span
+                  className="editor-tab-dot"
+                  title="File is not a parseable diagram"
+                />
+              )}
+            </button>
+          </div>
+          <div className="editor-body">
+            <div
+              className={`editor-tab-pane${editorTab !== EDITOR_TABS.DIAGRAM ? " editor-tab-pane--hidden" : ""}`}
+            >
+              <BpmnEditor
+                ref={editorRef}
+                xml={isUnparsed ? null : xml}
+                onXmlChange={handleXmlChange}
+              />
+              {isUnparsed && (
+                <div className="diagram-unparsed-overlay">
+                  <div className="diagram-unparsed-card">
+                    <div className="diagram-unparsed-title">
+                      This file can&apos;t be shown as a diagram
+                    </div>
+                    <div className="diagram-unparsed-detail">{parseError}</div>
+                    <div className="diagram-unparsed-hint">
+                      Open the{" "}
+                      <button
+                        type="button"
+                        className="link-button"
+                        onClick={() => setEditorTab(EDITOR_TABS.CODE)}
+                      >
+                        Code
+                      </button>{" "}
+                      tab to inspect the source, or run <strong>Fix XML</strong>{" "}
+                      to let the LLM repair it.
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div
+              className={`editor-tab-pane${editorTab !== EDITOR_TABS.CODE ? " editor-tab-pane--hidden" : ""}`}
+            >
+              <CodeView code={xml} language="xml" error={parseError} />
+            </div>
           </div>
         </div>
 
@@ -1084,17 +1535,33 @@ export default function App() {
               onMouseDown={assistantPanel.handleMouseDown}
             />
           )}
-          <aside className={`assistant-panel${!chatOpen ? " assistant-panel--hidden" : ""}`} style={chatOpen ? { width: assistantPanel.size } : undefined}>
+          <aside
+            className={`assistant-panel${!chatOpen ? " assistant-panel--hidden" : ""}`}
+            style={chatOpen ? { width: assistantPanel.size } : undefined}
+          >
             <div className="assistant-panel-header">
               <div>
-                <div className="assistant-panel-title"><ChatIcon /> AI diagram assistant</div>
-                <div className="assistant-panel-subtitle">Ask for BPMN improvements or refinements</div>
+                <div className="assistant-panel-title">
+                  <ChatIcon /> AI diagram assistant
+                </div>
+                <div className="assistant-panel-subtitle">
+                  Ask for BPMN improvements or refinements
+                </div>
               </div>
-              <button className="panel-toggle-btn" onClick={() => setChatOpen(false)} title="Hide AI chat" aria-label="Hide AI chat">
+              <button
+                className="panel-toggle-btn"
+                onClick={() => setChatOpen(false)}
+                title="Hide AI chat"
+                aria-label="Hide AI chat"
+              >
                 <SidePanelIcon side="right" />
               </button>
             </div>
-            <div className="assistant-tabs" role="tablist" aria-label="Assistant views">
+            <div
+              className="assistant-tabs"
+              role="tablist"
+              aria-label="Assistant views"
+            >
               <button
                 type="button"
                 role="tab"
@@ -1115,7 +1582,9 @@ export default function App() {
                 {logEntries.length > 0 && <span>{logEntries.length}</span>}
               </button>
             </div>
-            <div className={`assistant-tab-pane${assistantTab !== ASSISTANT_TABS.CHAT ? " assistant-tab-pane--hidden" : ""}`}>
+            <div
+              className={`assistant-tab-pane${assistantTab !== ASSISTANT_TABS.CHAT ? " assistant-tab-pane--hidden" : ""}`}
+            >
               <ChatPanel
                 ir={diagram}
                 issues={allIssues}
@@ -1132,9 +1601,13 @@ export default function App() {
                 onFocusProposalOp={focusProposalOperation}
                 config={interactionConfig(llmSettings.chat)}
                 onActivity={recordApiActivity}
+                disabled={isUnparsed}
+                disabledReason="Fix the file (Fix XML) so it parses before chatting about the diagram."
               />
             </div>
-            <div className={`assistant-tab-pane${assistantTab !== ASSISTANT_TABS.LOGS ? " assistant-tab-pane--hidden" : ""}`}>
+            <div
+              className={`assistant-tab-pane${assistantTab !== ASSISTANT_TABS.LOGS ? " assistant-tab-pane--hidden" : ""}`}
+            >
               <LogsPanel
                 entries={logEntries}
                 onClear={() => setLogEntries([])}
@@ -1145,7 +1618,11 @@ export default function App() {
 
         {!chatOpen && (
           <div className="assistant-rail">
-            <button className="assistant-rail-btn" onClick={() => setChatOpen(true)} title="Show AI diagram assistant">
+            <button
+              className="assistant-rail-btn"
+              onClick={() => setChatOpen(true)}
+              title="Show AI diagram assistant"
+            >
               <ChatIcon />
               <span>AI Chat</span>
             </button>

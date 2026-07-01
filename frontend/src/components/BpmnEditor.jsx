@@ -74,6 +74,20 @@ const BpmnEditor = forwardRef(function BpmnEditor({ xml, onXmlChange }, ref) {
       modelerRef.current.importXML(xml).catch(console.error);
     },
 
+    // recompute canvas size after the pane was hidden (display:none) — bpmn-js
+    // measures zero while the tab is inactive, so the diagram needs a nudge
+    resize() {
+      const modeler = modelerRef.current;
+      if (!modeler) return;
+      try {
+        const canvas = modeler.get("canvas");
+        canvas.resized();
+        canvas.zoom("fit-viewport", "auto");
+      } catch (err) {
+        console.error("failed to resize canvas", err);
+      }
+    },
+
     applyDiff({ added = [], modified = [] }) {
       const modeler = modelerRef.current;
       if (!modeler) return;

@@ -147,6 +147,8 @@ export default function ChatPanel({
   onFocusProposalOp,
   config = {},
   onActivity,
+  disabled = false,
+  disabledReason = null,
 }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -177,6 +179,7 @@ export default function ChatPanel({
   }
 
   async function handleSend() {
+    if (disabled) return;
     const text = input.trim();
     if (!text) return;
 
@@ -355,13 +358,16 @@ export default function ChatPanel({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask for an improvement, repair, or explanation..."
+          placeholder={disabled
+            ? (disabledReason ?? "Chat is unavailable for this file.")
+            : "Ask for an improvement, repair, or explanation..."}
           rows={2}
           className="chat-textarea"
+          disabled={disabled}
         />
         <button
           onClick={handleSend}
-          disabled={loading || !input.trim()}
+          disabled={disabled || loading || !input.trim()}
           className="chat-send-btn"
           title="Send message"
         >
