@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -12,7 +14,13 @@ from app.llm.tracing import LlmTrace, get_traces, reset_trace_context, start_tra
 from app.model.schema import BpmnDiagram
 from app.repair.ops import EditOp, EditOpResult, apply_edit_ops
 from app.services.diagrams import export_bpmn_xml, parse_bpmn_bytes
-from app.services.repair import dispatch_repair, repair_diagram, repair_prompt_path
+from app.services.repair import (
+    dispatch_repair,
+    repair_diagram,
+    repair_prompt_path,
+    repair_raw_xml,
+    xml_repair_prompt_path,
+)
 from app.validation.rules import RULES_VERSION, ValidationIssue
 
 router = APIRouter(prefix="/repair", tags=["repair"])
@@ -32,6 +40,21 @@ class RepairResponse(BaseModel):
     remaining_issues: list[ValidationIssue] = Field(default_factory=list)
     iterations: int
     converged: bool
+    run: RunBlock
+    llm_traces: list[LlmTrace] = Field(default_factory=list)
+
+
+class RepairXmlRequest(BaseModel):
+    xml: str
+    instruction: str | None = None
+    config: ExperimentConfig = Field(default_factory=ExperimentConfig)
+
+
+class RepairXmlResponse(BaseModel):
+    updated_xml: str
+    parseable: bool
+    diagram: BpmnDiagram | None = None
+    parse_error: str | None = None
     run: RunBlock
     llm_traces: list[LlmTrace] = Field(default_factory=list)
 
@@ -106,6 +129,61 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
     )
 
 
+@router.post("/xml", response_model=RepairXmlResponse)
+async def repair_xml(req: RepairXmlRequest) -> RepairXmlResponse | JSONResponse:
+    """free-form repair for XML that cannot be parsed into the IR
+
+    the model rewrites the raw BPMN XML directly (e.g. to dedupe element IDs).
+    the result is re-parsed: on success the canonical diagram is returned so the
+    UI can re-enable the structured flows; otherwise only the corrected XML is.
+    """
+    xml_prompt_files = {"repair_xml": xml_repair_prompt_path()}
+    run = _build_repair_run(
+        req.config, iterations=1, converged=False, prompt_files=xml_prompt_files
+    )
+    trace_token = start_trace_context()
+    try:
+        updated_xml = await repair_raw_xml(
+            req.xml,
+            instruction=req.instruction,
+            config=req.config,
+        )
+    except Exception as exc:
+        traces = get_traces()
+        reset_trace_context(trace_token)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": str(exc),
+                "run": run.model_dump(mode="json"),
+                "llm_traces": [trace.model_dump(mode="json") for trace in traces],
+            },
+        )
+
+    parseable = True
+    diagram: BpmnDiagram | None = None
+    parse_error: str | None = None
+    try:
+        diagram = parse_bpmn_bytes(updated_xml.encode("utf-8"))
+    except Exception as exc:
+        parseable = False
+        parse_error = str(exc)
+
+    run = _build_repair_run(
+        req.config, iterations=1, converged=parseable, prompt_files=xml_prompt_files
+    )
+    traces = get_traces()
+    reset_trace_context(trace_token)
+    return RepairXmlResponse(
+        updated_xml=updated_xml,
+        parseable=parseable,
+        diagram=diagram,
+        parse_error=parse_error,
+        run=run,
+        llm_traces=traces,
+    )
+
+
 @router.post("/apply", response_model=ApplyEditOpsResponse)
 async def apply_selected_edit_ops(req: ApplyEditOpsRequest) -> ApplyEditOpsResponse:
     updated_diagram, op_results = apply_edit_ops(req.ops, req.diagram)
@@ -120,13 +198,14 @@ def _build_repair_run(
     config: ExperimentConfig,
     iterations: int,
     converged: bool,
+    prompt_files: dict[str, Path] | None = None,
 ) -> RunBlock:
     return build_run_block(
         config=config,
         model_used=resolve_model(TaskType.REPAIR, config=config),
         converter=converter_version(config),
         rules_version=RULES_VERSION,
-        prompt_files={"repair": repair_prompt_path(config)},
+        prompt_files=prompt_files or {"repair": repair_prompt_path(config)},
         iterations=iterations,
         converged=converged,
     )

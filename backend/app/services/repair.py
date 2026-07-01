@@ -33,6 +33,7 @@ from app.validation.rules import ValidationIssue, issue_to_dict
 _PROMPT_DIR = Path(__file__).parent.parent / "llm" / "prompts"
 _REPAIR_PROMPT = _PROMPT_DIR / "repair.txt"
 _ATOMIC_REPAIR_PROMPT = _PROMPT_DIR / "repair_atomic.txt"
+_XML_REPAIR_PROMPT = _PROMPT_DIR / "repair_xml.txt"
 
 # computed once — the EditOp union has no open dicts, so it is fully strict-expressible
 _ATOMIC_OPS_SCHEMA = strict_json_schema(AtomicEditOpsResult)
@@ -114,6 +115,44 @@ async def repair_diagram(
         rev_id=revision.rev_id,
         session_id=new_session_id,
     )
+
+
+async def repair_raw_xml(
+    xml: str,
+    instruction: str | None = None,
+    config: ExperimentConfig | None = None,
+) -> str:
+    """fix unparseable BPMN XML text-to-text, returning corrected XML
+
+    used when a file cannot be parsed into the IR (e.g. duplicate element IDs),
+    so the structured edit-op repair loop is unavailable. the LLM rewrites the
+    raw XML directly; the caller is responsible for re-parsing the result.
+    """
+    prompt = xml if not instruction else f"{xml}\n\n## User instruction\n{instruction}"
+    raw = await llm_client.complete(
+        prompt=prompt,
+        system=render_prompt_template(_XML_REPAIR_PROMPT, config=config),
+        model=resolve_model(TaskType.REPAIR, config=config),
+        provider=resolve_provider(TaskType.REPAIR, config=config),
+        max_tokens=16384,
+        reasoning_effort=str(config.reasoning_effort)
+        if config and config.reasoning_effort
+        else None,
+    )
+    return _strip_code_fences(raw)
+
+
+def _strip_code_fences(text: str) -> str:
+    """drop a leading/trailing markdown fence if the model wrapped its output"""
+    stripped = text.strip()
+    if not stripped.startswith("```"):
+        return stripped
+    lines = stripped.splitlines()
+    if lines and lines[0].startswith("```"):
+        lines = lines[1:]
+    if lines and lines[-1].strip() == "```":
+        lines = lines[:-1]
+    return "\n".join(lines).strip()
 
 
 async def repair_with_edit_ops(
@@ -223,6 +262,10 @@ def repair_prompt_path(config: ExperimentConfig | None = None) -> Path:
     if config is not None and config.repair_mode == RepairMode.ATOMIC:
         return _ATOMIC_REPAIR_PROMPT
     return _REPAIR_PROMPT
+
+
+def xml_repair_prompt_path() -> Path:
+    return _XML_REPAIR_PROMPT
 
 
 def _atomic_ops_schema_for_diagram(diagram: BpmnDiagram) -> dict[str, Any]:
