@@ -13,8 +13,14 @@ export default function ValidationPanel({
   loading,
   loadingLabel = "Running validation...",
   errorCount = 0,
+  modelUsed = null,
 }) {
-  const all = [...issues, ...semanticIssues];
+  // tag each issue with its origin so the user can tell a deterministic verdict
+  // from an LLM suggestion
+  const all = [
+    ...issues.map((issue) => ({ issue, origin: "rules" })),
+    ...semanticIssues.map((issue) => ({ issue, origin: "llm" })),
+  ];
 
   // pick a badge variant for the header
   let badge = null;
@@ -51,7 +57,7 @@ export default function ValidationPanel({
         )}
 
         {!loading &&
-          all.map((issue, i) => {
+          all.map(({ issue, origin }, i) => {
             const sev = SEVERITY_CLASS[issue.severity] ?? "info";
             return (
               <div key={i} className={`issue-card issue-card--${sev}`}>
@@ -59,6 +65,9 @@ export default function ValidationPanel({
                   {issue.severity}
                 </span>
                 <span className="issue-rule">{issue.rule_id}</span>
+                <span className={`issue-origin issue-origin--${origin}`}>
+                  {origin === "llm" ? modelUsed ?? "LLM" : "rule engine"}
+                </span>
                 <p className="issue-message">{issue.message}</p>
                 {issue.suggestion && (
                   <p className="issue-suggestion">{issue.suggestion}</p>

@@ -18,6 +18,24 @@ Your task is to identify SEMANTIC issues that the rule engine cannot detect:
 - naming inconsistencies (e.g. contradictory labels)
 - process termination problems
 
+Do NOT report the following — they are handled elsewhere or are not defects:
+- anything already present in the deterministic issue list above; never restate it
+- missing `condition_expression` on gateway outgoing flows when the branch semantics are
+  already clear from the flow names (e.g. "Approved" / "Rejected"). An unlabelled
+  condition field is a modeling-style choice, not a semantic defect. Only report this
+  when the branches are genuinely ambiguous and a reader could not tell them apart.
+- structural properties the rule engine and formal checker own: reachability, dead ends,
+  missing start/end events, dangling references, soundness, safeness
+- stylistic preferences: naming conventions, capitalization, element ordering, layout
+
+Severity discipline:
+- "error"   — the process cannot execute correctly as modeled
+- "warning" — the process executes, but a realistic business scenario is mishandled
+- "info"    — do not use; if it is only worth an "info", omit it entirely
+
+Report only what you can tie to a concrete element or flow path. Prefer returning an
+empty array over speculative findings — a false alarm costs the user more than a miss.
+
 Return your findings as a JSON array of objects with these keys:
   rule_id    — your own identifier, e.g. "S001"
   severity   — "error" | "warning" | "info"

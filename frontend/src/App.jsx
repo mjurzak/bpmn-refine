@@ -108,8 +108,8 @@ const DEFAULT_LLM_SETTINGS = {
 };
 
 const VALIDATION_LOADING_LABELS = {
-  [VALIDATION_MODES.STRUCTURAL]: "Running structural validation...",
-  [VALIDATION_MODES.DEEP]: "Running deep formal validation...",
+  [VALIDATION_MODES.STRUCTURAL]: "Verifying rules...",
+  [VALIDATION_MODES.DEEP]: "Running formal validation...",
   [VALIDATION_MODES.SEMANTIC]: "Running semantic LLM validation...",
 };
 
@@ -1333,6 +1333,7 @@ export default function App() {
                 "Running validation..."
               }
               errorCount={errorCount}
+              modelUsed={validationResult?.model_used}
             />
           </div>
 
@@ -1416,10 +1417,10 @@ export default function App() {
                 title={
                   isUnparsed
                     ? "Unavailable: file is not a parseable diagram"
-                    : "Run deterministic structural validation"
+                    : "Check the diagram against the deterministic rule set"
                 }
               >
-                <CheckIcon /> Validate
+                <CheckIcon /> Verify Rules
               </button>
               <button
                 onClick={() => handleValidate(VALIDATION_MODES.DEEP)}
@@ -1428,10 +1429,10 @@ export default function App() {
                 title={
                   isUnparsed
                     ? "Unavailable: file is not a parseable diagram"
-                    : "Run tier-1 rules plus PM4Py Woflan formal validation"
+                    : "Check the rule set plus PM4Py Woflan formal soundness verification"
                 }
               >
-                <SparkIcon /> Deep Validate
+                <SparkIcon /> Formal Validate
               </button>
               <button
                 onClick={() => handleValidate(VALIDATION_MODES.SEMANTIC)}
