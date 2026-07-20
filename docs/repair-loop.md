@@ -1,8 +1,10 @@
-# repair loop *(planned)*
+# repair loop
 
 Repair is one of the three top-level operations (see [`architecture.md`](architecture.md)). It takes **issues** (found by tier 1, tier 2, and/or tier 3) and a diagram, and produces **proposed changes** — never silent mutations. The user decides whether to apply them.
 
 Internally, the repair endpoint is a **closed loop**: dispatcher -> apply -> re-validate -> stop-or-iterate. The loop is what makes repair more than a single-turn LLM call: it tightens convergence on a correct diagram, and it produces a record (`iterations`, `applied_ops`) that is useful both to the user and to Phase 3 evaluation.
+
+**Status (2026-07-20):** the loop, both repair modes, the quick-fix registry (R001–R006), the `/repair`, `/repair/xml`, and `/repair/apply` endpoints, and the `tier2_findings` prompt section are all wired. The one gap is the *content* of the counterexample: the witness structure below is populated only with a diagnosis, not a firing trace, because the wired tier-2 checker (Woflan) does not emit one. The trace fields in the examples that follow are the target shape, not current output.
 
 This doc owns:
 

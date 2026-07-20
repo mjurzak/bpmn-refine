@@ -1,4 +1,4 @@
-# run — response envelope *(planned)*
+# run — response envelope
 
 Every backend response includes a `run` block. It records what produced the response: which model, which prompts, which rules, which config. Without it, results are not reproducible and Phase 3 evaluation ([`experiments.md`](experiments.md)) cannot join a metric back to the conditions that produced it.
 

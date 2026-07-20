@@ -11,7 +11,7 @@ The architecture is organised around four ideas:
 - **Multiple IRs as a first-class comparison surface** — one canonical IR drives internal logic; candidate IRs (YAML, Mermaid, compact-JSON) are swappable I/O formats used for comparison experiments.
 - **Live + on-demand validation triggers** — tier 1 runs continuously on every edit; tier 2 and tier 3 run on explicit user action.
 
-Items marked `(planned)` in this document are committed in the thesis architecture but not yet wired in code. See `TODO.md` at the workspace root for per-item status.
+Items marked `(planned)` in this document are committed in the thesis architecture but not yet wired in code. As of 2026-07-20 the validation pipeline (all three tiers, with tier 2 backed by PM4Py Woflan), the repair loop and its endpoints, the five IR converters, and the `run` envelope are all wired; what remains planned is the BPMN Analyzer 2.0 / BPMNspector adapters and the counterexample *trace* they would supply. See `TODO.md` at the workspace root for per-item status.
 
 ---
 
@@ -48,7 +48,9 @@ FastAPI (port 8000)
  ├── /diagrams/*         parse, serialize, export
  ├── /validate           run the validation pipeline (tiers 1–3)
  ├── /chat               conversational refinement
- ├── /repair             closed repair loop  (planned)
+ ├── /repair             closed repair loop (dispatcher)
+ ├── /repair/xml         repair BPMN XML that does not parse into the IR
+ ├── /repair/apply       apply a user-selected subset of edit ops
  └── /history/*          session-scoped revision log
        │
        ├── api/           routes, request/response schemas
@@ -56,7 +58,7 @@ FastAPI (port 8000)
        ├── model/         IR layer (canonical + candidates)
        ├── validation/    tier 1 deterministic rules
        ├── llm/           provider-agnostic client, prompts, routing
-       │                  tier 3 entry point; tier 2 integration (planned)
+       │                  tier 3 entry point; tier 2 = Woflan (Analyzer/BPMNspector planned)
        └── history/       sessions and revisions
 ```
 
@@ -79,7 +81,7 @@ ExperimentConfig {
 }
 ```
 
-The config is hashed into `run.config_hash` so every result traces back to the exact parameter set that produced it. See [`experiments.md`](experiments.md) *(planned doc)*.
+The config is hashed into `run.config_hash` so every result traces back to the exact parameter set that produced it. See [`experiments.md`](experiments.md) *(Phase 3, planned)*.
 
 ---
 
@@ -106,7 +108,7 @@ run {
 
 All hashes are the **first 12 hex characters of sha256(file bytes)**. Full hashes are always reconstructible from the source file; 12 chars is git's long-form abbreviation — short enough to read inline, with a collision probability of ~10⁻¹⁰ for a thousand prompt versions. The `name` mirrors the file stem so logs stay human-readable.
 
-Rationale: Phase 3 evaluation requires every metric to be replayable. `run` is cheap to emit and expensive to add retroactively — results collected without it cannot be trusted. See [`run.md`](run.md) *(planned doc)*.
+Rationale: Phase 3 evaluation requires every metric to be replayable. `run` is cheap to emit and expensive to add retroactively — results collected without it cannot be trusted. See [`run.md`](run.md).
 
 ---
 
@@ -118,15 +120,15 @@ A diagram passes through three independent validators. Each emits a uniform `Iss
 
 Pure Python, zero external dependencies, runs quickly on typical diagrams. Detects *local, structural* violations: missing start/end events, dangling references; and unreachable nodes or traps (a linear-time under-approximation of soundness). Every rule is an `error` — heuristic "might be a problem" checks are deferred to tier 2 / tier 3 rather than emitted as deterministic warnings. Eight rules today (R001–R008). Runs on the **live** trigger — on every edit. See [`validation-rules.md`](validation-rules.md).
 
-### tier 2 — formal checker stack (planned)
+### tier 2 — formal checker stack
 
-Three open-source tools stacked under a uniform `CheckerIssue` schema so the repair layer does not care which tool produced a finding.
+Checker adapters stacked under a uniform issue schema so the repair layer does not care which tool produced a finding. Wired today: **PM4Py Woflan**. Planned: BPMN Analyzer 2.0 and BPMNspector.
 
-- **BPMN Analyzer 2.0** (Kräuter, Rust) — soundness, safeness, deadlock, livelock, lack of synchronisation; emits counterexample traces; sub-500 ms. Wrapped as a subprocess / sidecar.
-- **PM4Py Woflan** (Python-native) — classical Petri-net soundness. Covers elements BPMN Analyzer 2.0 drops (data objects, non-message artefacts) via the BPMN -> Petri-net mapping PM4Py already provides.
-- **BPMNspector** (uniba-dsg, Java) — BPMN 2.0 standards compliance across 611 constraints; complements behavioural checks with structural conformance.
+- **PM4Py Woflan** (Python-native, **wired**) — classical Petri-net soundness via PM4Py's BPMN -> Petri-net mapping, run in-process on a worker thread under a configured timeout. Reports a boolean soundness verdict, Woflan's diagnostic messages, and dead transitions. It does **not** yet emit a firing trace, a marking at failure, or safeness as a separate finding, and its raw output names Petri-net *places*, not BPMN element ids — see [`formal-checkers.md`](formal-checkers.md).
+- **BPMN Analyzer 2.0** (Kräuter, Rust, **planned**) — soundness, safeness, deadlock, livelock, lack of synchronisation; emits counterexample traces; sub-500 ms. Wrapped as a subprocess / sidecar.
+- **BPMNspector** (uniba-dsg, Java, **planned**) — BPMN 2.0 standards compliance across 611 constraints; complements behavioural checks with structural conformance.
 
-Runs on the **on-demand** trigger (explicit *Deep Validate* action). See [`formal-checkers.md`](formal-checkers.md) *(planned doc)*.
+Runs on the **on-demand** trigger (explicit formal-validate action). See [`formal-checkers.md`](formal-checkers.md).
 
 ### tier 3 — LLM semantic review
 
@@ -134,7 +136,7 @@ Single-turn LLM call over the IR plus tier 1 and tier 2 diagnostics. Targets con
 
 ---
 
-## repair loop (planned)
+## repair loop
 
 Repairs are always **suggestions by default**; the frontend only applies them on explicit user acceptance. The `/repair` endpoint orchestrates a closed loop:
 
@@ -167,9 +169,9 @@ Mode is selected per request via `ExperimentConfig.repair_mode`.
 
 ### counterexample context
 
-When tier 2 produces a counterexample (e.g. a token-flow trace leading to a deadlock), the repair prompt includes it in structured form. The LLM reasons about *why* the diagram is broken, not just *that* it is. This is the neuro-symbolic hinge point of the system.
+When tier 2 produces a witness, the repair prompt includes it in a structured `tier2_findings` section (`_extract_tier2_findings`), so the LLM reasons about *why* the diagram is broken, not just *that* it is. This is the neuro-symbolic hinge point of the system. The plumbing is wired, but the witness carries no firing trace yet: Woflan does not emit one, so the LLM currently reasons over the diagnosis rather than the failing run. A trace-producing adapter (BPMN Analyzer 2.0, or deeper extraction of Woflan's coverability graph) is what closes this.
 
-See [`repair-loop.md`](repair-loop.md) *(planned doc)*.
+See [`repair-loop.md`](repair-loop.md).
 
 ---
 
@@ -200,14 +202,18 @@ One internal representation — the Pydantic-typed `BpmnDiagram` — is what eve
 
 Additional formats are **I/O surfaces**, not replacement internal types: they parse into the canonical IR on ingest and serialize from it on output. This decouples IR experimentation from the validation code, which would otherwise fragment across schema types.
 
-Planned candidate IRs:
+Candidate IRs (all wired, selected via `ExperimentConfig.ir_format`):
 
-- **Pydantic-JSON** — canonical, also usable as an I/O format (current default).
+- **Pydantic-JSON** — canonical, also usable as an I/O format.
 - **YAML** — novel thesis contribution; no prior BPMN-LLM YAML study exists.
-- **Mermaid** — reference point for ~93% token reduction against raw BPMN XML.
+- **Mermaid** — reference point for strong token reduction against raw BPMN XML.
 - **compact-JSON** — minimal-key JSON for ablation.
 
 Comparison runs (token reduction, generation quality, edit success) vary `ExperimentConfig.ir_format`.
+
+### diagram-level invariants
+
+Document-scoped identifier uniqueness is enforced by a validator on the canonical `BpmnDiagram` itself, not in any one converter. Because every input path — all five IR formats, LLM-authored payloads, edit-op results — constructs a `BpmnDiagram`, the check holds everywhere at once. This matters beyond spec compliance: the tier-1 reachability rules key their adjacency index by node id, so a duplicate would silently shadow its twin and misdirect the analysis.
 
 ### round-trip invariant
 
@@ -236,7 +242,7 @@ Owns the canonical IR and the converter registry.
 - `schema.py` — canonical `BpmnDiagram`, `BpmnProcess`, `FlowNode`, `SequenceFlow`.
 - `protocol.py` — `DiagramConverter` protocol.
 - `registry.py` — short-name -> converter instance; default chosen via `DIAGRAM_CONVERTER` env var.
-- `formats/` — one module per converter (`pydantic_ir.py` today; YAML, Mermaid, compact-JSON planned).
+- `formats/` — one module per converter: `pydantic_ir.py` (canonical), `pydantic_json.py`, `yaml_ir.py`, `mermaid.py`, `compact_json.py`.
 
 ### validation layer — `backend/app/validation/`
 
@@ -245,7 +251,7 @@ Houses tier 1 deterministic rules. When tier 2 is wired, this layer will also ho
 ### llm layer — `backend/app/llm/`
 
 - `client.py` — high-level entry points (`complete`, `complete_with_history`). Every LLM call routes through here.
-- `protocol.py` + `providers/` — provider abstraction. Current implementations: Anthropic, OpenAI, Ollama. Only `providers/` modules touch vendor SDKs.
+- `protocol.py` + `providers/` — provider abstraction. Current implementations: Anthropic, OpenAI, Gemini, Ollama (each registered only when its credentials are present; Ollama always). Only `providers/` modules touch vendor SDKs.
 - `registry.py` — provider registration at startup.
 - `router.py` — `TaskType` -> model tier -> concrete provider + model id.
 - `prompts/` — versioned `.txt` files (`validate.txt`, `repair.txt`, `chat_system.txt`). Hashed at load for `run.prompt_versions`.
@@ -256,11 +262,11 @@ Session-scoped revision log. Every diagram change (upload, repair acceptance, ch
 
 ### services layer — `backend/app/services/`
 
-Business logic decoupled from HTTP: `chat.py`, `diagrams.py`, `repair.py` (service scaffolding exists; route not yet wired), `validation.py`.
+Business logic decoupled from HTTP: `chat.py`, `diagrams.py`, `repair.py`, `validation.py`, `ir_payload.py`.
 
 ### api layer — `backend/app/api/routes/`
 
-Thin adapters over service-layer functions. Current routes: `diagrams`, `validate`, `chat`, `history`. Planned: `repair`.
+Thin adapters over service-layer functions. Current routes: `diagrams`, `validate`, `chat`, `repair` (plus `/repair/xml`, `/repair/apply`), `history`.
 
 ---
 
@@ -290,7 +296,7 @@ user clicks "Deep validate"
   -> response { issues, run }
 ```
 
-### repair -> iterative loop (planned)
+### repair -> iterative loop
 
 ```
 user clicks "Repair" on one or more issues
@@ -335,8 +341,8 @@ user types in chat
 |---|---|
 | IR protocol, canonical IR, candidate IRs, BPMN 2.0 coverage matrix | [`converter-format.md`](converter-format.md) |
 | Tier 1 deterministic rules | [`validation-rules.md`](validation-rules.md) |
-| Tier 2 formal checker stack | [`formal-checkers.md`](formal-checkers.md) *(planned)* |
+| Tier 2 formal checker stack (Woflan wired; Analyzer/BPMNspector planned) | [`formal-checkers.md`](formal-checkers.md) |
 | LLM client, routing, prompts, structured outputs, counterexample prompting | [`llm-integration.md`](llm-integration.md) |
-| Repair modes, dispatcher, edit ops | [`repair-loop.md`](repair-loop.md) *(planned)* |
-| `ExperimentConfig` schema, metrics, reproducibility, datasets | [`experiments.md`](experiments.md) *(planned)* |
-| `run` metadata contract | [`run.md`](run.md) *(planned)* |
+| Repair modes, dispatcher, edit ops | [`repair-loop.md`](repair-loop.md) |
+| `ExperimentConfig` schema, metrics, reproducibility, datasets | [`experiments.md`](experiments.md) *(Phase 3, planned)* |
+| `run` metadata contract | [`run.md`](run.md) |

@@ -74,7 +74,7 @@ Several checks were considered and **cut** because they fail the class criteria:
 
 ## worked examples
 
-`data/rule_cases/` holds one minimal fixture per rule, each isolating its target so the mapping rule->example is checkable. `R000_valid_baseline.bpmn` is well formed and fires nothing (it also exercises multi-start and a matched gateway pair to prove the rules do not over-fire). `tests/test_rule_cases.py` validates the whole folder against the expected-issue table. Parser/import preconditions that cannot be represented safely in the canonical IR, such as duplicate element ids, live under `data/import_cases/`.
+`data/rule_cases/` holds one minimal fixture per rule, each isolating its target so the mapping rule->example is checkable. `R000_valid_baseline.bpmn` is well formed and fires nothing (it also exercises multi-start and a matched gateway pair to prove the rules do not over-fire). `tests/test_rule_cases.py` validates the whole folder against the expected-issue table. Parser/import preconditions live under `data/import_cases/`. Note that document-scoped identifier uniqueness is no longer only a parser precondition: it is enforced by a validator on `BpmnDiagram` itself, so it holds across all five IR formats and the LLM payload paths, not just XML upload.
 
 ---
 

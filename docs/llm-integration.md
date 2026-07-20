@@ -51,8 +51,8 @@ Current providers (`backend/app/llm/providers/`):
 
 | Provider | Module | Notes |
 |---|---|---|
-| Anthropic | `anthropic.py` | primary; strong-tier default |
-| OpenAI | `openai.py` | for cross-model comparison experiments |
+| OpenAI | `openai.py` | shipped default provider (see model routing) |
+| Anthropic | `anthropic.py` | swappable via `.env` / `ExperimentConfig`; used for cross-model comparison |
 | Ollama | `ollama.py` | local/offline runs; subclasses `OpenAIProvider` (OpenAI-compatible endpoint) |
 | Gemini | `gemini.py` | Google models via `google-genai`; registered only when `GEMINI_API_KEY` is set (SDK imported lazily) |
 
@@ -64,23 +64,23 @@ Adding a provider: implement the protocol in a new module under `providers/` and
 
 `backend/app/llm/router.py` exposes a `TaskType` enum and two resolvers (`resolve_model`, `resolve_provider`). Call sites pass a task type rather than hard-coding a model id.
 
-| TaskType | Tier | Default |
-|---|---|---|
-| `SEMANTIC_VALIDATION` | strong | `claude-opus-4-7` |
-| `REPAIR` | strong | `claude-opus-4-7` |
-| `REFINEMENT` | strong | `claude-opus-4-7` |
-| `IR_CONVERSION` | fast | `claude-haiku-4-5` |
-| `SUMMARY` | fast | `claude-haiku-4-5` |
-| `SIMPLE_QUERY` | fast | `claude-haiku-4-5` |
+| TaskType | Tier |
+|---|---|
+| `SEMANTIC_VALIDATION` | strong |
+| `REPAIR` | strong |
+| `REFINEMENT` | strong |
+| `IR_CONVERSION` | fast |
+| `SUMMARY` | fast |
+| `SIMPLE_QUERY` | fast |
 
-Tier and provider are configurable per-tier via `.env`:
+The concrete model behind each tier is set in config, not hard-coded per task. The shipped defaults (`backend/app/core/config.py`) are `LLM_STRONG_MODEL=gpt-5.5` and `LLM_FAST_MODEL=gpt-5-nano`; treat the values as configuration and read the current ones from `.env` / `config.py` rather than trusting a copy here. Tier and provider are configurable per-tier via `.env`:
 
 ```
-LLM_PROVIDER=anthropic              # global default
-LLM_STRONG_PROVIDER=anthropic       # optional override for strong tasks
-LLM_FAST_PROVIDER=anthropic         # optional override for fast tasks
-LLM_STRONG_MODEL=claude-opus-4-7
-LLM_FAST_MODEL=claude-haiku-4-5
+LLM_PROVIDER=openai                 # global default
+LLM_STRONG_PROVIDER=openai          # optional override for strong tasks
+LLM_FAST_PROVIDER=openai            # optional override for fast tasks
+LLM_STRONG_MODEL=gpt-5.5
+LLM_FAST_MODEL=gpt-5-nano
 ```
 
 Per-request, `ExperimentConfig.model_tier` and `model_override` can supersede the static defaults, which is how ablation experiments (e.g. "run the same task on GPT and Claude") are driven without changing code.
@@ -94,7 +94,9 @@ Prompt text lives in `backend/app/llm/prompts/` as plain `.txt` files. They are 
 | File | Used by | Purpose |
 |---|---|---|
 | `validate.txt` | `/validate` (tier 3) | detect semantic issues not catchable by tier 1 / tier 2 |
-| `repair.txt` | `/repair` (planned) | produce an `EditOp` plan (or a full IR under `repair_mode = regen`) from issues + counterexamples |
+| `repair.txt` | `/repair`, `repair_mode = regen` | produce a full replacement IR from issues + `tier2_findings` |
+| `repair_atomic.txt` | `/repair`, `repair_mode = atomic` | produce an `EditOp` plan under structured outputs |
+| `repair_xml.txt` | `/repair/xml` | rewrite BPMN XML that does not parse into the IR |
 | `chat_system.txt` | `/chat` | conversational refinement, intent-driven |
 
 ### versioning — hash + name, not rename
@@ -105,7 +107,7 @@ Each prompt file is loaded lazily and hashed with sha256. The **first 12 hex cha
 "validate": { "name": "validate_v1", "hash": "ab34cd5e78f9" }
 ```
 
-Rationale: renaming files (`validate_v2.txt`) is discipline-based and brittle. A content hash changes **automatically** whenever the file changes, capturing uncommitted edits experimenters make locally. Renames are still useful for deliberate branching (running `v1` and `v2` side-by-side in a comparison run), but the hash is the reproducibility anchor — not the name. See [`run.md`](run.md) *(planned doc)*.
+Rationale: renaming files (`validate_v2.txt`) is discipline-based and brittle. A content hash changes **automatically** whenever the file changes, capturing uncommitted edits experimenters make locally. Renames are still useful for deliberate branching (running `v1` and `v2` side-by-side in a comparison run), but the hash is the reproducibility anchor — not the name. See [`run.md`](run.md).
 
 For a deliberate A/B run, rename the parallel version `prompt_v2.txt`, register it by key, and point `ExperimentConfig` at the chosen key. The hash column in the run block will tell both versions apart regardless.
 
@@ -148,7 +150,7 @@ Pydantic's raw `model_json_schema()` is not what the strict APIs want, so `stric
 
 ## the `EditOp` prompt contract
 
-Under `repair_mode = atomic`, the LLM emits a list of edit operations over the canonical IR. The schema is shared with the repair loop ([`repair-loop.md`](repair-loop.md) *(planned)*) and is documented authoritatively there. This doc covers only how it enters the prompt.
+Under `repair_mode = atomic`, the LLM emits a list of edit operations over the canonical IR. The schema is shared with the repair loop ([`repair-loop.md`](repair-loop.md)) and is documented authoritatively there. This doc covers only how it enters the prompt.
 
 `repair.txt` (and, when the user asks for a fix, `chat_system.txt`) contains:
 
@@ -160,11 +162,11 @@ Under `repair_mode = regen`, the same prompts include a fallback branch asking f
 
 ---
 
-## counterexample prompting (planned)
+## counterexample prompting
 
-When tier 2 produces a counterexample (e.g. a token-flow trace leading to a deadlock), it is injected into the repair prompt in **structured form** — not pasted as raw tool output.
+When tier 2 produces a witness, it is injected into the repair prompt in **structured form** (a `tier2_findings` section built by `_extract_tier2_findings`) — not pasted as raw tool output. This is wired. The gap is the witness content: Woflan supplies a diagnosis but no firing trace, so the `trace`/`marking` fields below are empty in practice today. The prompts already tell the model these may be empty.
 
-Planned structure:
+Target structure:
 
 ```
 ## problem
@@ -214,5 +216,6 @@ backend/app/llm/
     ├── validate.txt
     ├── repair.txt
     ├── repair_atomic.txt
+    ├── repair_xml.txt
     └── chat_system.txt
 ```

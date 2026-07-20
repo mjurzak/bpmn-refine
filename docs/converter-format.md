@@ -130,7 +130,7 @@ Each candidate IR is evaluated along:
 - **Edit success** — under `repair_mode = atomic`, the percentage of LLM-emitted `EditOp` plans that apply cleanly.
 - **Generation quality** — GED / PME similarity to ground-truth when the LLM generates a diagram from a textual description.
 
-Detailed protocol and results live in [`experiments.md`](experiments.md) *(planned doc)*.
+Detailed protocol and results live in [`experiments.md`](experiments.md) *(Phase 3, planned)*.
 
 ---
 

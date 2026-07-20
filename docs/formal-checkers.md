@@ -1,6 +1,8 @@
-# formal checkers — tier 2 *(planned)*
+# formal checkers — tier 2
 
-Tier 2 is the formal-verification layer. It runs **on demand** (explicit *Deep Validate* action), not on every edit, because it is heavier than tier 1 and its findings are the input that makes LLM-guided repair non-trivial.
+Tier 2 is the formal-verification layer. It runs **on demand** (explicit formal-validate action), not on every edit, because it is heavier than tier 1 and its findings are the input that makes LLM-guided repair non-trivial.
+
+**Status (2026-07-20):** one checker is wired — **PM4Py Woflan**, in-process. The BPMN Analyzer 2.0 and BPMNspector adapters described below, and the parallel fan-out across them, are planned. The wired Woflan slice returns a soundness verdict, diagnostic messages, and dead transitions, but no firing trace and no BPMN-element-level mapping yet (see the Woflan subsection). Sections that describe the full three-tool stack are the target design, not the current state.
 
 Tier 1 catches local, structural mistakes. Tier 2 catches behavioural problems that require exploring the diagram's **state space**: deadlocks, livelocks, unreachable termination, token-count mismatches, safeness and standards-conformance violations.
 
@@ -24,7 +26,7 @@ And: formal BPMN verification is a 20-year-old research area. The thesis contrib
 
 ## the stack
 
-### BPMN Analyzer 2.0 (primary)
+### BPMN Analyzer 2.0 (planned — intended primary)
 
 - **Origin:** Tim Kräuter et al., BPM 2024 (open source, Rust).
 - **Checks:** option-to-complete (deadlock-freedom), proper completion, safeness, lack of synchronisation, dead activities.
@@ -34,14 +36,14 @@ And: formal BPMN verification is a 20-year-old research area. The thesis contrib
 - **Latency:** <500 ms on typical diagrams.
 - **Wrapping:** shipped binary invoked as a subprocess (or as a sidecar HTTP service in Docker Compose). Input is the canonical IR serialised to BPMN XML via `PydanticConverter`. Output is JSON containing issues + counterexamples.
 
-### PM4Py Woflan (fallback / complement)
+### PM4Py Woflan (wired)
 
 - **Origin:** PM4Py's built-in soundness analysis, implementing Woflan's classical Petri-net soundness.
 - **Checks:** soundness (option-to-complete, proper completion, no dead transitions), bounded-ness for P/T nets.
-- **Counterexamples:** marking-level traces; less visually focused than BPMN Analyzer 2.0 but covers elements Analyzer drops once the BPMN -> PN mapping handles them.
-- **Coverage:** whatever the canonical IR + PM4Py's BPMN-to-PN conversion support. Strongest when data objects and explicit swimlane semantics are part of the picture.
-- **Wrapping:** Python-native — no subprocess, no sidecar. Runs in-process.
-- **Role in the stack:** fallback when BPMN Analyzer 2.0 cannot analyse a diagram (elements it ignores are load-bearing), and secondary confirmation for diagrams both tools can analyse.
+- **Wrapping:** Python-native — no subprocess, no sidecar. Runs in-process on a worker thread under a configured timeout (`checkers.yaml`); a crash or timeout degrades to a warning rather than failing the request.
+- **What the adapter emits today:** a boolean soundness verdict, Woflan's diagnostic messages, and dead transitions as `element_refs`, normalised into the shared `ValidationIssue` shape with `rule_id = "woflan:soundness"`.
+- **What it does *not* emit yet (adapter-side gaps, not tool limits):** Woflan returns a minimal coverability graph (`mcg`), `not_well_handled_pairs`, and locking scenarios that the adapter currently discards. So there is no firing trace, no marking-at-failure, and no separately surfaced safeness finding. `FormalWitness.kind` is hard-coded to `"soundness"` — the `deadlock`/`livelock` values the repair prompts advertise are never produced.
+- **Known bug:** the diagnostic text and `element_refs` name Petri-net *places* and can include Woflan's synthetic `short_circuited_transition`, which is not an element of the user's diagram. Mapping these back to BPMN element ids is the first fix (see `TODO.md`).
 
 ### BPMNspector (standards compliance)
 
@@ -90,7 +92,7 @@ TraceStep {
 }
 ```
 
-The schema is what the repair dispatcher and the repair prompt consume — see [`repair-loop.md`](repair-loop.md) *(planned)*.
+The schema is what the repair dispatcher and the repair prompt consume — see [`repair-loop.md`](repair-loop.md).
 
 ---
 
