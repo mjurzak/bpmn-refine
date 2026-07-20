@@ -26,7 +26,11 @@ from app.repair.ops import (
     atomic_edit_op_list_adapter,
 )
 from app.repair.quick_fixes import propose_quick_fix
-from app.services.ir_payload import diagram_payload, parse_diagram_payload
+from app.services.ir_payload import (
+    call_with_ir_correction,
+    diagram_payload,
+    parse_diagram_payload,
+)
 from app.services.validation import validate_diagram
 from app.validation.rules import ValidationIssue, issue_to_dict
 
@@ -80,18 +84,27 @@ async def repair_diagram(
     tier2_findings = _extract_tier2_findings(issues)
     if tier2_findings:
         payload["tier2_findings"] = tier2_findings
-    raw = await llm_client.complete(
-        prompt=json.dumps(payload),
-        system=render_prompt_template(_REPAIR_PROMPT, config=config),
-        model=resolve_model(TaskType.REPAIR, config=config),
-        provider=resolve_provider(TaskType.REPAIR, config=config),
-        reasoning_effort=str(config.reasoning_effort)
-        if config and config.reasoning_effort
-        else None,
-    )
-    parsed = json.loads(raw)
-    repaired_diagram = parse_diagram_payload(parsed["ir"], config)
-    unresolved = [_normalise_unresolved(item) for item in parsed.get("unresolved", [])]
+
+    async def attempt(feedback: str | None) -> tuple[BpmnDiagram, list[UnresolvedRepair]]:
+        prompt = json.dumps(payload)
+        if feedback:
+            prompt = f"{prompt}\n\n{feedback}"
+        raw = await llm_client.complete(
+            prompt=prompt,
+            system=render_prompt_template(_REPAIR_PROMPT, config=config),
+            model=resolve_model(TaskType.REPAIR, config=config),
+            provider=resolve_provider(TaskType.REPAIR, config=config),
+            reasoning_effort=str(config.reasoning_effort)
+            if config and config.reasoning_effort
+            else None,
+        )
+        parsed = json.loads(raw)
+        return (
+            parse_diagram_payload(parsed["ir"], config),
+            [_normalise_unresolved(item) for item in parsed.get("unresolved", [])],
+        )
+
+    repaired_diagram, unresolved = await call_with_ir_correction(attempt)
 
     if not snapshot:
         return RepairResult(repaired_diagram=repaired_diagram, unresolved=unresolved)

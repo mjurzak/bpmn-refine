@@ -15,6 +15,7 @@ from app.llm.prompt_context import render_prompt_template
 from app.llm.router import TaskType, resolve_model, resolve_provider
 from app.model.schema import BpmnDiagram
 from app.services.ir_payload import (
+    call_with_ir_correction,
     diagram_fence,
     diagram_payload_text,
     parse_diagram_from_fenced_reply,
@@ -70,15 +71,34 @@ async def chat_diagram(
             content = context_prefix + content
         payload_messages.append({"role": message.role, "content": content})
 
-    reply = await llm_client.complete_with_history(
-        messages=payload_messages,
-        system=system_prompt,
-        model=resolve_model(TaskType.REFINEMENT, config=config),
-        provider=resolve_provider(TaskType.REFINEMENT, config=config),
-        reasoning_effort=str(config.reasoning_effort) if config and config.reasoning_effort else None,
-    )
+    last_reply = ""
 
-    updated_diagram = _parse_diagram_from_reply(reply, config=config)
+    async def attempt(feedback: str | None) -> tuple[str, BpmnDiagram | None]:
+        nonlocal last_reply
+        turns = list(payload_messages)
+        if feedback:
+            turns.append({"role": "user", "content": feedback})
+        last_reply = await llm_client.complete_with_history(
+            messages=turns,
+            system=system_prompt,
+            model=resolve_model(TaskType.REFINEMENT, config=config),
+            provider=resolve_provider(TaskType.REFINEMENT, config=config),
+            reasoning_effort=str(config.reasoning_effort)
+            if config and config.reasoning_effort
+            else None,
+        )
+        # raises on a fenced block that will not parse, which is what triggers a
+        # correction round; a reply with no fenced diagram is not an error, it is
+        # the model answering a question
+        return last_reply, parse_diagram_from_fenced_reply(last_reply, config)
+
+    try:
+        reply, updated_diagram = await call_with_ir_correction(attempt)
+    except Exception as exc:
+        # corrections exhausted. a chat turn must not hard-fail over a bad diagram —
+        # the user still gets the model's text, just without an applicable change
+        logger.warning("failed to parse diagram from reply: %s", exc)
+        reply, updated_diagram = last_reply, None
     rev_id: str | None = None
     new_session_id: str | None = None
 
@@ -116,14 +136,3 @@ def chat_prompt_name() -> str:
 
 def chat_prompt_path() -> Path:
     return _CHAT_PROMPT
-
-
-def _parse_diagram_from_reply(
-    reply: str,
-    config: ExperimentConfig | None = None,
-) -> BpmnDiagram | None:
-    try:
-        return parse_diagram_from_fenced_reply(reply, config)
-    except Exception as exc:
-        logger.warning("failed to parse diagram from reply: %s", exc)
-    return None

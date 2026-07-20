@@ -7,10 +7,11 @@ here — the round-trip property (XML -> model -> XML) must hold.
 
 from __future__ import annotations
 
+from collections import Counter
 from enum import StrEnum
-from typing import TypeAlias
+from typing import Self, TypeAlias
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class FlowNodeType(StrEnum):
@@ -88,3 +89,41 @@ class BpmnDiagram(BaseModel):
     processes: list[BpmnProcess] = Field(default_factory=list)
     # raw XML namespaces preserved for round-trip
     namespaces: dict[str, str] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _reject_duplicate_ids(self) -> Self:
+        """Enforce document-scoped ID uniqueness, as BPMN 2.0 types `id` as xsd:ID.
+
+        This lives on the model rather than in the XML parser on purpose. Every
+        input path — the five IR formats, LLM-authored payloads, edit-op results —
+        builds a `BpmnDiagram`, so this is the one place that covers all of them.
+        A parser-level check only ever guarded uploaded files.
+
+        Uniqueness is not a cosmetic concern here: `_Graph` keys its adjacency
+        index by node ID, so a duplicate silently shadows its twin and the
+        reachability rules go on to read the wrong node's edges.
+        """
+        duplicates = [
+            element_id
+            for element_id, count in Counter(self._element_ids()).items()
+            if count > 1
+        ]
+        if duplicates:
+            listed = ", ".join(f"'{item}'" for item in sorted(duplicates))
+            raise ValueError(
+                f"Duplicate element ID(s) in diagram '{self.definitions_id}': {listed}. "
+                "Every process, flow node, sequence flow, pool and lane must carry an ID "
+                "that is unique across the whole diagram."
+            )
+        return self
+
+    def _element_ids(self) -> list[str]:
+        ids: list[str] = []
+        for proc in self.processes:
+            ids.append(proc.id)
+            ids.extend(node.id for node in proc.flow_nodes)
+            ids.extend(flow.id for flow in proc.sequence_flows)
+            for pool in proc.pools:
+                ids.append(pool.id)
+                ids.extend(lane.id for lane in pool.lanes)
+        return ids
