@@ -41,6 +41,22 @@ FlowNodeId: TypeAlias = str
 SequenceFlowId: TypeAlias = str
 
 
+class Bounds(BaseModel):
+    """A BPMNDI shape rectangle, in diagram coordinates."""
+
+    x: float
+    y: float
+    width: float
+    height: float
+
+
+class Waypoint(BaseModel):
+    """One bend point on a BPMNDI edge."""
+
+    x: float
+    y: float
+
+
 class FlowNode(BaseModel):
     id: FlowNodeId
     type: FlowNodeType
@@ -48,6 +64,10 @@ class FlowNode(BaseModel):
     # outgoing/incoming are edge IDs — filled in by the converter
     outgoing: list[SequenceFlowId] = Field(default_factory=list)
     incoming: list[SequenceFlowId] = Field(default_factory=list)
+    # where the author put this node. None means "never had a shape" (a node the
+    # LLM just added), which the serialiser fills in from the fallback layout
+    bounds: Bounds | None = None
+    label_bounds: Bounds | None = None
     # raw attributes preserved for round-trip
     extra: dict = Field(default_factory=dict)
 
@@ -58,6 +78,9 @@ class SequenceFlow(BaseModel):
     target_ref: FlowNodeId
     name: str | None = None
     condition_expression: str | None = None
+    # the author's routing. an empty list means "no edge shape", not "straight"
+    waypoints: list[Waypoint] = Field(default_factory=list)
+    label_bounds: Bounds | None = None
 
 
 class Lane(BaseModel):

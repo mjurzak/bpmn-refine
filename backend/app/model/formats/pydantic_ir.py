@@ -12,6 +12,7 @@ from typing import Any, cast
 from lxml import etree
 
 from app.model.schema import (
+    Bounds,
     BpmnDiagram,
     BpmnProcess,
     FlowNode,
@@ -19,6 +20,7 @@ from app.model.schema import (
     FlowNodeType,
     SequenceFlow,
     SequenceFlowId,
+    Waypoint,
 )
 
 # standard BPMN 2.0 namespaces
@@ -49,6 +51,10 @@ class PydanticConverter:
         processes: list[BpmnProcess] = []
         for proc_el in root.findall(f"{{{bpmn_ns}}}process"):
             processes.append(_parse_process(proc_el, bpmn_ns))
+
+        # the author's layout, keyed by the element it decorates. carried on the
+        # model so a repair does not force a full re-layout of an untouched diagram
+        _attach_di(root, processes)
 
         return BpmnDiagram(
             definitions_id=root.get("id", "definitions"),
@@ -119,6 +125,68 @@ def _resolve_bpmn_ns(root: etree._Element) -> str:
         if "BPMN" in uri and "MODEL" in uri:
             return uri
     return BPMN_NS
+
+
+def _attach_di(root: etree._Element, processes: list[BpmnProcess]) -> None:
+    """copy BPMNDI geometry onto the flow nodes and flows it belongs to
+
+    BPMNDI lives in a separate subtree keyed by `bpmnElement`, so it is read once
+    here and hung off the model. Elements with no shape keep `bounds=None`, which
+    is how the serialiser tells "the author never placed this" from "the author
+    placed it at 0,0".
+    """
+    shapes: dict[str, tuple[Bounds, Bounds | None]] = {}
+    edges: dict[str, tuple[list[Waypoint], Bounds | None]] = {}
+
+    for el in root.iter():
+        if not isinstance(el.tag, str):
+            continue
+        local = etree.QName(el.tag).localname
+        target = el.get("bpmnElement")
+        if not target:
+            continue
+        if local == "BPMNShape":
+            bounds = _read_bounds(el.find(f"{{{DC_NS}}}Bounds"))
+            if bounds is not None:
+                shapes[target] = (bounds, _read_label_bounds(el))
+        elif local == "BPMNEdge":
+            waypoints = [
+                Waypoint(x=float(wp.get("x", 0)), y=float(wp.get("y", 0)))
+                for wp in el.findall(f"{{{DI_NS}}}waypoint")
+            ]
+            if waypoints:
+                edges[target] = (waypoints, _read_label_bounds(el))
+
+    for proc in processes:
+        for node in proc.flow_nodes:
+            found = shapes.get(node.id)
+            if found is not None:
+                node.bounds, node.label_bounds = found
+        for flow in proc.sequence_flows:
+            found_edge = edges.get(flow.id)
+            if found_edge is not None:
+                flow.waypoints, flow.label_bounds = found_edge
+
+
+def _read_bounds(el: etree._Element | None) -> Bounds | None:
+    if el is None:
+        return None
+    try:
+        return Bounds(
+            x=float(el.get("x", 0)),
+            y=float(el.get("y", 0)),
+            width=float(el.get("width", 0)),
+            height=float(el.get("height", 0)),
+        )
+    except (TypeError, ValueError):
+        return None
+
+
+def _read_label_bounds(parent: etree._Element) -> Bounds | None:
+    label = parent.find(f"{{{BPMNDI_NS}}}BPMNLabel")
+    if label is None:
+        return None
+    return _read_bounds(label.find(f"{{{DC_NS}}}Bounds"))
 
 
 def _parse_process(proc_el: etree._Element, bpmn_ns: str) -> BpmnProcess:
@@ -230,11 +298,13 @@ def _serialize_process(proc: BpmnProcess, bpmn_ns: str) -> etree._Element:
 
 
 def _serialize_bpmndi(proc: BpmnProcess) -> etree._Element:
-    """Generate minimal BPMNDI for bpmn-js rendering.
+    """Emit BPMNDI, preferring the geometry the author gave us.
 
-    Lays out nodes left-to-right in sequence flow order so the diagram is
-    at least readable.  This is not a full auto-layout — just enough for
-    bpmn-js to initialise its canvas.
+    A node that arrived with `bounds` keeps them exactly. Only elements with no
+    stored geometry — nodes an edit op just created — are placed by the
+    left-to-right fallback below, which exists so bpmn-js has something to render
+    rather than as a layout engine. Keeping the two apart is what stops a
+    one-flow repair from re-drawing an entire diagram.
     """
     diagram_el = etree.Element(
         f"{{{BPMNDI_NS}}}BPMNDiagram",
@@ -246,59 +316,95 @@ def _serialize_bpmndi(proc: BpmnProcess) -> etree._Element:
         attrib={"id": f"BPMNPlane_{proc.id}", "bpmnElement": proc.id},
     )
 
-    # build a simple left-to-right ordering following sequence flows
-    ordered_ids = _topo_order(proc)
-    node_positions: dict[str, tuple[int, int, int, int]] = {}  # id -> (x, y, w, h)
+    node_positions = _node_positions(proc)
 
-    x = 150
-    for node_id in ordered_ids:
-        node = next((n for n in proc.flow_nodes if n.id == node_id), None)
-        if node is None:
+    for node in proc.flow_nodes:
+        bounds = node_positions.get(node.id)
+        if bounds is None:
             continue
-        w, h = _node_dimensions(node)
-        y = _Y_CENTER - h // 2
-        node_positions[node_id] = (x, y, w, h)
-        x += w + _H_GAP
-
-    # shapes
-    for node_id, (bx, by, bw, bh) in node_positions.items():
         shape_el = etree.SubElement(
             plane_el,
             f"{{{BPMNDI_NS}}}BPMNShape",
-            attrib={"id": f"{node_id}_di", "bpmnElement": node_id},
+            attrib={"id": f"{node.id}_di", "bpmnElement": node.id},
         )
-        etree.SubElement(
-            shape_el,
-            f"{{{DC_NS}}}Bounds",
-            attrib={"x": str(bx), "y": str(by), "width": str(bw), "height": str(bh)},
-        )
+        _write_bounds(shape_el, bounds)
+        _write_label(shape_el, node.label_bounds)
 
-    # edges — simple straight line from source center-right to target center-left
     for sf in proc.sequence_flows:
-        src = node_positions.get(sf.source_ref)
-        tgt = node_positions.get(sf.target_ref)
-        if not src or not tgt:
+        waypoints = sf.waypoints or _fallback_waypoints(sf, node_positions)
+        if not waypoints:
             continue
         edge_el = etree.SubElement(
             plane_el,
             f"{{{BPMNDI_NS}}}BPMNEdge",
             attrib={"id": f"{sf.id}_di", "bpmnElement": sf.id},
         )
-        # waypoint: right edge of source -> left edge of target
-        sx, sy, sw, sh = src
-        tx, ty, tw, th = tgt
-        etree.SubElement(
-            edge_el,
-            f"{{{DI_NS}}}waypoint",
-            attrib={"x": str(sx + sw), "y": str(sy + sh // 2)},
-        )
-        etree.SubElement(
-            edge_el,
-            f"{{{DI_NS}}}waypoint",
-            attrib={"x": str(tx), "y": str(ty + th // 2)},
-        )
+        for wp in waypoints:
+            etree.SubElement(
+                edge_el,
+                f"{{{DI_NS}}}waypoint",
+                attrib={"x": _num(wp.x), "y": _num(wp.y)},
+            )
+        _write_label(edge_el, sf.label_bounds)
 
     return diagram_el
+
+
+def _node_positions(proc: BpmnProcess) -> dict[str, Bounds]:
+    """stored bounds where we have them, generated ones where we do not"""
+    positions = {node.id: node.bounds for node in proc.flow_nodes if node.bounds}
+    unplaced = [node for node in proc.flow_nodes if node.bounds is None]
+    if not unplaced:
+        return positions
+
+    # start to the right of everything already placed so new nodes never land on
+    # top of the author's work
+    x = max((b.x + b.width for b in positions.values()), default=150 - _H_GAP) + _H_GAP
+    order = {node_id: i for i, node_id in enumerate(_topo_order(proc))}
+    for node in sorted(unplaced, key=lambda n: order.get(n.id, len(order))):
+        w, h = _node_dimensions(node)
+        positions[node.id] = Bounds(x=x, y=_Y_CENTER - h // 2, width=w, height=h)
+        x += w + _H_GAP
+    return positions
+
+
+def _fallback_waypoints(
+    sf: SequenceFlow, positions: dict[str, Bounds]
+) -> list[Waypoint]:
+    """a straight line between two shapes, for a flow with no stored routing"""
+    src = positions.get(sf.source_ref)
+    tgt = positions.get(sf.target_ref)
+    if src is None or tgt is None:
+        return []
+    return [
+        Waypoint(x=src.x + src.width, y=src.y + src.height / 2),
+        Waypoint(x=tgt.x, y=tgt.y + tgt.height / 2),
+    ]
+
+
+def _write_bounds(parent: etree._Element, bounds: Bounds) -> None:
+    etree.SubElement(
+        parent,
+        f"{{{DC_NS}}}Bounds",
+        attrib={
+            "x": _num(bounds.x),
+            "y": _num(bounds.y),
+            "width": _num(bounds.width),
+            "height": _num(bounds.height),
+        },
+    )
+
+
+def _write_label(parent: etree._Element, bounds: Bounds | None) -> None:
+    if bounds is None:
+        return
+    label_el = etree.SubElement(parent, f"{{{BPMNDI_NS}}}BPMNLabel")
+    _write_bounds(label_el, bounds)
+
+
+def _num(value: float) -> str:
+    """BPMNDI coordinates are decimals, but whole numbers should stay whole"""
+    return str(int(value)) if float(value).is_integer() else str(value)
 
 
 def _node_dimensions(node: FlowNode) -> tuple[int, int]:

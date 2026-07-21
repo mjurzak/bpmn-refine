@@ -279,7 +279,15 @@ function verticalSplitConfig() {
   return { initial, min: 60, max };
 }
 
+// the IR carries the author's BPMNDI now, so a diagram that arrived with a
+// layout keeps it — re-laying out would move every element and turn a one-flow
+// repair into a 100% visual diff. Only diagrams with no geometry at all (hand
+// written XML, some exports) get laid out, and new nodes are placed clear of the
+// existing shapes by the serialiser.
 async function autoLayout(xmlString) {
+  if (xmlString?.includes("<bpmndi:BPMNShape") || xmlString?.includes("BPMNShape")) {
+    return xmlString;
+  }
   try {
     return await layoutProcess(xmlString);
   } catch (err) {
