@@ -15,6 +15,7 @@ from app.model.schema import BpmnDiagram
 from app.services.ir_payload import diagram_payload
 from app.validation.checkers import run_tier2_checkers
 from app.validation.rules import (
+    SOURCE_LLM,
     Severity,
     ValidationIssue,
     ValidationReport,
@@ -97,7 +98,11 @@ async def _semantic_validate(
     )
     try:
         issues_data = json.loads(raw)
-        return [ValidationIssue(**issue) for issue in issues_data]
+        issues = [ValidationIssue(**issue) for issue in issues_data]
+        # the model does not get to claim it is anything else
+        for issue in issues:
+            issue.source = SOURCE_LLM
+        return issues
     except Exception:
         # surface malformed LLM output as a warning instead of crashing the command
         return [
@@ -105,6 +110,7 @@ async def _semantic_validate(
                 rule_id="LLM_PARSE_ERROR",
                 severity=Severity.WARNING,
                 message="LLM semantic validation returned an unparseable response.",
+                source=SOURCE_LLM,
             )
         ]
 

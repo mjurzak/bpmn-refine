@@ -6,6 +6,14 @@ const SEVERITY_CLASS = {
   info: "info",
 };
 
+// tier 2 stamps its own tool name ("woflan"), which is worth showing as-is —
+// it says more than "rule engine" and it is still a deterministic verdict
+function originLabel(issue, origin, modelUsed) {
+  if (origin === "llm") return modelUsed ?? "LLM";
+  if (!issue.source || issue.source === "rules") return "rule engine";
+  return issue.source;
+}
+
 export default function ValidationPanel({
   issues = [],
   semanticIssues = [],
@@ -16,11 +24,13 @@ export default function ValidationPanel({
   modelUsed = null,
 }) {
   // tag each issue with its origin so the user can tell a deterministic verdict
-  // from an LLM suggestion
-  const all = [
-    ...issues.map((issue) => ({ issue, origin: "rules" })),
-    ...semanticIssues.map((issue) => ({ issue, origin: "llm" })),
-  ];
+  // from an LLM suggestion. the backend stamps issue.source, which is the only
+  // signal that survives a repair — remaining_issues comes back as one flat list,
+  // so which array an issue arrived in says nothing about who produced it
+  const all = [...issues, ...semanticIssues].map((issue) => ({
+    issue,
+    origin: issue.source === "llm" ? "llm" : "rules",
+  }));
 
   // pick a badge variant for the header
   let badge = null;
@@ -66,7 +76,7 @@ export default function ValidationPanel({
                 </span>
                 <span className="issue-rule">{issue.rule_id}</span>
                 <span className={`issue-origin issue-origin--${origin}`}>
-                  {origin === "llm" ? modelUsed ?? "LLM" : "rule engine"}
+                  {originLabel(issue, origin, modelUsed)}
                 </span>
                 <p className="issue-message">{issue.message}</p>
                 {issue.suggestion && (

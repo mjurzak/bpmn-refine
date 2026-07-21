@@ -86,6 +86,12 @@ class ValidationReport:
         return [i for i in self.issues if i.severity == Severity.WARNING]
 
 
+# issue.source values that are not a tier-2 tool name. tier 2 stamps its own tool
+# (e.g. "woflan"), which is deterministic like the rules and more informative
+SOURCE_RULES = "rules"
+SOURCE_LLM = "llm"
+
+
 def issue_to_dict(issue: ValidationIssue) -> dict[str, Any]:
     """convert an issue to JSON-safe data for prompts and logs"""
     return asdict(issue)
@@ -150,6 +156,12 @@ def validate(diagram: BpmnDiagram) -> ValidationReport:
         _check_sequence_flow_refs(proc, report)  # R005, R006
         # class B — live under-approximations of soundness
         _check_reachability(proc, graph, report)  # R007, R008
+    # stamped centrally rather than at each construction site: consumers need to
+    # tell a deterministic verdict from an LLM opinion, and after a repair every
+    # issue arrives in one flat list with no other way to tell them apart
+    for issue in report.issues:
+        if issue.source is None:
+            issue.source = SOURCE_RULES
     return report
 
 

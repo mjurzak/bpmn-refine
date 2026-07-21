@@ -87,3 +87,23 @@ def test_trap_node_flags_r008():
     proc.flow_nodes[1].outgoing.append("sf_d")
     rule_ids = {i.rule_id for i in validate(diagram).errors()}
     assert "R008" in rule_ids
+
+
+def test_every_deterministic_issue_is_stamped_as_rules():
+    """the UI tells a rule verdict from an LLM opinion by issue.source alone
+
+    After a repair the frontend receives one flat `remaining_issues` list, so the
+    array an issue arrived in carries no information. Without this stamp, LLM
+    findings render as "rule engine".
+    """
+    from pathlib import Path
+
+    from app.model.formats.pydantic_ir import PydanticConverter
+    from app.validation.rules import SOURCE_RULES
+
+    diagram = PydanticConverter().parse(
+        Path("data/test_cases/09_expense_reimbursement.bpmn").read_bytes()
+    )
+    issues = validate(diagram).issues
+    assert issues
+    assert all(issue.source == SOURCE_RULES for issue in issues)

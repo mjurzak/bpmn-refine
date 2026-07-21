@@ -82,3 +82,27 @@ def _minimal_valid_diagram() -> dict:
             }
         ],
     }
+
+
+def test_semantic_issues_are_stamped_as_llm(monkeypatch):
+    """an LLM finding must never render as a deterministic verdict"""
+    from app.services import validation as validation_service
+
+    async def fake_complete(**kwargs):
+        return (
+            '[{"rule_id": "S001", "severity": "warning", '
+            '"message": "Rejected reports end at \'Expense Reimbursed\'.", '
+            '"source": "rules"}]'
+        )
+
+    monkeypatch.setattr(validation_service.llm_client, "complete", fake_complete)
+
+    response = client.post(
+        "/api/v1/validate",
+        json={"diagram": _minimal_valid_diagram(), "include_semantic": True},
+    )
+
+    assert response.status_code == 200
+    semantic = response.json()["semantic_issues"]
+    # the model claimed "rules"; the service overrides it
+    assert [issue["source"] for issue in semantic] == ["llm"]
