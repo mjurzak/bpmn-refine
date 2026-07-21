@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 import pytest
 from app.experiments import ExperimentConfig
@@ -12,6 +13,7 @@ from app.model.schema import (
 from app.repair.ops import RenameNodeOp
 from app.services import repair as repair_service
 from app.services.repair import RepairResult, dispatch_repair, repair_with_edit_ops
+from app.services.validation import ValidationResult
 from app.validation.rules import FormalWitness, Severity, ValidationIssue
 
 
@@ -223,11 +225,13 @@ async def test_repair_with_edit_ops_sends_diagram_specific_id_enums(monkeypatch)
         "start_1",
         "task_1",
     ]
-    assert schema_defs["AddFlowOp"]["properties"]["source_ref"]["enum"] == [
-        "end_1",
-        "start_1",
-        "task_1",
-    ]
+    # add_flow endpoints stay open strings: a node added earlier in the same ops
+    # list has to be a legal endpoint, and a frozen enum cannot express that.
+    # _validate_atomic_op_ids enforces the real constraint instead.
+    source_ref = schema_defs["AddFlowOp"]["properties"]["source_ref"]
+    assert "enum" not in source_ref
+    assert "end_1" in source_ref["description"]
+    assert "add_node" in source_ref["description"]
     payload = json.loads(captured["prompt"])
     assert payload["id_constraints"]["flow_ids"] == ["sf_1", "sf_2"]
     assert (
@@ -403,6 +407,76 @@ async def test_dispatch_repair_re_validates_with_t2_between_iterations(monkeypat
     assert called_config.tiers_enabled.t2 is True
 
 
+async def test_dispatch_repair_re_validates_with_t3_when_enabled(monkeypatch):
+    """without this the loop cannot re-report a semantic issue and always converges"""
+    seen: list[bool] = []
+
+    async def fake_validate(diagram, **kwargs):
+        seen.append(kwargs.get("include_semantic"))
+        return ValidationResult(is_valid=True, issues=[], semantic_issues=[])
+
+    monkeypatch.setattr(repair_service, "validate_diagram", fake_validate)
+
+    async def fake_atomic_repair(diagram, issues, **kwargs):
+        return [RenameNodeOp(id="task_1", new_name="Fixed")]
+
+    issue = ValidationIssue(
+        rule_id="R999",
+        severity=Severity.ERROR,
+        message="Synthetic issue.",
+        element_id="task_1",
+    )
+    for t3, expected in ((True, True), (False, False)):
+        seen.clear()
+        config = ExperimentConfig.model_validate(
+            {"tiers_enabled": {"t1": True, "t2": False, "t3": t3}}
+        )
+        await dispatch_repair(
+            _minimal_valid_diagram(),
+            issues=[issue],
+            config=config,
+            atomic_repair_fn=fake_atomic_repair,
+        )
+        assert seen == [expected]
+
+
+async def test_dispatch_repair_passes_other_issues_as_context(monkeypatch):
+    """warnings are not repaired, but the repairer should still know about them"""
+    captured: dict[str, Any] = {}
+
+    async def fake_validate(diagram, **kwargs):
+        return ValidationResult(is_valid=True, issues=[], semantic_issues=[])
+
+    monkeypatch.setattr(repair_service, "validate_diagram", fake_validate)
+
+    async def fake_atomic_repair(diagram, issues, **kwargs):
+        captured.update(kwargs)
+        return [RenameNodeOp(id="task_1", new_name="Fixed")]
+
+    target = ValidationIssue(
+        rule_id="R999",
+        severity=Severity.ERROR,
+        message="Synthetic issue.",
+        element_id="task_1",
+    )
+    warning = ValidationIssue(
+        rule_id="S001",
+        severity=Severity.WARNING,
+        message="Shared end event contradicts the rejection path.",
+    )
+
+    await dispatch_repair(
+        _minimal_valid_diagram(),
+        issues=[target, warning],
+        config=ExperimentConfig(),
+        atomic_repair_fn=fake_atomic_repair,
+    )
+
+    context = captured.get("context_issues")
+    assert context is not None
+    assert [i.rule_id for i in context] == ["S001"]
+
+
 def _minimal_valid_diagram() -> BpmnDiagram:
     start = FlowNode(id="start_1", type=FlowNodeType.START_EVENT, outgoing=["sf_1"])
     task = FlowNode(
@@ -436,3 +510,153 @@ def _diagram_without_start() -> BpmnDiagram:
             BpmnProcess(id="proc_1", flow_nodes=[task, end], sequence_flows=[flow])
         ],
     )
+
+
+async def test_atomic_repair_can_connect_a_node_it_just_added(monkeypatch):
+    """the S001 case: inserting a gateway needs add_node then add_flow to it
+
+    Before the id sets were walked forward, add_flow endpoints were pinned to the
+    diagram as it arrived, so a newly added node could never be connected and the
+    whole insert-a-gateway repair class was unreachable.
+    """
+    async def fake_complete_structured(**kwargs):
+        return {
+            "ops": [
+                {
+                    "op": "add_node",
+                    "id": "gw_outcome",
+                    "node_type": "exclusiveGateway",
+                    "process_id": "proc_1",
+                    "name": "Delivered?",
+                },
+                {"op": "remove_flow", "id": "sf_2"},
+                {
+                    "op": "add_flow",
+                    "id": "sf_to_gw",
+                    "source_ref": "task_1",
+                    "target_ref": "gw_outcome",
+                },
+                {
+                    "op": "add_flow",
+                    "id": "sf_from_gw",
+                    "source_ref": "gw_outcome",
+                    "target_ref": "end_1",
+                },
+            ]
+        }
+
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
+
+    ops = await repair_with_edit_ops(
+        _minimal_valid_diagram(),
+        issues=[
+            ValidationIssue(
+                rule_id="S001",
+                severity=Severity.ERROR,
+                message="Uncontrolled split with contradictory outcomes.",
+            )
+        ],
+        config=ExperimentConfig(),
+    )
+
+    assert [op.op for op in ops] == ["add_node", "remove_flow", "add_flow", "add_flow"]
+    assert ops[3].source_ref == "gw_outcome"
+
+
+async def test_atomic_repair_still_rejects_an_id_that_is_never_created(monkeypatch):
+    """relaxing the enum must not reopen the hallucinated-id hole"""
+    async def fake_complete_structured(**kwargs):
+        return {
+            "ops": [
+                {
+                    "op": "add_flow",
+                    "id": "sf_new",
+                    "source_ref": "task_1",
+                    "target_ref": "gw_never_added",
+                }
+            ]
+        }
+
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
+
+    with pytest.raises(ValueError, match="gw_never_added"):
+        await repair_with_edit_ops(
+            _minimal_valid_diagram(),
+            issues=[
+                ValidationIssue(
+                    rule_id="R999",
+                    severity=Severity.ERROR,
+                    message="Synthetic atomic repair issue.",
+                )
+            ],
+            config=ExperimentConfig(),
+        )
+
+
+async def test_atomic_repair_rejects_add_node_onto_an_existing_id(monkeypatch):
+    """seen live on R004: the model re-added the orphan instead of removing it"""
+    async def fake_complete_structured(**kwargs):
+        return {
+            "ops": [
+                {
+                    "op": "add_node",
+                    "id": "task_1",
+                    "node_type": "task",
+                    "process_id": "proc_1",
+                }
+            ]
+        }
+
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
+
+    with pytest.raises(ValueError, match="already exists"):
+        await repair_with_edit_ops(
+            _minimal_valid_diagram(),
+            issues=[
+                ValidationIssue(
+                    rule_id="R999",
+                    severity=Severity.ERROR,
+                    message="Synthetic atomic repair issue.",
+                )
+            ],
+            config=ExperimentConfig(),
+        )
+
+
+async def test_atomic_repair_rejects_reference_to_a_node_removed_earlier(monkeypatch):
+    """the id set shrinks as well as grows"""
+    async def fake_complete_structured(**kwargs):
+        return {
+            "ops": [
+                {"op": "remove_node", "id": "task_1", "cascade": False},
+                {
+                    "op": "add_flow",
+                    "id": "sf_new",
+                    "source_ref": "task_1",
+                    "target_ref": "end_1",
+                },
+            ]
+        }
+
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
+
+    with pytest.raises(ValueError, match="task_1"):
+        await repair_with_edit_ops(
+            _minimal_valid_diagram(),
+            issues=[
+                ValidationIssue(
+                    rule_id="R999",
+                    severity=Severity.ERROR,
+                    message="Synthetic atomic repair issue.",
+                )
+            ],
+            config=ExperimentConfig(),
+        )

@@ -79,42 +79,7 @@ def _fix_missing_end(
     return ops
 
 
-def _fix_start_without_outgoing(
-    issue: ValidationIssue, diagram: BpmnDiagram
-) -> list[EditOp] | None:
-    found = _find_node(diagram, issue.element_id)
-    if found is None:
-        return None
-    proc, start = found
-    target = _best_entry_target(proc, exclude_id=start.id)
-    if target is None:
-        return None
-    return [
-        AddFlowOp(
-            id=_unique_flow_id(diagram, f"flow_{start.id}_to_{target.id}"),
-            source_ref=start.id,
-            target_ref=target.id,
-        )
-    ]
-
-
-def _fix_end_without_incoming(
-    issue: ValidationIssue, diagram: BpmnDiagram
-) -> list[EditOp] | None:
-    found = _find_node(diagram, issue.element_id)
-    if found is None:
-        return None
-    proc, end = found
-    source = _best_exit_source(proc, exclude_id=end.id)
-    if source is None:
-        return None
-    return [
-        AddFlowOp(
-            id=_unique_flow_id(diagram, f"flow_{source.id}_to_{end.id}"),
-            source_ref=source.id,
-            target_ref=end.id,
-        )
-    ]
+# R003 and R004 deliberately have no quick fix; see the note on _REGISTRY.
 
 
 def _fix_dangling_flow(
@@ -146,31 +111,26 @@ def _has_node_type(proc: BpmnProcess, node_type: FlowNodeType) -> bool:
     return any(node.type == node_type for node in proc.flow_nodes)
 
 
-def _best_entry_target(
-    proc: BpmnProcess, exclude_id: str | None = None
-) -> FlowNode | None:
+def _best_entry_target(proc: BpmnProcess) -> FlowNode | None:
+    """where a newly added start event should point
+
+    A node with no incoming flow is the likely head of the process, so it wins;
+    otherwise any non-start node will do. Only R001 uses this, and R001 means the
+    process has no start event at all, so there is no risk of picking one.
+    """
     candidates = [
-        node
-        for node in proc.flow_nodes
-        if node.id != exclude_id and node.type != FlowNodeType.START_EVENT
+        node for node in proc.flow_nodes if node.type != FlowNodeType.START_EVENT
     ]
     preferred = [node for node in candidates if not node.incoming]
-    if exclude_id is not None:
-        return next(iter(preferred), None)
     return next(iter(preferred or candidates), None)
 
 
-def _best_exit_source(
-    proc: BpmnProcess, exclude_id: str | None = None
-) -> FlowNode | None:
+def _best_exit_source(proc: BpmnProcess) -> FlowNode | None:
+    """the mirror of _best_entry_target, for a newly added end event (R002)"""
     candidates = [
-        node
-        for node in proc.flow_nodes
-        if node.id != exclude_id and node.type != FlowNodeType.END_EVENT
+        node for node in proc.flow_nodes if node.type != FlowNodeType.END_EVENT
     ]
     preferred = [node for node in candidates if not node.outgoing]
-    if exclude_id is not None:
-        return next(iter(preferred), None)
     return next(iter(preferred or candidates), None)
 
 
@@ -236,11 +196,19 @@ def _safe_id(value: str) -> str:
     return cleaned or "process"
 
 
+# A quick fix must be right whenever it fires — an issue it handles never reaches
+# the LLM. R003 and R004 are therefore unregistered on purpose: connecting an
+# orphan event needs a judgement about intent (wire it in, or delete it) that no
+# local heuristic has the context to make. Both had one, and it picked the only
+# node lacking a flow on the side it needed — which on a diagram with more than
+# one connectivity defect is another orphan. Observed on case 09: repairing R003
+# wired an unconnected start event straight into an unconnected end event,
+# producing a process that escalated every imported card statement without
+# looking at it. Both rules now fall through to the LLM, which sees the whole
+# diagram and the other open issues.
 _REGISTRY: dict[str, QuickFix] = {
     "R001": _fix_missing_start,            # no start event
     "R002": _fix_missing_end,              # no end event
-    "R003": _fix_start_without_outgoing,   # start event has no outgoing
-    "R004": _fix_end_without_incoming,     # end event has no incoming
     "R005": _fix_dangling_flow,            # sequence flow unknown source
     "R006": _fix_dangling_flow,            # sequence flow unknown target
 }

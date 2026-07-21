@@ -193,7 +193,11 @@ def _check_event_connectivity(proc: BpmnProcess, report: ValidationReport) -> No
                     severity=Severity.ERROR,
                     message=f"Start event '{node.id}' has no outgoing sequence flow.",
                     element_id=node.id,
-                    suggestion="Connect the start event to the first activity of the process.",
+                    suggestion=(
+                        "Connect the start event to the activity that should follow "
+                        "it, or remove the start event if nothing actually triggers "
+                        "the process there."
+                    ),
                 )
             )
         elif node.type in _END_EVENT_TYPES and not node.incoming:
@@ -203,7 +207,11 @@ def _check_event_connectivity(proc: BpmnProcess, report: ValidationReport) -> No
                     severity=Severity.ERROR,
                     message=f"End event '{node.id}' has no incoming sequence flow.",
                     element_id=node.id,
-                    suggestion="Connect the activity that should terminate here to the end event.",
+                    suggestion=(
+                        "Route the activity that should terminate here to the end "
+                        "event, or remove the end event if the outcome is already "
+                        "covered elsewhere."
+                    ),
                 )
             )
 

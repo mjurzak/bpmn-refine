@@ -172,8 +172,14 @@ async def repair_with_edit_ops(
     diagram: BpmnDiagram,
     issues: list[ValidationIssue],
     config: ExperimentConfig | None = None,
+    context_issues: list[ValidationIssue] | None = None,
 ) -> AtomicEditOpList:
-    """repair a diagram by asking the LLM for atomic EditOps"""
+    """repair a diagram by asking the LLM for atomic EditOps
+
+    `context_issues` are the other issues open on the same diagram — typically
+    warnings the loop will not act on. They are passed as background so the fix
+    for `issues` does not walk straight into a known problem, not as work to do.
+    """
     payload: dict[str, Any] = {
         "ir_format": str((config or ExperimentConfig()).ir_format),
         "diagram": diagram_payload(diagram, config),
@@ -181,6 +187,10 @@ async def repair_with_edit_ops(
         "repair_mode": RepairMode.ATOMIC,
         "id_constraints": _diagram_id_constraints(diagram),
     }
+    if context_issues:
+        payload["other_open_issues"] = [
+            issue_to_dict(issue) for issue in context_issues
+        ]
     tier2_findings = _extract_tier2_findings(issues)
     if tier2_findings:
         payload["tier2_findings"] = tier2_findings
@@ -246,13 +256,14 @@ async def dispatch_repair(
                     current,
                     issues=[issue],
                     config=active_config,
+                    context_issues=[other for other in remaining if other is not issue],
                 )
             current, op_results = apply_edit_ops(ops, current)
             applied_ops.extend(result.op for result in op_results if result.applied)
 
         validation = await validate_diagram(
             current,
-            include_semantic=False,
+            include_semantic=active_config.tiers_enabled.t3,
             config=active_config,
         )
         remaining = validation.issues + validation.semantic_issues
@@ -293,8 +304,6 @@ def _atomic_ops_schema_for_diagram(diagram: BpmnDiagram) -> dict[str, Any]:
         ("RenameNodeOp", "id", node_ids),
         ("ChangeNodeTypeOp", "id", node_ids),
         ("ChangeGatewayTypeOp", "id", node_ids),
-        ("AddFlowOp", "source_ref", node_ids),
-        ("AddFlowOp", "target_ref", node_ids),
         ("RemoveFlowOp", "id", flow_ids),
         ("RenameFlowOp", "id", flow_ids),
         ("SetConditionOp", "flow_id", flow_ids),
@@ -302,7 +311,32 @@ def _atomic_ops_schema_for_diagram(diagram: BpmnDiagram) -> dict[str, Any]:
     ]:
         _set_schema_enum(schema, def_name, field_name, enum_values)
 
+    # add_flow endpoints stay open strings. Enumerating them against the incoming
+    # diagram would make add_node unusable — a node created earlier in the same
+    # op list could never be connected, so every added node would be an orphan.
+    # _validate_atomic_op_ids walks the list in order and rejects genuinely
+    # unknown ids, which is the guarantee the enum was there to provide.
+    for field_name in ("source_ref", "target_ref"):
+        _describe_open_id_field(schema, "AddFlowOp", field_name, node_ids)
+
     return schema
+
+
+def _describe_open_id_field(
+    schema: dict[str, Any],
+    def_name: str,
+    field_name: str,
+    existing_ids: list[str],
+) -> None:
+    """leave a field unconstrained but tell the model what it may reference"""
+    field_schema = schema.get("$defs", {}).get(def_name, {}).get("properties", {}).get(field_name)
+    if field_schema is None:
+        return
+    listed = ", ".join(existing_ids) if existing_ids else "<none>"
+    field_schema["description"] = (
+        f"{field_name}. Either an existing node ID ({listed}) or the ID of a node "
+        "created by an earlier add_node op in this same ops list."
+    )
 
 
 def _json_schema_block(schema: dict[str, Any]) -> str:
@@ -335,6 +369,14 @@ def _diagram_id_constraints(diagram: BpmnDiagram) -> dict[str, list[str]]:
 
 
 def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
+    """reject ops referencing ids that will not exist when the op is applied
+
+    Ops apply in order, so the set of valid ids is walked forward with them: a
+    node introduced by an earlier `add_node` is a legal endpoint for a later
+    `add_flow`, and one removed by an earlier `remove_node` is not. Pinning the
+    check to the diagram as it arrived would make `add_node` useless — a new node
+    could never be connected to anything, which is a defect in itself.
+    """
     if not isinstance(ops_data, list):
         return
 
@@ -359,8 +401,10 @@ def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
                 "node",
                 index,
                 "id",
-                constraints["node_ids"],
+                sorted(node_ids),
             )
+            if op == "remove_node":
+                node_ids.discard(op_data.get("id"))
         elif op == "add_flow":
             _require_id_in_enum(
                 op_data.get("source_ref"),
@@ -368,7 +412,7 @@ def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
                 "node",
                 index,
                 "source_ref",
-                constraints["node_ids"],
+                sorted(node_ids),
             )
             _require_id_in_enum(
                 op_data.get("target_ref"),
@@ -376,8 +420,9 @@ def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
                 "node",
                 index,
                 "target_ref",
-                constraints["node_ids"],
+                sorted(node_ids),
             )
+            _register_new_id(op_data.get("id"), flow_ids)
         elif op in {"remove_flow", "rename_flow"}:
             _require_id_in_enum(
                 op_data.get("id"),
@@ -385,8 +430,10 @@ def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
                 "flow",
                 index,
                 "id",
-                constraints["flow_ids"],
+                sorted(flow_ids),
             )
+            if op == "remove_flow":
+                flow_ids.discard(op_data.get("id"))
         elif op == "set_condition":
             _require_id_in_enum(
                 op_data.get("flow_id"),
@@ -394,7 +441,7 @@ def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
                 "flow",
                 index,
                 "flow_id",
-                constraints["flow_ids"],
+                sorted(flow_ids),
             )
         elif op == "add_node":
             _require_id_in_enum(
@@ -403,8 +450,29 @@ def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
                 "process",
                 index,
                 "process_id",
-                constraints["process_ids"],
+                sorted(process_ids),
             )
+            # an add_node onto an id that is already taken is not an addition —
+            # it is a no-op the model reached for instead of remove_node. The
+            # apply layer rejects it too, but only after the round trip.
+            _reject_taken_id(op_data.get("id"), node_ids | flow_ids, index)
+            # the new node becomes a legal endpoint for later ops in this list
+            _register_new_id(op_data.get("id"), node_ids)
+
+
+def _reject_taken_id(value: Any, known: set[str], index: int) -> None:
+    """refuse to introduce an id that already exists in the diagram"""
+    if isinstance(value, str) and value in known:
+        raise ValueError(
+            f"op[{index}] add_node id '{value}' already exists — use remove_node "
+            "or add_flow to act on an existing element."
+        )
+
+
+def _register_new_id(value: Any, known: set[str]) -> None:
+    """record an id an op introduces so later ops in the same list may use it"""
+    if isinstance(value, str) and value:
+        known.add(value)
 
 
 def _require_id_in_enum(

@@ -30,6 +30,7 @@ def test_quick_fix_removes_sequence_flow_with_unknown_target():
 
 
 def test_quick_fix_declines_to_feed_start_event():
+    """R003 is unregistered — wiring an orphan start event is the LLM's call"""
     diagram = _diagram_with_orphan_start()
     issue = next(item for item in validate(diagram).errors() if item.rule_id == "R003")
 
@@ -39,12 +40,36 @@ def test_quick_fix_declines_to_feed_start_event():
 
 
 def test_quick_fix_declines_to_fork_start_to_orphan_end():
+    """R004 is unregistered — deleting vs connecting needs the whole diagram"""
     diagram = _diagram_with_orphan_end()
     issue = next(item for item in validate(diagram).errors() if item.rule_id == "R004")
 
     ops = propose_quick_fix(issue, diagram)
 
     assert ops is None
+
+
+def test_quick_fix_never_staples_two_orphans_together():
+    """the case 09 regression: R003 and R004 both used to return the same op
+
+    An orphan start and an orphan end event in one process is exactly the shape
+    the old heuristic got wrong — each rule's fix picked the other rule's element
+    as its endpoint, joining two defects into a plausible-looking flow.
+    """
+    from pathlib import Path
+
+    from app.model.formats.pydantic_ir import PydanticConverter
+
+    diagram = PydanticConverter().parse(
+        Path("data/test_cases/09_expense_reimbursement.bpmn").read_bytes()
+    )
+    connectivity = [
+        issue
+        for issue in validate(diagram).issues
+        if issue.rule_id in {"R003", "R004"}
+    ]
+    assert {issue.rule_id for issue in connectivity} == {"R003", "R004"}
+    assert all(propose_quick_fix(issue, diagram) is None for issue in connectivity)
 
 
 def _diagram_without_start() -> BpmnDiagram:

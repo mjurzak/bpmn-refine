@@ -19,11 +19,29 @@ If the request includes a `tier2_findings` list, each entry is a formally verifi
 - `formal_witness.marking` — (may be empty) token distribution at the point of failure
 - `affected_elements` — element IDs implicated
 
-Use this to reason about the minimal fix before selecting EditOps:
+These mappings apply **only** when `tier2_findings` is present:
 - Dead tasks → `remove_node` or reconnect with `add_flow`
 - Token deficit at a join → `add_flow` from a missing branch or replace gateway type
 - Excess tokens / open branch → `add_node` (end event) + `add_flow`, or fix missing merge
 - Non-terminating loop → `add_flow` to an exit path or `change_gateway_type` to exclusive
+
+## Connectivity issues (no tier-2 findings)
+
+For a plain structural issue about a disconnected element, pick one of:
+- Element carries intent the process still needs → `add_flow` to wire it in
+- Element is a leftover, or its outcome is already covered elsewhere → `remove_node`
+
+Never `add_node` an element that already exists, and never `change_node_type` to
+dodge a connectivity rule — retyping an orphan leaves it just as disconnected.
+
+## Other open issues (background only)
+
+The request may include `other_open_issues` — findings that are open on the same
+diagram but are **not** your assignment this round, usually lower-severity
+warnings. Treat them as low priority context:
+- Do not fix them. Fixing them is a separate round.
+- Do use them to avoid making them worse. If the natural fix for your assigned
+  issue would aggravate one of them, pick a different fix of the same size.
 
 Your task is to produce the smallest ordered EditOp list that resolves the listed issue.
 
