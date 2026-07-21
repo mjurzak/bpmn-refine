@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  R002 — no end event (class A: integrity / translation precondition).
+  The pizza is delivered and then the process just stops: with no sink the net can
+  never properly complete.
+  R008 is suppressed — with no exit anchor there is nothing to measure backward
+  reachability against.
+  Expected: R002.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="def_R002" targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="proc_R002" name="Pizza order (no end)" isExecutable="false">
+    <startEvent id="start_order" name="Order received"><outgoing>f_ordered</outgoing></startEvent>
+    <task id="task_bake" name="Bake pizza"><incoming>f_ordered</incoming><outgoing>f_baked</outgoing></task>
+    <task id="task_deliver" name="Deliver pizza"><incoming>f_baked</incoming></task>
+    <sequenceFlow id="f_ordered" sourceRef="start_order" targetRef="task_bake"/>
+    <sequenceFlow id="f_baked" sourceRef="task_bake" targetRef="task_deliver"/>
+  </process>
+</definitions>

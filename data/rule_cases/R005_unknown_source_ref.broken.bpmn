@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  R005 — sequence flow with an unknown source (class A, error).
+  A "Check stock" step was deleted from the model but the flow leaving it was
+  left behind, so f_ghost dangles from an element that no longer exists. A
+  dangling reference cannot be rendered, executed, or translated to a net — this
+  is precisely the class of defect that stops tier 2 from running at all.
+  Expected: R005 on f_ghost.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="def_R005" targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="proc_R005" name="Pizza order (deleted source)" isExecutable="false">
+    <startEvent id="start_order" name="Order received"><outgoing>f_ordered</outgoing></startEvent>
+    <task id="task_bake" name="Bake pizza"><incoming>f_ordered</incoming><outgoing>f_baked</outgoing></task>
+    <task id="task_deliver" name="Deliver pizza"><incoming>f_baked</incoming><outgoing>f_delivered</outgoing></task>
+    <endEvent id="end_delivered" name="Pizza delivered"><incoming>f_delivered</incoming></endEvent>
+    <sequenceFlow id="f_ordered" sourceRef="start_order" targetRef="task_bake"/>
+    <sequenceFlow id="f_baked" sourceRef="task_bake" targetRef="task_deliver"/>
+    <sequenceFlow id="f_delivered" sourceRef="task_deliver" targetRef="end_delivered"/>
+    <!-- "task_check_stock" was deleted; this flow was not -->
+    <sequenceFlow id="f_ghost" sourceRef="task_check_stock" targetRef="task_bake"/>
+  </process>
+</definitions>
