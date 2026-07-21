@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any
@@ -86,14 +87,22 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
         return []
 
     messages = _diagnostic_messages(diagnostics)
-    dead_tasks = _dead_tasks(diagnostics)
-    description = "; ".join(messages) if messages else "Woflan reported an unsound process."
+    index = _element_index(diagram)
+    dead_names = _petri_names(diagnostics.get("dead_tasks"))
+    uncovered_names = _petri_names(diagnostics.get("uncovered_places_s_component"))
+    dead_refs = _resolve_petri_names(dead_names, index)
+    uncovered_refs = _resolve_petri_names(uncovered_names, index)
+
+    # dead elements first — they are a direct verdict, the s-component places
+    # are a weaker localisation hint
+    element_refs = dead_refs + [ref for ref in uncovered_refs if ref not in dead_refs]
+    description = _soundness_description(dead_refs, uncovered_refs, index)
     return [
         ValidationIssue(
             rule_id="woflan:soundness",
             severity=Severity.ERROR,
             message=description,
-            element_refs=dead_tasks,
+            element_refs=element_refs,
             source=T2Tool.WOFLAN.value,
             formal_witness=FormalWitness(
                 kind="soundness",
@@ -102,7 +111,14 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
             raw={
                 "sound": False,
                 "diagnostic_messages": messages,
-                "dead_tasks": dead_tasks,
+                "dead_tasks": dead_refs,
+                "uncovered_places_s_component": uncovered_refs,
+                # keep the untranslated pm4py names so a run stays reproducible
+                # against the tool's own output
+                "petri_net_names": {
+                    "dead_tasks": dead_names,
+                    "uncovered_places_s_component": uncovered_names,
+                },
             },
         )
     ]
@@ -127,14 +143,116 @@ def _diagnostic_messages(diagnostics: dict[Any, Any]) -> list[str]:
     return values
 
 
-def _dead_tasks(diagnostics: dict[Any, Any]) -> list[str]:
-    tasks = diagnostics.get("dead_tasks") or []
+# pm4py's BPMN -> Petri net converter derives every place and transition name
+# from the BPMN element it came from: transitions are named after node ids,
+# sequence flows become places keyed by flow id, and a node contributes
+# `ent_<id>` / `exi_<id>` places plus `sfl_<id>` / `tfl_<id>` invisible
+# transitions. Everything outside that scheme belongs to the encoding, not to
+# the user's diagram.
+_PETRI_ID_PREFIXES = ("ent_", "exi_", "sfl_", "tfl_")
+
+# the workflow-net source/sink, and the transition Woflan itself adds to
+# short-circuit the net before checking soundness
+_SYNTHETIC_PETRI_NAMES = frozenset({"source", "sink", "short_circuited_transition"})
+
+
+@dataclass(frozen=True)
+class _ElementIndex:
+    """the BPMN ids a Petri-net name is allowed to resolve to, with their labels"""
+
+    ids: frozenset[str]
+    names: dict[str, str]
+
+
+def _element_index(diagram: BpmnDiagram) -> _ElementIndex:
+    ids: set[str] = set()
+    names: dict[str, str] = {}
+    for process in diagram.processes:
+        for node in process.flow_nodes:
+            ids.add(node.id)
+            if node.name:
+                names[node.id] = node.name
+        for flow in process.sequence_flows:
+            ids.add(flow.id)
+            if flow.name:
+                names[flow.id] = flow.name
+    return _ElementIndex(ids=frozenset(ids), names=names)
+
+
+def _resolve_petri_name(name: str, index: _ElementIndex) -> str | None:
+    """map one pm4py place/transition name back to the BPMN element it encodes
+
+    returns None for anything the encoding invented — source/sink, Woflan's
+    short-circuit transition, and the uuid4-named invisible transitions pm4py
+    emits for gateway splits and joins. Those have no counterpart on the canvas,
+    so reporting them would highlight a phantom and hand the repair prompt an
+    element that does not exist.
+    """
+    if name in _SYNTHETIC_PETRI_NAMES:
+        return None
+    if name in index.ids:
+        return name
+    for prefix in _PETRI_ID_PREFIXES:
+        if name.startswith(prefix):
+            candidate = name[len(prefix) :]
+            if candidate in index.ids:
+                return candidate
+    return None
+
+
+def _resolve_petri_names(names: list[str], index: _ElementIndex) -> list[str]:
+    """resolve names to BPMN ids, dropping the unmappable and keeping order"""
     refs: list[str] = []
-    for task in tasks:
-        ref = getattr(task, "label", None) or getattr(task, "name", None) or str(task)
-        if ref:
-            refs.append(str(ref))
+    for name in names:
+        ref = _resolve_petri_name(name, index)
+        if ref is not None and ref not in refs:
+            refs.append(ref)
     return refs
+
+
+def _petri_names(entries: Any) -> list[str]:
+    """read the `name` off pm4py Place/Transition objects
+
+    deliberately not `label` — for a task, pm4py puts the human-readable name
+    there and the BPMN id in `name`, and it is the id we need to map back.
+    """
+    if not entries:
+        return []
+    names: list[str] = []
+    for entry in entries:
+        name = getattr(entry, "name", None)
+        if name:
+            names.append(str(name))
+    return names
+
+
+def _describe_element(ref: str, index: _ElementIndex) -> str:
+    name = index.names.get(ref)
+    return f"{name} ({ref})" if name else ref
+
+
+def _soundness_description(
+    dead_refs: list[str],
+    uncovered_refs: list[str],
+    index: _ElementIndex,
+) -> str:
+    """phrase the verdict in BPMN terms rather than in Petri-net place names"""
+    parts = ["The process is not sound."]
+    if dead_refs:
+        listed = ", ".join(_describe_element(ref, index) for ref in dead_refs)
+        parts.append(f"These elements can never execute: {listed}.")
+    if uncovered_refs:
+        listed = ", ".join(_describe_element(ref, index) for ref in uncovered_refs)
+        parts.append(
+            "The following elements are not covered by an S-component, "
+            f"which points at a split/join mismatch around them: {listed}."
+        )
+    if not dead_refs and not uncovered_refs:
+        parts.append(
+            "The violation could not be localised to a specific element; "
+            "see the raw checker diagnostics."
+        )
+    return " ".join(parts)
 
 
 def _woflan_version() -> str:
