@@ -52,6 +52,19 @@ const DEEP_VALIDATE_CONFIG = {
   t2_tools: ["woflan"],
 };
 
+const SEMANTIC_VALIDATE_CONFIG = {
+  tiers_enabled: { t1: true, t2: false, t3: true },
+};
+
+// which tiers each button turns on. the repair loop re-validates with whatever
+// the last validation used, so a tier that found an issue is a tier that can
+// confirm the fix
+const VALIDATION_MODE_CONFIG = {
+  [VALIDATION_MODES.STRUCTURAL]: {},
+  [VALIDATION_MODES.DEEP]: DEEP_VALIDATE_CONFIG,
+  [VALIDATION_MODES.SEMANTIC]: SEMANTIC_VALIDATE_CONFIG,
+};
+
 const PROVIDER_OPTIONS = [
   {
     value: "openai",
@@ -658,6 +671,9 @@ export default function App() {
   const [validating, setValidating] = useState(false);
   const [repairing, setRepairing] = useState(false);
   const [validationMode, setValidationMode] = useState(null);
+  // survives the run, unlike validationMode — repair needs to know which tiers
+  // produced the issues it is about to fix
+  const [lastValidationTiers, setLastValidationTiers] = useState(null);
   const [pendingProposal, setPendingProposal] = useState(null);
   const [darkMode, setDarkMode] = useState(() =>
     readSessionBoolean(UI_SESSION_KEYS.darkMode, false),
@@ -890,10 +906,12 @@ export default function App() {
   async function handleValidate(mode = VALIDATION_MODES.STRUCTURAL) {
     if (!xml) return alert("Upload a diagram first.");
     const includeSemanticPass = mode === VALIDATION_MODES.SEMANTIC;
+    const modeConfig = VALIDATION_MODE_CONFIG[mode] ?? {};
     const config = mergeExperimentConfig(
       interactionConfig(llmSettings.validation),
-      mode === VALIDATION_MODES.DEEP ? DEEP_VALIDATE_CONFIG : {},
+      modeConfig,
     );
+    setLastValidationTiers(modeConfig.tiers_enabled ?? null);
     setValidating(true);
     setValidationMode(mode);
     const startedAt = performance.now();
@@ -1194,7 +1212,10 @@ export default function App() {
       const res = await repairDiagram(
         xml,
         allIssues,
-        interactionConfig(llmSettings.repair),
+        mergeExperimentConfig(
+          interactionConfig(llmSettings.repair),
+          lastValidationTiers ? { tiers_enabled: lastValidationTiers } : {},
+        ),
       );
       const proposedDiagram = res.updated_diagram;
       if (approvalMode === APPROVAL_MODES.AUTO) {

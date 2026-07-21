@@ -34,22 +34,38 @@ class ValidationResult(BaseModel):
 
 async def validate_diagram(
     diagram: BpmnDiagram,
-    include_semantic: bool = False,
+    include_semantic: bool | None = None,
     include_t2: bool | None = None,
     config: ExperimentConfig | None = None,
 ) -> ValidationResult:
-    """run deterministic validation and optionally an LLM semantic pass"""
+    """run deterministic validation and optionally an LLM semantic pass
+
+    Both tier switches follow the same rule: an explicit argument wins, otherwise
+    the config decides. Tier 3 used to ignore the config, so a caller could enable
+    it here and have the repair loop — which only reads the config — silently skip
+    the semantic re-check.
+    """
     active_config = config or ExperimentConfig()
     report: ValidationReport = validate(diagram)
     checker_issues: list[ValidationIssue] = []
     semantic_issues: list[ValidationIssue] = []
     should_run_t2 = include_t2 if include_t2 is not None else active_config.tiers_enabled.t2
+    should_run_t3 = (
+        include_semantic if include_semantic is not None else active_config.tiers_enabled.t3
+    )
 
     if should_run_t2:
         checker_issues = await run_tier2_checkers(diagram, active_config)
 
-    if include_semantic:
-        semantic_issues = await _semantic_validate(diagram, report, config=active_config)
+    if should_run_t3:
+        # tier 3 runs last on purpose: it is handed everything tiers 1 and 2 already
+        # found, so it can skip re-reporting them and spend its budget on what only
+        # a reader can see
+        semantic_issues = await _semantic_validate(
+            diagram,
+            report.issues + checker_issues,
+            config=active_config,
+        )
 
     issues = report.issues + checker_issues
     all_issues = issues + semantic_issues
@@ -63,14 +79,14 @@ async def validate_diagram(
 
 async def _semantic_validate(
     diagram: BpmnDiagram,
-    report: ValidationReport,
+    existing_issues: list[ValidationIssue],
     config: ExperimentConfig | None = None,
 ) -> list[ValidationIssue]:
     system_prompt = render_prompt_template(_VALIDATE_PROMPT, config=config)
     payload = {
         "ir_format": str((config or ExperimentConfig()).ir_format),
         "diagram": diagram_payload(diagram, config),
-        "existing_issues": [issue_to_dict(issue) for issue in report.issues],
+        "existing_issues": [issue_to_dict(issue) for issue in existing_issues],
     }
     raw = await llm_client.complete(
         prompt=json.dumps(payload),
