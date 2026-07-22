@@ -15,6 +15,9 @@ BPMN_NAMESPACES = {
     "bpmndi": "http://www.omg.org/spec/BPMN/20100524/DI",
     "dc": "http://www.omg.org/spec/DD/20100524/DC",
     "di": "http://www.omg.org/spec/DD/20100524/DI",
+    # both fixtures carry a condition_expression, which the serialiser stamps with
+    # xsi:type — so the declaration is part of the floor they have to declare
+    "xsi": "http://www.w3.org/2001/XMLSchema-instance",
 }
 
 

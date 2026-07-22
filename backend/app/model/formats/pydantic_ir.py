@@ -28,6 +28,7 @@ BPMN_NS = "http://www.omg.org/spec/BPMN/20100524/MODEL"
 BPMNDI_NS = "http://www.omg.org/spec/BPMN/20100524/DI"
 DC_NS = "http://www.omg.org/spec/DD/20100524/DC"
 DI_NS = "http://www.omg.org/spec/DD/20100524/DI"
+XSI_NS = "http://www.w3.org/2001/XMLSchema-instance"
 
 # dimensions for auto-layout
 _EVENT_SIZE = 36
@@ -70,6 +71,10 @@ class PydanticConverter:
         _ensure_namespace(nsmap, "bpmndi", BPMNDI_NS)
         _ensure_namespace(nsmap, "dc", DC_NS)
         _ensure_namespace(nsmap, "di", DI_NS)
+        # only declared when something will actually use it, so a diagram with no
+        # conditions round-trips without picking up a namespace it never needs
+        if _has_condition_expression(diagram):
+            _ensure_namespace(nsmap, "xsi", XSI_NS)
 
         root = etree.Element(
             f"{{{BPMN_NS}}}definitions",
@@ -79,8 +84,9 @@ class PydanticConverter:
                 "targetNamespace": diagram.target_namespace,
             },
         )
+        formal_expr_type = _formal_expression_type(nsmap)
         for proc in diagram.processes:
-            root.append(_serialize_process(proc, BPMN_NS))
+            root.append(_serialize_process(proc, BPMN_NS, formal_expr_type))
 
         # bpmn-js requires BPMNDI to render — generate a simple left-to-right layout
         for proc in diagram.processes:
@@ -257,7 +263,30 @@ def _parse_sequence_flow(el: etree._Element) -> SequenceFlow:
     )
 
 
-def _serialize_process(proc: BpmnProcess, bpmn_ns: str) -> etree._Element:
+def _has_condition_expression(diagram: BpmnDiagram) -> bool:
+    return any(
+        sf.condition_expression
+        for proc in diagram.processes
+        for sf in proc.sequence_flows
+    )
+
+
+def _formal_expression_type(nsmap: dict[None | str, str]) -> str:
+    """The `xsi:type` value to stamp on `conditionExpression`.
+
+    It is a QName, so it has to carry whatever prefix *this* document binds to the
+    BPMN namespace — `bpmn:tFormalExpression` where bpmn.io writes `xmlns:bpmn`,
+    bare `tFormalExpression` where the BPMN namespace is the default.
+    """
+    for prefix, uri in nsmap.items():
+        if uri == BPMN_NS:
+            return "tFormalExpression" if prefix is None else f"{prefix}:tFormalExpression"
+    return "tFormalExpression"
+
+
+def _serialize_process(
+    proc: BpmnProcess, bpmn_ns: str, formal_expr_type: str
+) -> etree._Element:
     attrib: dict[str, str] = {
         "id": proc.id,
         "isExecutable": str(proc.is_executable).lower(),
@@ -291,7 +320,14 @@ def _serialize_process(proc: BpmnProcess, bpmn_ns: str) -> etree._Element:
             sf_attrib["name"] = sf.name
         sf_el = etree.SubElement(el, f"{{{bpmn_ns}}}sequenceFlow", attrib=sf_attrib)
         if sf.condition_expression:
-            cond_el = etree.SubElement(sf_el, f"{{{bpmn_ns}}}conditionExpression")
+            # BPMN 2.0 types conditionExpression as tExpression; tools that read
+            # the expression need the xsi:type narrowing to tFormalExpression, and
+            # some silently ignore an untyped one
+            cond_el = etree.SubElement(
+                sf_el,
+                f"{{{bpmn_ns}}}conditionExpression",
+                attrib={f"{{{XSI_NS}}}type": formal_expr_type},
+            )
             cond_el.text = sf.condition_expression
 
     return el
