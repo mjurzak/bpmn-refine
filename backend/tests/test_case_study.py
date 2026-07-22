@@ -2,7 +2,8 @@
 
 The case study prose quotes specific rule ids against specific elements. If a
 rule changes and this diagram stops producing them, the chapter is wrong and
-nothing else in the suite would notice — data/test_cases has no other coverage.
+nothing else in the suite would notice. The other two fixtures in
+data/test_cases are pinned in test_fixture_cases.py.
 """
 from pathlib import Path
 

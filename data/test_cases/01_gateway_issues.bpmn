@@ -1,8 +1,16 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
   CASE 01 — Gateway issues: Expense Report Approval
+
   Expected issues:
-        
+    tier 1 — none. An XOR split feeding an AND join is legal BPMN 2.0 syntax, so
+             no deterministic rule may fire. That is the point of this fixture.
+    tier 2 — woflan:soundness (error). gw_approval takes exactly one branch;
+             gw_notify waits for both, so it never fires and task_notify is dead.
+             Localised to task_notify, gw_approval, f5, f6.
+
+  Pinned in backend/tests/test_fixture_cases.py.
+
   Flow: Expense Submitted → Check Receipt → XOR[Approval Level?] → Senior Approval → Parallel[Notify Parties] → Notify Employee → Expense Closed
                                                                   → Auto Approve   ↗
 -->
