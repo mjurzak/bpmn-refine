@@ -11,9 +11,18 @@ falls into one of two justification classes (see `docs/validation-rules.md`):
 
 Every tier-1 rule is an `error`: firing guarantees a real defect. Heuristic,
 "might be a problem" checks (disconnected fragments, gateway split/join
-mismatches, ambiguous or no-op gateways, implicit splits) are deliberately left
-to the formal checker (tier 2) and the LLM review (tier 3) rather than producing
-deterministic warnings here.
+mismatches, ambiguous or no-op gateways) are deliberately left to the formal
+checker (tier 2) and the LLM review (tier 3) rather than producing deterministic
+warnings here.
+
+Implicit splits are the exception: they fall to tier 3 *alone*. Tier 2 cannot
+take that delegation, structurally — pm4py encodes a node with several outgoing
+flows as a **free choice** in the Petri net (one exit place feeding several
+transitions) where BPMN 2.0 specifies **parallel**, so Woflan reports SOUND on a
+model that ends in contradictory states. Verified 2026-07-21; recorded as a named
+tier-2 limitation in TODO.md under 2f. Promoting the check to tier 1 is not the
+fix either: an uncontrolled split is legal BPMN, so the rule could not guarantee
+a defect, and that invariant is worth more than the heuristic.
 
 Multiple start events are deliberately not checked: BPMN 2.0 permits them and a
 sound model can have many, so flagging them only produced noise.
