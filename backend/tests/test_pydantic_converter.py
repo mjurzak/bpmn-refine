@@ -36,7 +36,7 @@ def test_author_layout_survives_a_round_trip():
 
     from lxml import etree
 
-    source = Path("data/test_cases/09_expense_reimbursement.bpmn").read_bytes()
+    source = Path("data/test_cases/03_expense_reimbursement.bpmn").read_bytes()
     converter = PydanticConverter()
     out = converter.serialize(converter.parse(source))
 
@@ -71,7 +71,7 @@ def test_layout_is_generated_only_when_absent():
 
     converter = PydanticConverter()
     diagram = converter.parse(
-        Path("data/test_cases/09_expense_reimbursement.bpmn").read_bytes()
+        Path("data/test_cases/03_expense_reimbursement.bpmn").read_bytes()
     )
     before = {
         node.id: node.bounds for node in diagram.processes[0].flow_nodes
@@ -97,3 +97,4 @@ def test_layout_is_generated_only_when_absent():
     assert placed is not None
     rightmost = max(b.x + b.width for b in before.values() if b)
     assert placed.x >= rightmost, "a new node must not land on existing shapes"
+

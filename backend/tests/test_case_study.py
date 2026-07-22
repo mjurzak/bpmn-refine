@@ -10,7 +10,7 @@ from app.model.formats.pydantic_ir import PydanticConverter
 from app.validation.checkers import run_woflan
 from app.validation.rules import validate
 
-CASE_STUDY = Path("data/test_cases/09_expense_reimbursement.bpmn")
+CASE_STUDY = Path("data/test_cases/03_expense_reimbursement.bpmn")
 
 # planted faults F1 and F2. see the diagram's own header comment for the stories
 EXPECTED_TIER1 = {

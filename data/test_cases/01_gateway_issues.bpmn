@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
-  CASE 05 — Gateway issues: Expense Report Approval
+  CASE 01 — Gateway issues: Expense Report Approval
   Expected issues:
         
   Flow: Expense Submitted → Check Receipt → XOR[Approval Level?] → Senior Approval → Parallel[Notify Parties] → Notify Employee → Expense Closed

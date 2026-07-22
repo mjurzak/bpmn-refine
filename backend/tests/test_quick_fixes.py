@@ -61,7 +61,7 @@ def test_quick_fix_never_staples_two_orphans_together():
     from app.model.formats.pydantic_ir import PydanticConverter
 
     diagram = PydanticConverter().parse(
-        Path("data/test_cases/09_expense_reimbursement.bpmn").read_bytes()
+        Path("data/test_cases/03_expense_reimbursement.bpmn").read_bytes()
     )
     connectivity = [
         issue

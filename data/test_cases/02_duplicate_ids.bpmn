@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
-  CASE 06 — Duplicate element IDs: Support Ticket Handling
+  CASE 02 — Duplicate element IDs: Support Ticket Handling
   Expected result: import-time rejection because element ID "task_resolve" appears twice in the process
 
   This simulates a copy-paste error where two tasks ended up with the same ID.

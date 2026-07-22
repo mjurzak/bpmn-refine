@@ -102,7 +102,7 @@ def test_every_deterministic_issue_is_stamped_as_rules():
     from app.validation.rules import SOURCE_RULES
 
     diagram = PydanticConverter().parse(
-        Path("data/test_cases/09_expense_reimbursement.bpmn").read_bytes()
+        Path("data/test_cases/03_expense_reimbursement.bpmn").read_bytes()
     )
     issues = validate(diagram).issues
     assert issues
