@@ -16,7 +16,7 @@ runner = CliRunner()
 
 
 def test_validate_command_reports_valid_diagram():
-    result = runner.invoke(app, ["validate", "data/pmo-dataset/bpmn/01.bpmn"])
+    result = runner.invoke(app, ["validate", "data/import_cases/pmo_01.bpmn"])
 
     assert result.exit_code == 0
     assert "VALID" in result.stdout
@@ -48,7 +48,7 @@ def test_roundtrip_command_writes_output(tmp_path: Path):
 
     result = runner.invoke(
         app,
-        ["roundtrip", "data/pmo-dataset/bpmn/01.bpmn", "--out", str(out_path)],
+        ["roundtrip", "data/import_cases/pmo_01.bpmn", "--out", str(out_path)],
     )
 
     assert result.exit_code == 0
@@ -106,7 +106,7 @@ def test_chat_command_writes_updated_diagram(monkeypatch, tmp_path: Path):
         app,
         [
             "chat",
-            "data/pmo-dataset/bpmn/01.bpmn",
+            "data/import_cases/pmo_01.bpmn",
             "--message",
             "add approval",
             "--no-issues-from-validate",
