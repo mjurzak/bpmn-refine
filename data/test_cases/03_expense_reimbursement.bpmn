@@ -44,58 +44,39 @@
   legal implicit merge, not a defect — useful as a negative control that the
   tools do not flag it.
 -->
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
-                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  id="Definitions_expense_reimbursement"
-                  targetNamespace="http://bpmn.io/schema/bpmn">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_expense_reimbursement" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.22.0">
   <bpmn:process id="Process_expense_reimbursement" name="Employee Expense Reimbursement" isExecutable="false">
-
-    <!-- intake and receipt check -->
     <bpmn:startEvent id="start_submitted" name="Expense Report Submitted">
       <bpmn:outgoing>sf_submitted</bpmn:outgoing>
     </bpmn:startEvent>
-
-    <!-- F1: automated card feed, placed and never wired to anything -->
     <bpmn:startEvent id="start_card_feed" name="Corporate Card Statement Imported" />
-
-    <!-- two incoming flows: first submission and resubmission. legal implicit merge -->
     <bpmn:task id="task_check" name="Check Receipts">
       <bpmn:incoming>sf_submitted</bpmn:incoming>
       <bpmn:incoming>sf_resubmitted</bpmn:incoming>
       <bpmn:outgoing>sf_checked</bpmn:outgoing>
     </bpmn:task>
-
     <bpmn:exclusiveGateway id="gw_receipts" name="Receipts Complete?">
       <bpmn:incoming>sf_checked</bpmn:incoming>
       <bpmn:outgoing>sf_complete</bpmn:outgoing>
       <bpmn:outgoing>sf_incomplete</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-
     <bpmn:task id="task_request" name="Request Missing Receipts">
       <bpmn:incoming>sf_incomplete</bpmn:incoming>
       <bpmn:outgoing>sf_resubmitted</bpmn:outgoing>
     </bpmn:task>
-
-    <!-- approval routing by amount -->
     <bpmn:exclusiveGateway id="gw_amount" name="Amount Over 1000 EUR?">
       <bpmn:incoming>sf_complete</bpmn:incoming>
       <bpmn:outgoing>sf_high</bpmn:outgoing>
       <bpmn:outgoing>sf_low</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-
     <bpmn:task id="task_director_review" name="Director Review">
       <bpmn:incoming>sf_high</bpmn:incoming>
       <bpmn:outgoing>sf_director_done</bpmn:outgoing>
     </bpmn:task>
-
     <bpmn:task id="task_manager_review" name="Manager Review">
       <bpmn:incoming>sf_low</bpmn:incoming>
       <bpmn:outgoing>sf_manager_done</bpmn:outgoing>
     </bpmn:task>
-
     <bpmn:exclusiveGateway id="gw_decision" name="Approved?">
       <bpmn:incoming>sf_director_done</bpmn:incoming>
       <bpmn:incoming>sf_manager_done</bpmn:incoming>
@@ -103,37 +84,26 @@
       <bpmn:outgoing>sf_rejected</bpmn:outgoing>
       <bpmn:outgoing>sf_audit</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-
     <bpmn:task id="task_pay" name="Transfer Reimbursement">
       <bpmn:incoming>sf_approved</bpmn:incoming>
       <bpmn:outgoing>sf_paid</bpmn:outgoing>
     </bpmn:task>
-
     <bpmn:task id="task_notify_reject" name="Notify Employee of Rejection">
       <bpmn:incoming>sf_rejected</bpmn:incoming>
       <bpmn:outgoing>sf_notified</bpmn:outgoing>
     </bpmn:task>
-
-    <!-- F2: compliance branch was never finished. no outgoing flow (R008) -->
     <bpmn:task id="task_audit" name="Forward to Compliance Audit">
       <bpmn:incoming>sf_audit</bpmn:incoming>
     </bpmn:task>
-
-    <!-- F2: the outcome that branch was meant to reach. no incoming flow (R004) -->
     <bpmn:endEvent id="end_escalated" name="Case Escalated" />
-
-    <!-- F3: parallel join fed by mutually exclusive branches. deadlocks -->
     <bpmn:parallelGateway id="gw_close" name="Close Case">
       <bpmn:incoming>sf_paid</bpmn:incoming>
       <bpmn:incoming>sf_notified</bpmn:incoming>
       <bpmn:outgoing>sf_closed</bpmn:outgoing>
     </bpmn:parallelGateway>
-
-    <!-- F4: the rejection path also terminates here -->
     <bpmn:endEvent id="end_done" name="Expense Reimbursed">
       <bpmn:incoming>sf_closed</bpmn:incoming>
     </bpmn:endEvent>
-
     <bpmn:sequenceFlow id="sf_submitted" sourceRef="start_submitted" targetRef="task_check" />
     <bpmn:sequenceFlow id="sf_checked" sourceRef="task_check" targetRef="gw_receipts" />
     <bpmn:sequenceFlow id="sf_complete" name="yes" sourceRef="gw_receipts" targetRef="gw_amount">
@@ -163,143 +133,171 @@
     <bpmn:sequenceFlow id="sf_paid" sourceRef="task_pay" targetRef="gw_close" />
     <bpmn:sequenceFlow id="sf_notified" sourceRef="task_notify_reject" targetRef="gw_close" />
     <bpmn:sequenceFlow id="sf_closed" sourceRef="gw_close" targetRef="end_done" />
-
   </bpmn:process>
-
   <bpmndi:BPMNDiagram id="BPMNDiagram_expense_reimbursement">
     <bpmndi:BPMNPlane id="BPMNPlane_expense_reimbursement" bpmnElement="Process_expense_reimbursement">
-
       <bpmndi:BPMNShape id="start_submitted_di" bpmnElement="start_submitted">
-        <dc:Bounds x="150" y="202" width="36" height="36" />
-        <bpmndi:BPMNLabel><dc:Bounds x="128" y="245" width="80" height="27" /></bpmndi:BPMNLabel>
+        <dc:Bounds x="310" y="282" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="289" y="325" width="79" height="27" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="start_card_feed_di" bpmnElement="start_card_feed">
-        <dc:Bounds x="150" y="330" width="36" height="36" />
-        <bpmndi:BPMNLabel><dc:Bounds x="120" y="373" width="97" height="40" /></bpmndi:BPMNLabel>
+        <dc:Bounds x="310" y="410" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="280" y="453" width="97" height="27" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="task_check_di" bpmnElement="task_check">
-        <dc:Bounds x="240" y="180" width="100" height="80" />
+        <dc:Bounds x="400" y="260" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gw_receipts_di" bpmnElement="gw_receipts" isMarkerVisible="true">
-        <dc:Bounds x="400" y="195" width="50" height="50" />
-        <bpmndi:BPMNLabel><dc:Bounds x="382" y="252" width="86" height="14" /></bpmndi:BPMNLabel>
+        <dc:Bounds x="560" y="275" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="558" y="332" width="54" height="27" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="task_request_di" bpmnElement="task_request">
-        <dc:Bounds x="375" y="60" width="100" height="80" />
+        <dc:Bounds x="535" y="140" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gw_amount_di" bpmnElement="gw_amount" isMarkerVisible="true">
-        <dc:Bounds x="520" y="195" width="50" height="50" />
-        <bpmndi:BPMNLabel><dc:Bounds x="498" y="252" width="94" height="14" /></bpmndi:BPMNLabel>
+        <dc:Bounds x="680" y="275" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="727" y="286" width="65" height="27" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="task_director_review_di" bpmnElement="task_director_review">
-        <dc:Bounds x="620" y="70" width="100" height="80" />
+        <dc:Bounds x="780" y="150" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="task_manager_review_di" bpmnElement="task_manager_review">
-        <dc:Bounds x="620" y="300" width="100" height="80" />
+        <dc:Bounds x="780" y="380" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gw_decision_di" bpmnElement="gw_decision" isMarkerVisible="true">
-        <dc:Bounds x="790" y="195" width="50" height="50" />
-        <bpmndi:BPMNLabel><dc:Bounds x="782" y="252" width="66" height="14" /></bpmndi:BPMNLabel>
+        <dc:Bounds x="950" y="275" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="893" y="293" width="54" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="task_pay_di" bpmnElement="task_pay">
-        <dc:Bounds x="890" y="70" width="100" height="80" />
+        <dc:Bounds x="1050" y="150" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="task_notify_reject_di" bpmnElement="task_notify_reject">
-        <dc:Bounds x="890" y="300" width="100" height="80" />
+        <dc:Bounds x="1050" y="380" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="task_audit_di" bpmnElement="task_audit">
-        <dc:Bounds x="890" y="440" width="100" height="80" />
+        <dc:Bounds x="1050" y="520" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="end_escalated_di" bpmnElement="end_escalated">
-        <dc:Bounds x="1170" y="462" width="36" height="36" />
-        <bpmndi:BPMNLabel><dc:Bounds x="1157" y="505" width="63" height="14" /></bpmndi:BPMNLabel>
+        <dc:Bounds x="1330" y="542" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1310" y="585" width="78" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gw_close_di" bpmnElement="gw_close">
-        <dc:Bounds x="1060" y="195" width="50" height="50" />
-        <bpmndi:BPMNLabel><dc:Bounds x="1055" y="252" width="60" height="14" /></bpmndi:BPMNLabel>
+        <dc:Bounds x="1220" y="275" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1151" y="293" width="57" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="end_done_di" bpmnElement="end_done">
-        <dc:Bounds x="1170" y="202" width="36" height="36" />
-        <bpmndi:BPMNLabel><dc:Bounds x="1150" y="245" width="77" height="27" /></bpmndi:BPMNLabel>
+        <dc:Bounds x="1330" y="282" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1319" y="325" width="60" height="27" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-
       <bpmndi:BPMNEdge id="sf_submitted_di" bpmnElement="sf_submitted">
-        <di:waypoint x="186" y="220" />
-        <di:waypoint x="240" y="220" />
+        <di:waypoint x="346" y="300" />
+        <di:waypoint x="400" y="300" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sf_checked_di" bpmnElement="sf_checked">
-        <di:waypoint x="340" y="220" />
-        <di:waypoint x="400" y="220" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sf_incomplete_di" bpmnElement="sf_incomplete">
-        <di:waypoint x="425" y="195" />
-        <di:waypoint x="425" y="140" />
-        <bpmndi:BPMNLabel><dc:Bounds x="433" y="155" width="18" height="14" /></bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sf_resubmitted_di" bpmnElement="sf_resubmitted">
-        <di:waypoint x="375" y="100" />
-        <di:waypoint x="290" y="100" />
-        <di:waypoint x="290" y="180" />
+        <di:waypoint x="500" y="300" />
+        <di:waypoint x="560" y="300" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sf_complete_di" bpmnElement="sf_complete">
-        <di:waypoint x="450" y="220" />
-        <di:waypoint x="520" y="220" />
-        <bpmndi:BPMNLabel><dc:Bounds x="472" y="202" width="20" height="14" /></bpmndi:BPMNLabel>
+        <di:waypoint x="610" y="300" />
+        <di:waypoint x="680" y="300" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="633" y="282" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sf_incomplete_di" bpmnElement="sf_incomplete">
+        <di:waypoint x="585" y="275" />
+        <di:waypoint x="585" y="220" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="596" y="235" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sf_resubmitted_di" bpmnElement="sf_resubmitted">
+        <di:waypoint x="535" y="180" />
+        <di:waypoint x="450" y="180" />
+        <di:waypoint x="450" y="260" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sf_high_di" bpmnElement="sf_high">
-        <di:waypoint x="545" y="195" />
-        <di:waypoint x="545" y="110" />
-        <di:waypoint x="620" y="110" />
-        <bpmndi:BPMNLabel><dc:Bounds x="553" y="130" width="55" height="14" /></bpmndi:BPMNLabel>
+        <di:waypoint x="705" y="275" />
+        <di:waypoint x="705" y="190" />
+        <di:waypoint x="780" y="190" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="716" y="210" width="49" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sf_low_di" bpmnElement="sf_low">
-        <di:waypoint x="545" y="245" />
-        <di:waypoint x="545" y="340" />
-        <di:waypoint x="620" y="340" />
-        <bpmndi:BPMNLabel><dc:Bounds x="553" y="300" width="66" height="14" /></bpmndi:BPMNLabel>
+        <di:waypoint x="705" y="325" />
+        <di:waypoint x="705" y="420" />
+        <di:waypoint x="780" y="420" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="716" y="380" width="60" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sf_director_done_di" bpmnElement="sf_director_done">
-        <di:waypoint x="720" y="110" />
-        <di:waypoint x="815" y="110" />
-        <di:waypoint x="815" y="195" />
+        <di:waypoint x="880" y="190" />
+        <di:waypoint x="975" y="190" />
+        <di:waypoint x="975" y="275" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sf_manager_done_di" bpmnElement="sf_manager_done">
-        <di:waypoint x="720" y="340" />
-        <di:waypoint x="815" y="340" />
-        <di:waypoint x="815" y="245" />
+        <di:waypoint x="880" y="420" />
+        <di:waypoint x="975" y="420" />
+        <di:waypoint x="975" y="325" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sf_approved_di" bpmnElement="sf_approved">
-        <di:waypoint x="840" y="220" />
-        <di:waypoint x="865" y="220" />
-        <di:waypoint x="865" y="110" />
-        <di:waypoint x="890" y="110" />
+        <di:waypoint x="1000" y="300" />
+        <di:waypoint x="1025" y="300" />
+        <di:waypoint x="1025" y="190" />
+        <di:waypoint x="1050" y="190" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1037" y="243" width="46" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sf_rejected_di" bpmnElement="sf_rejected">
-        <di:waypoint x="840" y="220" />
-        <di:waypoint x="865" y="220" />
-        <di:waypoint x="865" y="340" />
-        <di:waypoint x="890" y="340" />
+        <di:waypoint x="1000" y="300" />
+        <di:waypoint x="1025" y="300" />
+        <di:waypoint x="1025" y="420" />
+        <di:waypoint x="1050" y="420" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1040" y="350" width="40" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sf_audit_di" bpmnElement="sf_audit">
-        <di:waypoint x="815" y="245" />
-        <di:waypoint x="815" y="480" />
-        <di:waypoint x="890" y="480" />
+        <di:waypoint x="975" y="325" />
+        <di:waypoint x="975" y="560" />
+        <di:waypoint x="1050" y="560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="981" y="493" width="57" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sf_paid_di" bpmnElement="sf_paid">
-        <di:waypoint x="990" y="110" />
-        <di:waypoint x="1085" y="110" />
-        <di:waypoint x="1085" y="195" />
+        <di:waypoint x="1150" y="190" />
+        <di:waypoint x="1245" y="190" />
+        <di:waypoint x="1245" y="275" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sf_notified_di" bpmnElement="sf_notified">
-        <di:waypoint x="990" y="340" />
-        <di:waypoint x="1085" y="340" />
-        <di:waypoint x="1085" y="245" />
+        <di:waypoint x="1150" y="420" />
+        <di:waypoint x="1245" y="420" />
+        <di:waypoint x="1245" y="325" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sf_closed_di" bpmnElement="sf_closed">
-        <di:waypoint x="1110" y="220" />
-        <di:waypoint x="1170" y="220" />
+        <di:waypoint x="1270" y="300" />
+        <di:waypoint x="1330" y="300" />
       </bpmndi:BPMNEdge>
-
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
