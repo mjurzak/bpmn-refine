@@ -19,6 +19,7 @@ from app.services.ir_payload import (
     diagram_fence,
     diagram_payload_text,
     parse_diagram_from_fenced_reply,
+    strip_diagram_from_fenced_reply,
 )
 from app.validation.rules import ValidationIssue, issue_to_dict
 
@@ -101,6 +102,9 @@ async def chat_diagram(
         reply, updated_diagram = last_reply, None
     rev_id: str | None = None
     new_session_id: str | None = None
+
+    if updated_diagram is not None:
+        reply = strip_diagram_from_fenced_reply(reply, config)
 
     if updated_diagram is not None and snapshot_changes:
         active_session_id = session_id

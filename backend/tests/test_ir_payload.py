@@ -7,6 +7,7 @@ from app.services.ir_payload import (
     diagram_payload_text,
     parse_diagram_from_fenced_reply,
     parse_diagram_payload,
+    strip_diagram_from_fenced_reply,
 )
 from tests.converter_cases import canonical_full_diagram
 
@@ -62,3 +63,22 @@ def test_fenced_reply_parser_uses_selected_mermaid_converter():
     )
 
     assert parsed == diagram
+
+
+def test_strip_diagram_from_fenced_reply_hides_pydantic_payload():
+    reply = (
+        "I added a recovery path.\n\n"
+        "```pydantic\n{\"definitions_id\": \"definitions_1\"}\n```"
+    )
+
+    visible_reply = strip_diagram_from_fenced_reply(reply, ExperimentConfig())
+
+    assert visible_reply == "I added a recovery path."
+
+
+def test_strip_diagram_from_fenced_reply_preserves_unrelated_code():
+    reply = "Use this expression:\n```python\npayment_successful = True\n```"
+
+    visible_reply = strip_diagram_from_fenced_reply(reply, ExperimentConfig())
+
+    assert visible_reply == reply

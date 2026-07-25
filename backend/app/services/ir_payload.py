@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
@@ -14,6 +15,7 @@ from app.model.schema import BpmnDiagram
 logger = logging.getLogger(__name__)
 
 _JSON_FENCES = {IrFormat.PYDANTIC, IrFormat.PYDANTIC_JSON, IrFormat.COMPACT_JSON}
+_FENCED_BLOCK = re.compile(r"```(?P<label>[^\s`]*)[ \t]*\n[\s\S]*?```")
 
 # one initial attempt plus one correction round. a second correction almost never
 # succeeds where the first failed, and every round costs the user a full latency
@@ -80,6 +82,18 @@ def parse_diagram_from_fenced_reply(
     if last_error is not None:
         raise last_error
     return None
+
+
+def strip_diagram_from_fenced_reply(
+    reply: str,
+    config: ExperimentConfig | None,
+) -> str:
+    """Remove machine-readable diagram blocks from a user-facing reply."""
+    compatible_fences = set(_candidate_fences(config))
+    return _FENCED_BLOCK.sub(
+        lambda match: "" if match.group("label") in compatible_fences else match.group(0),
+        reply,
+    ).strip()
 
 
 async def call_with_ir_correction(

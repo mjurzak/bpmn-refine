@@ -14,7 +14,7 @@ function buildAssistantMessage(reply, updatedDiagram) {
 }
 
 function stripDiagramPayloads(content) {
-  const pattern = /```(?:diagram|ir|json)\s*[\s\S]*?```/g;
+  const pattern = /```(?:diagram|ir|json|pydantic|pydantic_json|compact_json|yaml|mermaid)\s*[\s\S]*?```/g;
   const segments = [];
   let lastIndex = 0;
   let match;
@@ -30,7 +30,7 @@ function stripDiagramPayloads(content) {
     segments.push(content.slice(lastIndex));
   }
 
-  return segments.join("\n").trim() || content;
+  return segments.join("\n").trim();
 }
 
 function opLabel(op) {

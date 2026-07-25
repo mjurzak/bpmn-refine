@@ -95,4 +95,5 @@ async def test_chat_context_and_reply_use_selected_ir_format(monkeypatch):
     assert "Current diagram (mermaid):" in first_message
     assert "```mermaid" in first_message
     assert "flowchart TD" in first_message
+    assert result.reply == "Updated diagram:"
     assert result.updated_diagram == diagram
