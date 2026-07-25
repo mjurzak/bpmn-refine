@@ -73,14 +73,14 @@ Adding a provider: implement the protocol in a new module under `providers/` and
 | `SUMMARY` | fast |
 | `SIMPLE_QUERY` | fast |
 
-The concrete model behind each tier is set in config, not hard-coded per task. The shipped defaults (`backend/app/core/config.py`) are `LLM_STRONG_MODEL=gpt-5.5` and `LLM_FAST_MODEL=gpt-5-nano`; treat the values as configuration and read the current ones from `.env` / `config.py` rather than trusting a copy here. Tier and provider are configurable per-tier via `.env`:
+The concrete model behind each tier is set in config, not hard-coded per task. The shipped defaults (`backend/app/core/config.py`) are `LLM_STRONG_MODEL=gpt-5.6-sol` and `LLM_FAST_MODEL=gpt-5.6-luna`; treat the values as configuration and read the current ones from `.env` / `config.py` rather than trusting a copy here. Tier and provider are configurable per-tier via `.env`:
 
 ```
 LLM_PROVIDER=openai                 # global default
 LLM_STRONG_PROVIDER=openai          # optional override for strong tasks
 LLM_FAST_PROVIDER=openai            # optional override for fast tasks
-LLM_STRONG_MODEL=gpt-5.5
-LLM_FAST_MODEL=gpt-5-nano
+LLM_STRONG_MODEL=gpt-5.6-sol
+LLM_FAST_MODEL=gpt-5.6-luna
 ```
 
 Per-request, `ExperimentConfig.model_tier` and `model_override` can supersede the static defaults, which is how ablation experiments (e.g. "run the same task on GPT and Claude") are driven without changing code.

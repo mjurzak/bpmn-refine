@@ -24,9 +24,9 @@ class Settings(BaseSettings):
 
     # model names — must be valid for the chosen provider
     # "strong" model for reasoning-critical tasks (repair, semantic validation)
-    llm_strong_model: str = "gpt-5.5"
+    llm_strong_model: str = "gpt-5.6-sol"
     # "fast" model for mechanical transformations (format conversion, simple checks)
-    llm_fast_model: str = "gpt-5-nano"
+    llm_fast_model: str = "gpt-5.6-luna"
 
     # provider credentials / endpoints
     # empty string = key not set; actual values must come from .env

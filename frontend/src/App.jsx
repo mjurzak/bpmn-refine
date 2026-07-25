@@ -69,17 +69,18 @@ const PROVIDER_OPTIONS = [
   {
     value: "openai",
     label: "OpenAI",
-    models: ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano"],
+    models: ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-5.5"],
     reasoningEfforts: ["none", "low", "medium", "high", "xhigh"],
   },
   {
     value: "anthropic",
     label: "Anthropic",
     models: [
+      "claude-opus-5",
       "claude-fable-5",
+      "claude-sonnet-5",
+      "claude-haiku-4-5",
       "claude-opus-4-8",
-      "claude-sonnet-4-6",
-      "claude-haiku-4-5-20251001",
     ],
     reasoningEfforts: ["low", "medium", "high"],
   },
@@ -113,11 +114,11 @@ const INTERACTION_OPTIONS = [
 const DEFAULT_LLM_SETTINGS = {
   validation: {
     provider: "openai",
-    model: "gpt-5.5",
+    model: "gpt-5.6-sol",
     reasoning_effort: "medium",
   },
-  chat: { provider: "openai", model: "gpt-5.5", reasoning_effort: "medium" },
-  repair: { provider: "openai", model: "gpt-5.5", reasoning_effort: "high" },
+  chat: { provider: "openai", model: "gpt-5.6-sol", reasoning_effort: "medium" },
+  repair: { provider: "openai", model: "gpt-5.6-sol", reasoning_effort: "high" },
 };
 
 const VALIDATION_LOADING_LABELS = {
