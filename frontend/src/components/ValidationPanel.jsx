@@ -6,10 +6,14 @@ const SEVERITY_CLASS = {
   info: "info",
 };
 
-// tier 2 stamps its own tool name ("woflan"), which is worth showing as-is —
-// it says more than "rule engine" and it is still a deterministic verdict
 function originLabel(issue, origin, modelUsed) {
-  if (origin === "llm") return modelUsed ?? "LLM";
+  if (issue.tier === "tier3" || origin === "llm") {
+    return `tier 3 · ${modelUsed ?? "LLM"}`;
+  }
+  if (issue.tier === "tier2") {
+    return `tier 2 · ${issue.source ?? "formal checker"}`;
+  }
+  if (issue.tier === "tier1") return "tier 1 · rule engine";
   if (!issue.source || issue.source === "rules") return "rule engine";
   return issue.source;
 }

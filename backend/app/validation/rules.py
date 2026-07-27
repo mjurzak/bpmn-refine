@@ -52,6 +52,12 @@ class Severity(StrEnum):
     INFO = "info"
 
 
+class ValidationTier(StrEnum):
+    TIER1 = "tier1"
+    TIER2 = "tier2"
+    TIER3 = "tier3"
+
+
 @dataclass
 class TraceStep:
     step: int
@@ -72,6 +78,7 @@ class ValidationIssue:
     rule_id: str
     severity: Severity
     message: str
+    tier: ValidationTier | None = None
     element_id: str | None = None
     suggestion: str | None = None
     element_refs: list[str] = field(default_factory=list)
@@ -171,6 +178,8 @@ def validate(diagram: BpmnDiagram) -> ValidationReport:
     for issue in report.issues:
         if issue.source is None:
             issue.source = SOURCE_RULES
+        if issue.tier is None:
+            issue.tier = ValidationTier.TIER1
     return report
 
 

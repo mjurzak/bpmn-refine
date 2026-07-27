@@ -19,6 +19,7 @@ from app.validation.rules import (
     Severity,
     ValidationIssue,
     ValidationReport,
+    ValidationTier,
     issue_to_dict,
     validate,
 )
@@ -50,7 +51,9 @@ async def validate_diagram(
     report: ValidationReport = validate(diagram)
     checker_issues: list[ValidationIssue] = []
     semantic_issues: list[ValidationIssue] = []
-    should_run_t2 = include_t2 if include_t2 is not None else active_config.tiers_enabled.t2
+    should_run_t2 = (
+        include_t2 if include_t2 is not None else active_config.tiers_enabled.t2
+    )
     should_run_t3 = (
         include_semantic if include_semantic is not None else active_config.tiers_enabled.t3
     )
@@ -102,6 +105,7 @@ async def _semantic_validate(
         # the model does not get to claim it is anything else
         for issue in issues:
             issue.source = SOURCE_LLM
+            issue.tier = ValidationTier.TIER3
         return issues
     except Exception:
         # surface malformed LLM output as a warning instead of crashing the command
@@ -110,6 +114,7 @@ async def _semantic_validate(
                 rule_id="LLM_PARSE_ERROR",
                 severity=Severity.WARNING,
                 message="LLM semantic validation returned an unparseable response.",
+                tier=ValidationTier.TIER3,
                 source=SOURCE_LLM,
             )
         ]

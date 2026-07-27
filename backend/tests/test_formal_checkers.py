@@ -40,6 +40,33 @@ async def test_validate_diagram_merges_tier2_checker_issues(monkeypatch):
     assert result.issues[0].element_refs == ["task_1"]
 
 
+async def test_validate_diagram_runs_tier2_with_tier1_precondition_errors(monkeypatch):
+    checker_called = False
+
+    async def fake_run_tier2_checkers(diagram, config):
+        nonlocal checker_called
+        checker_called = True
+        return []
+
+    monkeypatch.setattr(
+        validation_service,
+        "run_tier2_checkers",
+        fake_run_tier2_checkers,
+    )
+    diagram = _minimal_valid_diagram()
+    diagram.processes[0].flow_nodes.append(
+        FlowNode(id="orphan_start", type=FlowNodeType.START_EVENT)
+    )
+
+    result = await validation_service.validate_diagram(
+        diagram,
+        config=ExperimentConfig.model_validate({"tiers_enabled": {"t2": True}}),
+    )
+
+    assert checker_called is True
+    assert [issue.rule_id for issue in result.issues] == ["R003"]
+
+
 def test_checker_versions_reports_enabled_selected_woflan():
     versions = checker_versions(
         ExperimentConfig.model_validate(

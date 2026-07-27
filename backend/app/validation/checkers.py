@@ -13,7 +13,12 @@ import yaml
 from app.experiments import ExperimentConfig, T2Tool
 from app.model.formats.pydantic_ir import PydanticConverter
 from app.model.schema import BpmnDiagram
-from app.validation.rules import FormalWitness, Severity, ValidationIssue
+from app.validation.rules import (
+    FormalWitness,
+    Severity,
+    ValidationIssue,
+    ValidationTier,
+)
 
 CHECKERS_CONFIG_PATH = Path(__file__).with_name("checkers.yaml")
 
@@ -38,6 +43,11 @@ async def run_tier2_checkers(
         except Exception as exc:
             issues.append(_checker_runtime_issue(T2Tool.WOFLAN, exc))
 
+    # Tier provenance belongs to the orchestration layer, not individual
+    # adapters. Future formal checkers therefore inherit the same prompt and UI
+    # contract even if they do not stamp their own issues.
+    for issue in issues:
+        issue.tier = ValidationTier.TIER2
     return _deduplicate(issues)
 
 
@@ -102,6 +112,7 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
             rule_id="woflan:soundness",
             severity=Severity.ERROR,
             message=description,
+            tier=ValidationTier.TIER2,
             element_refs=element_refs,
             source=T2Tool.WOFLAN.value,
             formal_witness=FormalWitness(
@@ -279,6 +290,7 @@ def _checker_runtime_issue(tool: T2Tool, exc: Exception) -> ValidationIssue:
         rule_id=f"{tool.value}:runtime_error",
         severity=Severity.WARNING,
         message=f"{tool.value} checker failed: {exc}",
+        tier=ValidationTier.TIER2,
         source=tool.value,
         raw={"error": str(exc)},
     )
