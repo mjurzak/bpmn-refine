@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -81,10 +80,6 @@ async def repair_diagram(
         "diagram": diagram_payload(diagram, config),
         "issues": [issue_to_dict(issue) for issue in issues],
     }
-    tier2_findings = _extract_tier2_findings(issues)
-    if tier2_findings:
-        payload["tier2_findings"] = tier2_findings
-
     async def attempt(feedback: str | None) -> tuple[BpmnDiagram, list[UnresolvedRepair]]:
         prompt = json.dumps(payload)
         if feedback:
@@ -191,9 +186,6 @@ async def repair_with_edit_ops(
         payload["other_open_issues"] = [
             issue_to_dict(issue) for issue in context_issues
         ]
-    tier2_findings = _extract_tier2_findings(issues)
-    if tier2_findings:
-        payload["tier2_findings"] = tier2_findings
     response_schema = _atomic_ops_schema_for_diagram(diagram)
     # structured outputs constrain the reply to the EditOp schema, so no fenced
     # scraping or best-effort JSON repair is needed
@@ -520,22 +512,3 @@ def _normalise_unresolved(item: object) -> UnresolvedRepair:
             reason=str(reason) if reason else json.dumps(item),
         )
     return UnresolvedRepair(reason=str(item))
-
-
-def _extract_tier2_findings(issues: list[ValidationIssue]) -> list[dict[str, Any]]:
-    """pull formal witnesses out of T2 issues for a dedicated payload section"""
-    findings = []
-    for issue in issues:
-        if issue.formal_witness is None:
-            continue
-        element_refs = issue.element_refs or (
-            [issue.element_id] if issue.element_id else []
-        )
-        findings.append(
-            {
-                "rule_id": issue.rule_id,
-                "formal_witness": asdict(issue.formal_witness),
-                "affected_elements": element_refs,
-            }
-        )
-    return findings

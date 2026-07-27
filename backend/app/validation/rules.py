@@ -31,7 +31,7 @@ sound model can have many, so flagging them only produced noise.
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
@@ -112,8 +112,43 @@ SOURCE_LLM = "llm"
 
 
 def issue_to_dict(issue: ValidationIssue) -> dict[str, Any]:
-    """convert an issue to JSON-safe data for prompts and logs"""
-    return asdict(issue)
+    """convert an issue to the compact, BPMN-level form used in LLM prompts"""
+    affected_elements: list[str] = []
+    if issue.element_id:
+        affected_elements.append(issue.element_id)
+    for element_ref in issue.element_refs:
+        if element_ref not in affected_elements:
+            affected_elements.append(element_ref)
+
+    data: dict[str, Any] = {
+        "rule_id": issue.rule_id,
+        "severity": str(issue.severity),
+        "message": issue.message,
+    }
+    if issue.tier:
+        data["tier"] = str(issue.tier)
+    if issue.source:
+        data["source"] = issue.source
+    if affected_elements:
+        data["affected_elements"] = affected_elements
+    if issue.formal_witness:
+        witness = issue.formal_witness
+        evidence: dict[str, Any] = {"kind": witness.kind}
+        if witness.dead_elements:
+            evidence["dead_elements"] = witness.dead_elements
+        if witness.uncovered_elements:
+            evidence["uncovered_elements"] = witness.uncovered_elements
+        traces = witness.counterexample_traces or (
+            [witness.trace] if witness.trace else []
+        )
+        if traces:
+            evidence["counterexample_traces"] = [
+                [step.fired for step in trace] for trace in traces
+            ]
+        if witness.marking:
+            evidence["marking"] = witness.marking
+        data["formal_evidence"] = evidence
+    return data
 
 
 _START_EVENT_TYPES = {FlowNodeType.START_EVENT}

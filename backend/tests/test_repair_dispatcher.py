@@ -14,7 +14,13 @@ from app.repair.ops import RenameNodeOp
 from app.services import repair as repair_service
 from app.services.repair import RepairResult, dispatch_repair, repair_with_edit_ops
 from app.services.validation import ValidationResult
-from app.validation.rules import FormalWitness, Severity, ValidationIssue
+from app.validation.rules import (
+    FormalWitness,
+    Severity,
+    TraceStep,
+    ValidationIssue,
+    ValidationTier,
+)
 
 
 async def test_dispatch_repair_prefers_quick_fix_over_llm():
@@ -68,6 +74,51 @@ async def test_dispatch_repair_uses_atomic_llm_ops_when_no_quick_fix_exists():
     assert result.remaining_issues == []
     assert [op.op for op in result.applied_ops] == ["rename_node"]
     assert calls[0][1][0].rule_id == "R999"
+
+
+async def test_dispatch_repair_assigns_remaining_errors_in_later_rounds(monkeypatch):
+    assigned: list[str] = []
+    validation_round = 0
+    second_issue = ValidationIssue(
+        rule_id="R998",
+        severity=Severity.ERROR,
+        message="Second synthetic issue.",
+        element_id="task_1",
+    )
+
+    async def fake_atomic_repair(diagram, issues, **kwargs):
+        assigned.append(issues[0].rule_id)
+        return [RenameNodeOp(id="task_1", new_name=f"Fixed {issues[0].rule_id}")]
+
+    async def fake_validate(diagram, **kwargs):
+        nonlocal validation_round
+        validation_round += 1
+        remaining = [second_issue] if validation_round == 1 else []
+        return ValidationResult(
+            is_valid=not remaining,
+            issues=remaining,
+            semantic_issues=[],
+        )
+
+    monkeypatch.setattr(repair_service, "validate_diagram", fake_validate)
+    result = await dispatch_repair(
+        _minimal_valid_diagram(),
+        issues=[
+            ValidationIssue(
+                rule_id="R999",
+                severity=Severity.ERROR,
+                message="First synthetic issue.",
+                element_id="task_1",
+            ),
+            second_issue,
+        ],
+        atomic_repair_fn=fake_atomic_repair,
+    )
+
+    assert assigned == ["R999", "R998"]
+    assert result.iterations == 2
+    assert result.converged is True
+    assert len(result.applied_ops) == 2
 
 
 async def test_dispatch_repair_regen_mode_uses_full_ir_replacement():
@@ -266,7 +317,7 @@ async def test_repair_with_edit_ops_rejects_flow_op_targeting_node_id(monkeypatc
         )
 
 
-async def test_repair_with_edit_ops_includes_tier2_findings_in_payload(monkeypatch):
+async def test_repair_with_edit_ops_compacts_formal_issue_in_payload(monkeypatch):
     captured = {}
 
     async def fake_complete_structured(**kwargs):
@@ -281,12 +332,22 @@ async def test_repair_with_edit_ops_includes_tier2_findings_in_payload(monkeypat
         rule_id="woflan:soundness",
         severity=Severity.ERROR,
         message="Process is not sound.",
+        tier=ValidationTier.TIER2,
         element_refs=["task_1"],
         source="woflan",
         formal_witness=FormalWitness(
             kind="soundness",
             description="task_1 is a dead task — it can never be reached.",
+            counterexample_traces=[
+                [
+                    TraceStep(step=1, fired="start_1"),
+                    TraceStep(step=2, fired="task_1"),
+                ]
+            ],
+            dead_elements=["task_1"],
+            uncovered_elements=["flow_1"],
         ),
+        raw={"diagnostic_messages": ["Petri-net implementation detail."]},
     )
 
     await repair_with_edit_ops(
@@ -296,15 +357,26 @@ async def test_repair_with_edit_ops_includes_tier2_findings_in_payload(monkeypat
     )
 
     payload = json.loads(captured["prompt"])
-    assert "tier2_findings" in payload
-    assert len(payload["tier2_findings"]) == 1
-    finding = payload["tier2_findings"][0]
-    assert finding["rule_id"] == "woflan:soundness"
-    assert finding["formal_witness"]["kind"] == "soundness"
-    assert "task_1" in finding["affected_elements"]
+    assert payload["issues"] == [
+        {
+            "rule_id": "woflan:soundness",
+            "severity": "error",
+            "message": "Process is not sound.",
+            "tier": "tier2",
+            "source": "woflan",
+            "affected_elements": ["task_1"],
+            "formal_evidence": {
+                "kind": "soundness",
+                "dead_elements": ["task_1"],
+                "uncovered_elements": ["flow_1"],
+                "counterexample_traces": [["start_1", "task_1"]],
+            },
+        }
+    ]
+    assert "tier2_findings" not in payload
 
 
-async def test_repair_diagram_includes_tier2_findings_in_payload(monkeypatch):
+async def test_repair_diagram_compacts_formal_issue_in_payload(monkeypatch):
     captured = {}
 
     async def fake_complete(**kwargs):
@@ -319,6 +391,7 @@ async def test_repair_diagram_includes_tier2_findings_in_payload(monkeypatch):
         rule_id="woflan:soundness",
         severity=Severity.ERROR,
         message="Process is not sound.",
+        tier=ValidationTier.TIER2,
         source="woflan",
         formal_witness=FormalWitness(
             kind="deadlock",
@@ -337,12 +410,20 @@ async def test_repair_diagram_includes_tier2_findings_in_payload(monkeypatch):
     )
 
     payload = json.loads(captured["prompt"])
-    assert "tier2_findings" in payload
-    finding = payload["tier2_findings"][0]
-    assert finding["formal_witness"]["kind"] == "deadlock"
+    assert payload["issues"] == [
+        {
+            "rule_id": "woflan:soundness",
+            "severity": "error",
+            "message": "Process is not sound.",
+            "tier": "tier2",
+            "source": "woflan",
+            "formal_evidence": {"kind": "deadlock"},
+        }
+    ]
+    assert "tier2_findings" not in payload
 
 
-async def test_issues_without_formal_witness_omit_tier2_findings(monkeypatch):
+async def test_structural_issue_payload_uses_affected_elements(monkeypatch):
     captured = {}
 
     async def fake_complete_structured(**kwargs):
@@ -360,12 +441,26 @@ async def test_issues_without_formal_witness_omit_tier2_findings(monkeypatch):
                 rule_id="R001",
                 severity=Severity.ERROR,
                 message="Process has no start event.",
+                tier=ValidationTier.TIER1,
+                element_id="process_1",
+                source="rules",
+                suggestion="Add a start event.",
             )
         ],
         config=ExperimentConfig(),
     )
 
     payload = json.loads(captured["prompt"])
+    assert payload["issues"] == [
+        {
+            "rule_id": "R001",
+            "severity": "error",
+            "message": "Process has no start event.",
+            "tier": "tier1",
+            "source": "rules",
+            "affected_elements": ["process_1"],
+        }
+    ]
     assert "tier2_findings" not in payload
 
 

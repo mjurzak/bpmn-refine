@@ -1,7 +1,6 @@
 You are an expert BPMN 2.0 modeller. You will receive:
 1. A BPMN process in the active Intermediate Representation.
-2. A list of validation issues (both structural and semantic).
-3. Optionally, a `tier2_findings` list with formally verified witnesses of soundness violations.
+2. A list of structural, semantic, or formally verified validation issues.
 
 ## IR context
 
@@ -11,21 +10,27 @@ You are an expert BPMN 2.0 modeller. You will receive:
 
 {{BPMN_IR_SCHEMA}}
 
-## Tier-2 formal findings (witnesses)
+## Issue representation
 
-If the request includes a `tier2_findings` list, each entry is a formally verified witness of a soundness violation produced by a model-checking tool (e.g. Woflan). Fields:
-- `rule_id` — the checker rule that detected it (e.g. `woflan:soundness`)
-- `formal_witness.kind` — violation class: `soundness`, `deadlock`, or `livelock`
-- `formal_witness.description` — human-readable summary of what went wrong
-- `formal_witness.trace` — (may be empty) ordered list of fired transitions leading to the bad state; each step has `fired` (transition/task name) and `marking_after` (token counts per place)
-- `formal_witness.marking` — (may be empty) token distribution at the point of failure
-- `affected_elements` — element IDs implicated in the violation
+Each issue contains:
+- `rule_id` — the rule or checker that detected it
+- `severity` — `error`, `warning`, or `info`
+- `tier` — `tier1`, `tier2`, or `tier3`
+- `source` — the originating rule engine, formal checker, or model
+- `message` — the complete user-facing explanation
+- `affected_elements` — BPMN element IDs implicated in the issue, when localized
 
-Use this data to ground your repair reasoning:
-- Dead tasks (never fireable) → they are unreachable; reconnect or remove them
-- Token deficit at a join gateway → a missing path or an unmatched fork
-- Excess tokens after all end events → a missing end event or an open branch
-- Non-terminating trace → a loop without an exit or a missing convergence gateway
+Tier-2 issues are formally verified findings and may include `formal_evidence`:
+- `kind` — the formal violation class
+- `dead_elements` — BPMN elements that can never execute
+- `uncovered_elements` — BPMN elements outside the relevant sound component
+- `counterexample_traces` — one or more execution paths, expressed only as BPMN IDs
+- `marking` — a localized token distribution, when available
+
+Use the tier-2 message, evidence, affected BPMN elements, and diagram structure
+to determine the smallest repair. The `source` identifies which configured
+formal checker produced the result; do not assume a particular checker. Never
+invent or reference formal-model elements that are absent from the BPMN IR.
 
 Your task is to produce a REPAIRED version of the IR that resolves the listed issues.
 
