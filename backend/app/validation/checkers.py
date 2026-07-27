@@ -16,6 +16,7 @@ from app.model.schema import BpmnDiagram
 from app.validation.rules import (
     FormalWitness,
     Severity,
+    TraceStep,
     ValidationIssue,
     ValidationTier,
 )
@@ -82,6 +83,9 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
         bpmn_graph = pm4py.read_bpmn(handle.name)
 
     net, initial_marking, final_marking = bpmn_converter.apply(bpmn_graph)
+    initial_marking, final_marking, boundary_normalization = (
+        _normalise_workflow_net_boundaries(net, initial_marking, final_marking)
+    )
     result = woflan.apply(
         net,
         initial_marking,
@@ -102,11 +106,17 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
     uncovered_names = _petri_names(diagnostics.get("uncovered_places_s_component"))
     dead_refs = _resolve_petri_names(dead_names, index)
     uncovered_refs = _resolve_petri_names(uncovered_names, index)
+    counterexample_traces = _counterexample_traces(diagnostics, index)
 
     # dead elements first — they are a direct verdict, the s-component places
     # are a weaker localisation hint
     element_refs = dead_refs + [ref for ref in uncovered_refs if ref not in dead_refs]
-    description = _soundness_description(dead_refs, uncovered_refs, index)
+    description = _soundness_description(
+        dead_refs,
+        uncovered_refs,
+        index,
+        diagnostic_messages=messages,
+    )
     return [
         ValidationIssue(
             rule_id="woflan:soundness",
@@ -118,12 +128,16 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
             formal_witness=FormalWitness(
                 kind="soundness",
                 description=description,
+                counterexample_traces=counterexample_traces,
+                dead_elements=dead_refs,
+                uncovered_elements=uncovered_refs,
             ),
             raw={
                 "sound": False,
                 "diagnostic_messages": messages,
                 "dead_tasks": dead_refs,
                 "uncovered_places_s_component": uncovered_refs,
+                "boundary_normalization": boundary_normalization,
                 # keep the untranslated pm4py names so a run stays reproducible
                 # against the tool's own output
                 "petri_net_names": {
@@ -135,12 +149,109 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
     ]
 
 
+def _normalise_workflow_net_boundaries(
+    net: Any,
+    initial_marking: Any,
+    final_marking: Any,
+) -> tuple[Any, Any, dict[str, Any]]:
+    """give Woflan one synthetic source and sink when BPMN boundaries multiply
+
+    Woflan stops before soundness analysis unless the converted Petri net has a
+    unique structural source and sink. Disconnected BPMN boundary elements are
+    already reported by tier 1, so the adapter adds an exclusive synthetic entry
+    and exit around them. This leaves the BPMN IR untouched while allowing
+    Woflan to expose deeper split/join defects in the same validation run.
+    """
+    from pm4py.objects.petri_net.obj import Marking, PetriNet
+    from pm4py.objects.petri_net.utils import petri_utils
+
+    source_places = sorted(
+        (place for place in net.places if not place.in_arcs),
+        key=lambda place: str(place.name),
+    )
+    sink_places = sorted(
+        (place for place in net.places if not place.out_arcs),
+        key=lambda place: str(place.name),
+    )
+    metadata = {
+        "applied": len(source_places) > 1 or len(sink_places) > 1,
+        "source_places": [str(place.name) for place in source_places],
+        "sink_places": [str(place.name) for place in sink_places],
+    }
+
+    if len(source_places) > 1:
+        synthetic_source = PetriNet.Place("__bpmn_ai_source__")
+        net.places.add(synthetic_source)
+        for index, place in enumerate(source_places):
+            transition = PetriNet.Transition(
+                f"__bpmn_ai_source_{index}__",
+                None,
+            )
+            net.transitions.add(transition)
+            petri_utils.add_arc_from_to(synthetic_source, transition, net)
+            petri_utils.add_arc_from_to(transition, place, net)
+        initial_marking = Marking()
+        initial_marking[synthetic_source] = 1
+
+    if len(sink_places) > 1:
+        synthetic_sink = PetriNet.Place("__bpmn_ai_sink__")
+        net.places.add(synthetic_sink)
+        for index, place in enumerate(sink_places):
+            transition = PetriNet.Transition(
+                f"__bpmn_ai_sink_{index}__",
+                None,
+            )
+            net.transitions.add(transition)
+            petri_utils.add_arc_from_to(place, transition, net)
+            petri_utils.add_arc_from_to(transition, synthetic_sink, net)
+        final_marking = Marking()
+        final_marking[synthetic_sink] = 1
+
+    return initial_marking, final_marking, metadata
+
+
 def _parse_woflan_result(result: Any) -> tuple[bool, dict[Any, Any]]:
     if isinstance(result, tuple):
         sound = bool(result[0])
         diagnostics = result[1] if len(result) > 1 and isinstance(result[1], dict) else {}
         return sound, diagnostics
     return bool(result), {}
+
+
+def _counterexample_traces(
+    diagnostics: dict[Any, Any],
+    index: _ElementIndex,
+) -> list[list[TraceStep]]:
+    """localise Woflan locking scenarios to stable BPMN element IDs"""
+    scenarios: Any = []
+    for key, value in diagnostics.items():
+        if str(key).endswith("LOCKING_SCENARIOS") or str(key) == "locking_scenarios":
+            scenarios = value
+            break
+    if not isinstance(scenarios, list):
+        return []
+
+    traces: list[list[TraceStep]] = []
+    for scenario in scenarios:
+        if not isinstance(scenario, list):
+            continue
+        fired: list[str] = []
+        for entry in scenario:
+            transition = entry[0] if isinstance(entry, tuple) and entry else entry
+            name = getattr(transition, "name", None)
+            if not name:
+                continue
+            element_ref = _resolve_petri_name(str(name), index)
+            if element_ref is not None:
+                fired.append(element_ref)
+        if fired:
+            traces.append(
+                [
+                    TraceStep(step=step, fired=element_ref)
+                    for step, element_ref in enumerate(fired, start=1)
+                ]
+            )
+    return traces
 
 
 def _diagnostic_messages(diagnostics: dict[Any, Any]) -> list[str]:
@@ -246,6 +357,7 @@ def _soundness_description(
     dead_refs: list[str],
     uncovered_refs: list[str],
     index: _ElementIndex,
+    diagnostic_messages: list[str] | None = None,
 ) -> str:
     """phrase the verdict in BPMN terms rather than in Petri-net place names"""
     parts = ["The process is not sound."]
@@ -259,10 +371,11 @@ def _soundness_description(
             f"which points at a split/join mismatch around them: {listed}."
         )
     if not dead_refs and not uncovered_refs:
-        parts.append(
-            "The violation could not be localised to a specific element; "
-            "see the raw checker diagnostics."
-        )
+        parts.append("The violation could not be localised to a specific element.")
+        if diagnostic_messages:
+            parts.append(f"Checker diagnostics: {' '.join(diagnostic_messages)}")
+        else:
+            parts.append("The checker did not provide further diagnostics.")
     return " ".join(parts)
 
 

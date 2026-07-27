@@ -70,7 +70,10 @@ class FormalWitness:
     kind: str
     description: str
     trace: list[TraceStep] = field(default_factory=list)
+    counterexample_traces: list[list[TraceStep]] = field(default_factory=list)
     marking: dict[str, int] = field(default_factory=dict)
+    dead_elements: list[str] = field(default_factory=list)
+    uncovered_elements: list[str] = field(default_factory=list)
 
 
 @dataclass
