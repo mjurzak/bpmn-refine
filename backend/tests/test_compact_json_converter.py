@@ -21,5 +21,5 @@ def test_compact_json_uses_short_keys_and_omits_empty_defaults():
 def test_compact_json_rejects_non_object_payload():
     converter = CompactJsonConverter()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         converter.parse(b"[]")

@@ -18,5 +18,5 @@ def test_yaml_serializes_readable_mapping():
 def test_yaml_rejects_non_mapping_payload():
     converter = YamlConverter()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         converter.parse(b"- not\n- a\n- diagram\n")

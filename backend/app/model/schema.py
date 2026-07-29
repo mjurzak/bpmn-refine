@@ -128,7 +128,7 @@ class BpmnDiagram(BaseModel):
         """
         duplicates = [
             element_id
-            for element_id, count in Counter(self._element_ids()).items()
+            for element_id, count in Counter(self.element_ids()).items()
             if count > 1
         ]
         if duplicates:
@@ -140,7 +140,48 @@ class BpmnDiagram(BaseModel):
             )
         return self
 
-    def _element_ids(self) -> list[str]:
+    @model_validator(mode="after")
+    def _rebuild_adjacency(self) -> Self:
+        """Derive every node's `incoming`/`outgoing` from the sequence flows.
+
+        BPMN XML states each connection twice — once on the flow's `sourceRef` /
+        `targetRef`, once on the node's `incoming` / `outgoing` children — and the
+        two can disagree in a file that was edited outside a modelling tool. The
+        XML parser already resolves that by trusting the flow, but a direct
+        `BpmnDiagram` JSON payload used to skip the parser entirely: Pydantic
+        type-checked both representations without ever comparing them, so a flow
+        out of `Task_A` could coexist with an empty `Task_A.outgoing`.
+
+        That left two readings of the same document. `_Graph` builds its adjacency
+        from the flows and would traverse the edge; R003/R004 read the node lists
+        and would call the same task disconnected. Rebuilding here gives every
+        input path — XML, the five IR formats, LLM-authored payloads — one graph.
+
+        The rebuild reproduces what the parser does, in flow order, so re-running
+        it on an already-consistent diagram is a no-op.
+        """
+        for proc in self.processes:
+            node_index = {node.id: node for node in proc.flow_nodes}
+            for node in proc.flow_nodes:
+                node.incoming.clear()
+                node.outgoing.clear()
+            for flow in proc.sequence_flows:
+                # a dangling endpoint wires nothing; R005/R006 report it instead
+                source = node_index.get(flow.source_ref)
+                if source is not None and flow.id not in source.outgoing:
+                    source.outgoing.append(flow.id)
+                target = node_index.get(flow.target_ref)
+                if target is not None and flow.id not in target.incoming:
+                    target.incoming.append(flow.id)
+        return self
+
+    def element_ids(self) -> list[str]:
+        """every ID the document declares, in the order BPMN scopes them
+
+        Public because uniqueness is not only a construction-time concern: edit
+        operations mutate an existing diagram in place, so they need the same
+        notion of "taken" that `_reject_duplicate_ids` enforces here.
+        """
         ids: list[str] = []
         for proc in self.processes:
             ids.append(proc.id)

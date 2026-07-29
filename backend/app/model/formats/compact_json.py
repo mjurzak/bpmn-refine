@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from app.model.protocol import BaseDiagramConverter
 from app.model.schema import BpmnDiagram
 
 _DIAGRAM_KEYS = {
@@ -40,14 +41,14 @@ _POOL_KEYS = {"id": "i", "name": "n", "lanes": "l"}
 _LANE_KEYS = {"id": "i", "name": "n", "flow_node_refs": "r"}
 
 
-class CompactJsonConverter:
+class CompactJsonConverter(BaseDiagramConverter):
     """Converts between compact-key JSON bytes and canonical BpmnDiagram."""
 
     def parse(self, payload: bytes) -> BpmnDiagram:
         """Parse compact-key JSON bytes into a BpmnDiagram."""
         data = json.loads(payload.decode("utf-8"))
         if not isinstance(data, dict):
-            raise ValueError("Compact JSON diagram payload must be an object")
+            raise TypeError("Compact JSON diagram payload must be an object")
         return BpmnDiagram.model_validate(_expand_diagram(data))
 
     def serialize(self, diagram: BpmnDiagram) -> bytes:

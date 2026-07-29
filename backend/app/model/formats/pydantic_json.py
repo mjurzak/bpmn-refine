@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 
+from app.model.protocol import BaseDiagramConverter
 from app.model.schema import BpmnDiagram
 
 
-class PydanticJsonConverter:
+class PydanticJsonConverter(BaseDiagramConverter):
     """Converts between UTF-8 JSON bytes and the canonical BpmnDiagram model."""
 
     def parse(self, payload: bytes) -> BpmnDiagram:

@@ -11,6 +11,7 @@ from typing import Any, cast
 
 from lxml import etree
 
+from app.model.protocol import BaseDiagramConverter, UnsupportedElement
 from app.model.schema import (
     Bounds,
     BpmnDiagram,
@@ -39,30 +40,58 @@ _Y_CENTER = 200
 
 _FLOW_NODE_TAGS = {t.value for t in FlowNodeType}
 
+# definitions-level children the converter handles or deliberately ignores.
+# `process` is parsed; `BPMNDiagram` is consumed by _attach_di; the rest of the
+# document-level vocabulary is metadata that carries no control flow.
+_HANDLED_DEFINITIONS_TAGS = {"process", "BPMNDiagram"}
+_IGNORED_DEFINITIONS_TAGS = {"import", "extension", "relationship", "documentation"}
 
-class PydanticConverter:
+
+class PydanticConverter(BaseDiagramConverter):
     """Converts between raw BPMN XML and the Pydantic BpmnDiagram model."""
 
     def parse(self, payload: bytes) -> BpmnDiagram:
         """Parse BPMN XML bytes and return a BpmnDiagram."""
+        diagram, _ = self.parse_with_diagnostics(payload)
+        return diagram
+
+    def parse_with_diagnostics(
+        self, payload: bytes
+    ) -> tuple[BpmnDiagram, list[UnsupportedElement]]:
+        """Parse BPMN XML, also reporting the children the IR does not represent.
+
+        The converter covers direct process-level control flow. Everything else
+        in a BPMN 2.0 document — collaborations, lane sets, data objects,
+        artifacts, extension elements — used to be read past in silence, so an
+        upload could lose half its content and still look like a clean import.
+        Losing what we cannot yet represent is a scope boundary; losing it
+        without saying so is a defect, and this is the channel that says so.
+
+        This is the one converter that overrides the empty-diagnostics default,
+        because XML is the only external format richer than the IR.
+        """
         root = etree.fromstring(payload)
         ns = _extract_namespaces(root)
         bpmn_ns = _resolve_bpmn_ns(root)
+        unsupported: list[UnsupportedElement] = []
 
         processes: list[BpmnProcess] = []
         for proc_el in root.findall(f"{{{bpmn_ns}}}process"):
-            processes.append(_parse_process(proc_el, bpmn_ns))
+            processes.append(_parse_process(proc_el, unsupported))
+
+        _collect_unsupported_definitions_children(root, unsupported)
 
         # the author's layout, keyed by the element it decorates. carried on the
         # model so a repair does not force a full re-layout of an untouched diagram
         _attach_di(root, processes)
 
-        return BpmnDiagram(
+        diagram = BpmnDiagram(
             definitions_id=root.get("id", "definitions"),
             target_namespace=root.get("targetNamespace", "http://bpmn.io/schema/bpmn"),
             processes=processes,
             namespaces=ns,
         )
+        return diagram, unsupported
 
     def serialize(self, diagram: BpmnDiagram) -> bytes:
         """Serialise a BpmnDiagram back to BPMN XML bytes."""
@@ -195,10 +224,14 @@ def _read_label_bounds(parent: etree._Element) -> Bounds | None:
     return _read_bounds(label.find(f"{{{DC_NS}}}Bounds"))
 
 
-def _parse_process(proc_el: etree._Element, bpmn_ns: str) -> BpmnProcess:
+def _parse_process(
+    proc_el: etree._Element,
+    unsupported: list[UnsupportedElement] | None = None,
+) -> BpmnProcess:
     flow_nodes: list[FlowNode] = []
     sequence_flows: list[SequenceFlow] = []
     seen_ids: set[str] = set()
+    proc_id = proc_el.get("id", "process_1")
 
     for child in proc_el:
         if not isinstance(child.tag, str):
@@ -212,6 +245,15 @@ def _parse_process(proc_el: etree._Element, bpmn_ns: str) -> BpmnProcess:
             flow = _parse_sequence_flow(child)
             _reject_duplicate_id(flow.id, proc_el, seen_ids)
             sequence_flows.append(flow)
+        elif unsupported is not None:
+            unsupported.append(
+                UnsupportedElement(
+                    tag=local,
+                    scope="process",
+                    element_id=child.get("id"),
+                    parent_id=proc_id,
+                )
+            )
 
     # wire incoming/outgoing on nodes
     node_index = {n.id: n for n in flow_nodes}
@@ -228,6 +270,33 @@ def _parse_process(proc_el: etree._Element, bpmn_ns: str) -> BpmnProcess:
         flow_nodes=flow_nodes,
         sequence_flows=sequence_flows,
     )
+
+
+def _collect_unsupported_definitions_children(
+    root: etree._Element,
+    unsupported: list[UnsupportedElement],
+) -> None:
+    """report document-level children that carry meaning the IR drops
+
+    A `collaboration` is the one that matters most in practice: it is where pools,
+    participants, and message flows live, so a file whose processes look thin
+    usually has its structure here rather than nowhere.
+    """
+    root_id = root.get("id", "definitions")
+    for child in root:
+        if not isinstance(child.tag, str):
+            continue
+        local = etree.QName(child.tag).localname
+        if local in _HANDLED_DEFINITIONS_TAGS or local in _IGNORED_DEFINITIONS_TAGS:
+            continue
+        unsupported.append(
+            UnsupportedElement(
+                tag=local,
+                scope="definitions",
+                element_id=child.get("id"),
+                parent_id=root_id,
+            )
+        )
 
 
 def _reject_duplicate_id(

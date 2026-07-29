@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, TypeAdapter, field_validator
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError, field_validator
 
 from app.model.schema import (
     BpmnDiagram,
@@ -44,8 +44,12 @@ GATEWAY_NODE_TYPES = {
 
 class AddNodeOp(BaseModel):
     op: Literal[EditOpType.ADD_NODE] = EditOpType.ADD_NODE
-    id: FlowNodeId = Field(description="New node ID")
-    node_type: FlowNodeType
+    id: FlowNodeId = Field(
+        description=(
+            "ID for a genuinely new BPMN flow node. Never use a sequence-flow ID."
+        )
+    )
+    node_type: FlowNodeType = Field(description="Type of the new BPMN flow node")
     process_id: str = Field(description="Process ID to add the node to")
     name: str | None = None
 
@@ -53,14 +57,22 @@ class AddNodeOp(BaseModel):
 class RemoveNodeOp(BaseModel):
     op: Literal[EditOpType.REMOVE_NODE] = EditOpType.REMOVE_NODE
     id: FlowNodeId = Field(description="Node ID to remove")
-    cascade: bool = Field(description="Whether to remove child nodes", default=False)
+    cascade: bool = Field(
+        description=(
+            "Whether to remove the node's incident sequence flows too. Required "
+            "when removing a connected node."
+        ),
+        default=False,
+    )
 
 
 class AddFlowOp(BaseModel):
     op: Literal[EditOpType.ADD_FLOW] = EditOpType.ADD_FLOW
-    id: SequenceFlowId = Field(description="New flow ID")
-    source_ref: FlowNodeId
-    target_ref: FlowNodeId
+    id: SequenceFlowId = Field(
+        description="ID for the new sequence flow, not a node ID"
+    )
+    source_ref: FlowNodeId = Field(description="Existing source node ID")
+    target_ref: FlowNodeId = Field(description="Existing target node ID")
     name: str | None = None
     condition_expression: str | None = None
 
@@ -113,15 +125,15 @@ class ReplaceDiagramOp(BaseModel):
 
 
 AtomicEditOp = Annotated[
-    AddNodeOp
+    AddFlowOp
+    | ChangeGatewayTypeOp
     | RemoveNodeOp
-    | AddFlowOp
     | RemoveFlowOp
     | RenameNodeOp
     | RenameFlowOp
     | ChangeNodeTypeOp
-    | ChangeGatewayTypeOp
-    | SetConditionOp,
+    | SetConditionOp
+    | AddNodeOp,
     Field(discriminator="op"),
 ]
 
@@ -142,7 +154,14 @@ class AtomicEditOpsResult(BaseModel):
     is wrapped in a single `ops` field rather than returned as a bare array.
     """
 
-    ops: list[AtomicEditOp] = Field(default_factory=list)
+    ops: list[AtomicEditOp] = Field(
+        default_factory=list,
+        max_length=32,
+        description=(
+            "One minimal ordered plan. Include each intended change once; never "
+            "enumerate alternative IDs or alternative candidate plans."
+        ),
+    )
 
 
 class EditOpResult(BaseModel):
@@ -166,7 +185,8 @@ def apply_edit_ops(
         before = updated.model_copy(deep=True)
         try:
             _apply_one(op, updated)
-        except EditOpError as exc:
+            updated = BpmnDiagram.model_validate(updated.model_dump())
+        except (EditOpError, ValidationError) as exc:
             updated = before
             results.append(EditOpResult(op=op, applied=False, error=str(exc)))
             continue
@@ -309,7 +329,14 @@ def _require_process(diagram: BpmnDiagram, process_id: str) -> BpmnProcess:
 
 
 def _require_unique_id(diagram: BpmnDiagram, element_id: str) -> None:
-    if _find_node(diagram, element_id) or _find_flow(diagram, element_id):
+    """refuse an ID already taken anywhere in the document
+
+    BPMN types `id` as `xsd:ID`, so the scope is the whole definitions element,
+    not the flow-node and sequence-flow lists this check used to walk. A new task
+    called `Process_1` cleared the old check and then collided with the process
+    it was being added to.
+    """
+    if element_id in set(diagram.element_ids()):
         raise EditOpError(f"element id '{element_id}' already exists")
 
 

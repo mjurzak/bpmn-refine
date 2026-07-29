@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from app.model.formats.compact_json import CompactJsonConverter
+from app.model.protocol import BaseDiagramConverter
 from app.model.schema import BpmnDiagram, FlowNode, FlowNodeType
 
 _METADATA_PREFIX = "%% bpmn-ai-ir:"
 
 
-class MermaidConverter:
+class MermaidConverter(BaseDiagramConverter):
     """Converts between Mermaid flowchart bytes and canonical BpmnDiagram."""
 
     def parse(self, payload: bytes) -> BpmnDiagram:

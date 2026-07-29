@@ -4,17 +4,18 @@ from __future__ import annotations
 
 import yaml
 
+from app.model.protocol import BaseDiagramConverter
 from app.model.schema import BpmnDiagram
 
 
-class YamlConverter:
+class YamlConverter(BaseDiagramConverter):
     """Converts between UTF-8 YAML bytes and the canonical BpmnDiagram model."""
 
     def parse(self, payload: bytes) -> BpmnDiagram:
         """Parse canonical IR YAML bytes into a BpmnDiagram."""
         data = yaml.safe_load(payload.decode("utf-8"))
         if not isinstance(data, dict):
-            raise ValueError("YAML diagram payload must be a mapping")
+            raise TypeError("YAML diagram payload must be a mapping")
         return BpmnDiagram.model_validate(data)
 
     def serialize(self, diagram: BpmnDiagram) -> bytes:

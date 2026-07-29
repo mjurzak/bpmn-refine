@@ -29,6 +29,18 @@ def test_converter_preserves_supported_canonical_ir(converter_name, diagram_fact
 
 
 @pytest.mark.parametrize(("converter_name", "diagram_factory"), CONVERTER_CASES)
+def test_every_converter_exposes_the_diagnostic_channel(converter_name, diagram_factory):
+    """round-tripping a converter's own output loses nothing, so it reports nothing"""
+    converter = get_converter(converter_name)
+    diagram = diagram_factory()
+
+    reparsed, unsupported = converter.parse_with_diagnostics(converter.serialize(diagram))
+
+    assert reparsed == diagram
+    assert unsupported == []
+
+
+@pytest.mark.parametrize(("converter_name", "diagram_factory"), CONVERTER_CASES)
 def test_converter_serialization_is_deterministic(converter_name, diagram_factory):
     converter = get_converter(converter_name)
     diagram = diagram_factory()
