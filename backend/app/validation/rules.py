@@ -57,6 +57,21 @@ class ValidationTier(StrEnum):
     TIER2 = "tier2"
     TIER3 = "tier3"
 
+class SemanticCategory(StrEnum):
+    """The kind of semantic defect a tier-3 finding reports."""
+
+    MISSING_STEP = "missing_step"
+    CONTRADICTORY_FLOW = "contradictory_flow"
+    UNREACHABLE_BRANCH = "unreachable_branch"
+    MISSING_EXCEPTION_HANDLING = "missing_exception_handling"
+    INCONSISTENT_NAMING = "inconsistent_naming"
+    IMPROPER_TERMINATION = "improper_termination"
+
+
+def semantic_rule_id(category: SemanticCategory) -> str:
+    """the stable issue identifier for a semantic category"""
+    return f"semantic:{category.value}"
+
 
 @dataclass
 class TraceStep:
@@ -111,8 +126,17 @@ SOURCE_RULES = "rules"
 SOURCE_LLM = "llm"
 
 
-def issue_to_dict(issue: ValidationIssue) -> dict[str, Any]:
-    """convert an issue to the compact, BPMN-level form used in LLM prompts"""
+def issue_to_dict(
+    issue: ValidationIssue, include_formal_evidence: bool = True
+) -> dict[str, Any]:
+    """convert an issue to the compact, BPMN-level form used in LLM prompts
+
+    `include_formal_evidence` is the ablation switch for the counterexample
+    condition. With it off the issue still reaches the model — same verdict, same
+    affected elements, produced by the same formal checker run — but without the
+    traces, dead elements, uncovered places, and marking that localise it. That
+    isolates the contribution of the evidence from the contribution of the check.
+    """
     affected_elements: list[str] = []
     if issue.element_id:
         affected_elements.append(issue.element_id)
@@ -131,7 +155,7 @@ def issue_to_dict(issue: ValidationIssue) -> dict[str, Any]:
         data["source"] = issue.source
     if affected_elements:
         data["affected_elements"] = affected_elements
-    if issue.formal_witness:
+    if issue.formal_witness and include_formal_evidence:
         witness = issue.formal_witness
         evidence: dict[str, Any] = {"kind": witness.kind}
         if witness.dead_elements:

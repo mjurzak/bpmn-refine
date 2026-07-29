@@ -56,6 +56,8 @@ def _make_strict(node: Any) -> Any:
         # recurse first so nested $defs and properties are covered too
         for key, value in list(node.items()):
             node[key] = _make_strict(value)
+        if "$ref" in node:
+            return {"$ref": node["$ref"]}
         # pydantic emits discriminated unions as `oneOf`; strict APIs speak `anyOf`
         if "oneOf" in node and "anyOf" not in node:
             node["anyOf"] = node.pop("oneOf")

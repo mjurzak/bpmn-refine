@@ -8,19 +8,32 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.experiments import ExperimentConfig, RunBlock, build_run_block, converter_version
+from app.experiments import (
+    ExperimentConfig,
+    RunBlock,
+    build_run_block,
+    converter_version,
+)
 from app.llm.router import TaskType, resolve_model
-from app.llm.tracing import LlmTrace, get_traces, reset_trace_context, start_trace_context
+from app.llm.tracing import (
+    LlmTrace,
+    get_traces,
+    reset_trace_context,
+    start_trace_context,
+)
 from app.model.schema import BpmnDiagram
 from app.repair.ops import EditOp, EditOpResult, apply_edit_ops
 from app.services.diagrams import export_bpmn_xml, parse_bpmn_bytes
 from app.services.repair import (
+    StopReason,
     dispatch_repair,
     repair_diagram,
     repair_prompt_path,
     repair_raw_xml,
     xml_repair_prompt_path,
 )
+from app.services.validation import validate_prompt_path
+from app.validation.checkers import checker_versions
 from app.validation.rules import RULES_VERSION, ValidationIssue
 
 router = APIRouter(prefix="/repair", tags=["repair"])
@@ -37,9 +50,12 @@ class RepairResponse(BaseModel):
     updated_xml: str
     updated_diagram: BpmnDiagram
     applied_ops: list[EditOp] = Field(default_factory=list)
+    failed_ops: list[EditOpResult] = Field(default_factory=list)
     remaining_issues: list[ValidationIssue] = Field(default_factory=list)
     iterations: int
     converged: bool
+    errors_resolved: bool = False
+    stop_reason: StopReason = StopReason.ITERATION_BUDGET
     run: RunBlock
     llm_traces: list[LlmTrace] = Field(default_factory=list)
 
@@ -121,9 +137,12 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
         updated_xml=updated_xml,
         updated_diagram=repair_result.repaired_diagram,
         applied_ops=repair_result.applied_ops,
+        failed_ops=repair_result.failed_ops,
         remaining_issues=remaining_issues,
         iterations=iterations,
         converged=converged,
+        errors_resolved=repair_result.errors_resolved,
+        stop_reason=repair_result.stop_reason,
         run=run,
         llm_traces=traces,
     )
@@ -200,12 +219,24 @@ def _build_repair_run(
     converged: bool,
     prompt_files: dict[str, Path] | None = None,
 ) -> RunBlock:
+    """describe the repair run, including what its nested revalidation invoked
+
+    Each dispatcher iteration revalidates, so a repair with Tier 3 enabled also
+    executes the semantic-validation prompt and a repair with Tier 2 enabled also
+    executes the formal checkers. Recording only the repair prompt understated
+    the run: two records could agree on every listed field while one of them had
+    additionally made a semantic call the other never did.
+    """
+    resolved_prompts = prompt_files or {"repair": repair_prompt_path(config)}
+    if prompt_files is None and config.tiers_enabled.t3:
+        resolved_prompts = {**resolved_prompts, "validate": validate_prompt_path()}
     return build_run_block(
         config=config,
         model_used=resolve_model(TaskType.REPAIR, config=config),
         converter=converter_version(config),
         rules_version=RULES_VERSION,
-        prompt_files=prompt_files or {"repair": repair_prompt_path(config)},
+        prompt_files=resolved_prompts,
+        checkers=checker_versions(config) if config.tiers_enabled.t2 else None,
         iterations=iterations,
         converged=converged,
     )

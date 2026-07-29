@@ -13,11 +13,15 @@ from tests.converter_cases import canonical_full_diagram
 async def test_semantic_validation_prompt_uses_selected_ir_format(monkeypatch):
     captured = {}
 
-    async def fake_complete(**kwargs):
+    async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return "[]"
+        return {"findings": []}
 
-    monkeypatch.setattr("app.services.validation.llm_client.complete", fake_complete)
+    # tier 3 is schema-constrained, so it goes through the structured call
+    monkeypatch.setattr(
+        "app.services.validation.llm_client.complete_structured",
+        fake_complete_structured,
+    )
 
     await validate_diagram(
         canonical_full_diagram(),

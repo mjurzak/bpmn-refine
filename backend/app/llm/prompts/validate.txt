@@ -12,13 +12,17 @@ identify their `tier` and `source`; tier-2 issues may also carry localized
 
 {{BPMN_IR_SCHEMA}}
 
-Your task is to identify SEMANTIC issues that the rule engine cannot detect:
-- missing business logic steps
-- ambiguous or contradictory flow paths
-- unreachable branches
-- missing exception handling
-- naming inconsistencies (e.g. contradictory labels)
-- process termination problems
+Your task is to identify SEMANTIC issues that the rule engine cannot detect.  Every
+finding must be classified into exactly one of these categories:
+- `missing_step`                 — a business step the process needs but does not model
+- `contradictory_flow`           — ambiguous or contradictory flow paths
+- `unreachable_branch`           — a branch no execution can take, for a semantic reason
+- `missing_exception_handling`   — a realistic failure the model does not handle
+- `inconsistent_naming`          — labels that contradict the behaviour around them
+- `improper_termination`         — the process ends in a state it should not end in
+
+Choose the closest category.  There is no "other" — a finding that fits none of these
+well enough to name is one you should omit.
 
 Do NOT report the following — they are handled elsewhere or are not defects:
 - anything already present in the existing issue list above; never restate it
@@ -35,14 +39,15 @@ Severity discipline:
 - "warning" — the process executes, but a realistic business scenario is mishandled
 - "info"    — do not use; if it is only worth an "info", omit it entirely
 
-Report only what you can tie to a concrete element or flow path. Prefer returning an
-empty array over speculative findings — a false alarm costs the user more than a miss.
+Report only what you can tie to a concrete element or flow path. Prefer returning no
+findings over speculative ones — a false alarm costs the user more than a miss.
 
-Return your findings as a JSON array of objects with these keys:
-  rule_id    — your own identifier, e.g. "S001"
-  severity   — "error" | "warning" | "info"
-  message    — concise description of the issue
-  element_id — the affected element ID (null if process-wide)
-  suggestion — actionable fix suggestion
+Return an object with a single `findings` key holding an array of objects:
+  category     — one of the six category values listed above
+  severity     — "error" | "warning"
+  message      — concise description of the issue
+  element_refs — IDs of the affected elements; empty array if process-wide.  Every ID
+                 must already exist in the diagram; invented IDs are discarded.
+  suggestion   — actionable fix suggestion, or null
 
-Only return the JSON array.  No prose, no markdown code fences.
+Return an empty `findings` array if the process has no semantic defects.

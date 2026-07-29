@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -10,6 +11,7 @@ from app.model.schema import (
     FlowNodeType,
     SequenceFlow,
 )
+from app.model.formats.pydantic_ir import PydanticConverter
 from app.repair.ops import RenameNodeOp
 from app.services import repair as repair_service
 from app.services.repair import RepairResult, dispatch_repair, repair_with_edit_ops
@@ -76,8 +78,10 @@ async def test_dispatch_repair_uses_atomic_llm_ops_when_no_quick_fix_exists():
     assert calls[0][1][0].rule_id == "R999"
 
 
-async def test_dispatch_repair_assigns_remaining_errors_in_later_rounds(monkeypatch):
-    assigned: list[str] = []
+async def test_dispatch_repair_batches_errors_then_retries_only_what_remains(
+    monkeypatch,
+):
+    assigned: list[list[str]] = []
     validation_round = 0
     second_issue = ValidationIssue(
         rule_id="R998",
@@ -87,8 +91,8 @@ async def test_dispatch_repair_assigns_remaining_errors_in_later_rounds(monkeypa
     )
 
     async def fake_atomic_repair(diagram, issues, **kwargs):
-        assigned.append(issues[0].rule_id)
-        return [RenameNodeOp(id="task_1", new_name=f"Fixed {issues[0].rule_id}")]
+        assigned.append([issue.rule_id for issue in issues])
+        return [RenameNodeOp(id="task_1", new_name=f"Fixed round {len(assigned)}")]
 
     async def fake_validate(diagram, **kwargs):
         nonlocal validation_round
@@ -115,10 +119,37 @@ async def test_dispatch_repair_assigns_remaining_errors_in_later_rounds(monkeypa
         atomic_repair_fn=fake_atomic_repair,
     )
 
-    assert assigned == ["R999", "R998"]
+    assert assigned == [["R999", "R998"], ["R998"]]
     assert result.iterations == 2
     assert result.converged is True
     assert len(result.applied_ops) == 2
+
+
+async def test_dispatch_repair_uses_one_llm_call_when_batched_plan_converges():
+    assigned: list[list[str]] = []
+
+    async def fake_atomic_repair(diagram, issues, **kwargs):
+        assigned.append([issue.rule_id for issue in issues])
+        return [RenameNodeOp(id="task_1", new_name="Fixed in one plan")]
+
+    result = await dispatch_repair(
+        _minimal_valid_diagram(),
+        issues=[
+            ValidationIssue(
+                rule_id=f"R99{index}",
+                severity=Severity.ERROR,
+                message=f"Synthetic issue {index}.",
+                element_id="task_1",
+            )
+            for index in range(3)
+        ],
+        atomic_repair_fn=fake_atomic_repair,
+    )
+
+    assert assigned == [["R990", "R991", "R992"]]
+    assert result.iterations == 1
+    assert result.converged is True
+    assert len(result.applied_ops) == 1
 
 
 async def test_dispatch_repair_regen_mode_uses_full_ir_replacement():
@@ -153,7 +184,12 @@ async def test_dispatch_repair_respects_max_iteration_cap():
 
     async def fake_repair(diagram, issues, **kwargs):
         calls.append(issues[0].rule_id)
-        return RepairResult(repaired_diagram=diagram)
+        # each round must leave a genuinely different diagram, otherwise the
+        # no-progress detector stops the loop before the cap is reached — which
+        # is its own test below, not this one
+        updated = diagram.model_copy(deep=True)
+        updated.processes[0].flow_nodes[0].name = f"renamed_{len(calls)}"
+        return RepairResult(repaired_diagram=updated)
 
     result = await dispatch_repair(
         _diagram_without_start(),
@@ -183,12 +219,18 @@ async def test_dispatch_repair_respects_max_iteration_cap():
     ]
 
 
-async def test_dispatch_repair_does_not_iterate_when_no_errors_remain():
+async def test_dispatch_repair_targets_a_warning_once_no_error_remains():
+    """warnings are drained after errors rather than left standing
+
+    The loop used to select errors only, so a run reported convergence having
+    never looked at a warning. Chapter 6 measures warning repair, which requires
+    the dispatcher to reach them.
+    """
     calls = []
 
-    async def fake_repair(diagram, issues, **kwargs):
-        calls.append(issues)
-        return RepairResult(repaired_diagram=diagram)
+    async def fake_atomic_repair(diagram, issues, **kwargs):
+        calls.append(issues[0].rule_id)
+        return []
 
     result = await dispatch_repair(
         _minimal_valid_diagram(),
@@ -199,12 +241,36 @@ async def test_dispatch_repair_does_not_iterate_when_no_errors_remain():
                 message="Gateway has fewer than 2 outgoing flows.",
             )
         ],
+        atomic_repair_fn=fake_atomic_repair,
+    )
+
+    assert calls == ["R999"]
+    assert result.iterations == 1
+
+
+async def test_dispatch_repair_does_not_iterate_when_nothing_is_repairable():
+    """a checker failure is a fact about the run, not a defect to repair"""
+    calls = []
+
+    async def fake_repair(diagram, issues, **kwargs):
+        calls.append(issues)
+        return RepairResult(repaired_diagram=diagram)
+
+    result = await dispatch_repair(
+        _minimal_valid_diagram(),
+        issues=[
+            ValidationIssue(
+                rule_id="LLM_PARSE_ERROR",
+                severity=Severity.WARNING,
+                message="LLM semantic validation returned an unparseable response.",
+            )
+        ],
         repair_fn=fake_repair,
     )
 
     assert result.iterations == 0
     assert result.converged is True
-    assert result.remaining_issues[0].rule_id == "R999"
+    assert result.remaining_issues[0].rule_id == "LLM_PARSE_ERROR"
     assert calls == []
 
 
@@ -241,8 +307,12 @@ async def test_repair_with_edit_ops_parses_atomic_llm_output(monkeypatch):
     )
 
     assert [op.op for op in ops] == ["rename_node"]
-    assert "Available atomic EditOps" in captured["system"]
+    assert "Choose the operation by what is missing" in captured["system"]
+    assert "Never use `add_node` to represent a missing sequence flow" in captured[
+        "system"
+    ]
     assert "replace_diagram" not in captured["system"]
+    assert '"$defs"' not in captured["system"]
     assert json.loads(captured["prompt"])["repair_mode"] == "atomic"
 
 
@@ -285,14 +355,17 @@ async def test_repair_with_edit_ops_sends_diagram_specific_id_enums(monkeypatch)
     assert "add_node" in source_ref["description"]
     payload = json.loads(captured["prompt"])
     assert payload["id_constraints"]["flow_ids"] == ["sf_1", "sf_2"]
-    assert (
-        '"enum": [\n            "sf_1",\n            "sf_2"\n          ]'
-        in captured["system"]
-    )
-    assert (
-        '"enum": [\n            "end_1",\n            "start_1",\n            "task_1"\n          ]'
-        in captured["system"]
-    )
+    assert payload["id_constraints"]["gateway_ids"] == []
+    # The provider receives the full schema through response_format. Duplicating
+    # its 12k+ characters in the prose prompt previously buried operation-choice
+    # guidance and overemphasised add_node.
+    assert '"sf_1"' not in captured["system"]
+    assert len(captured["system"]) < 7_000
+    op_choices = captured["schema"]["properties"]["ops"]["items"]["anyOf"]
+    assert op_choices[0] == {"$ref": "#/$defs/AddFlowOp"}
+    assert op_choices[1] == {"$ref": "#/$defs/ChangeGatewayTypeOp"}
+    assert {"$ref": "#/$defs/AddNodeOp"} in op_choices
+    assert captured["schema"]["properties"]["ops"]["maxItems"] == 32
 
 
 async def test_repair_with_edit_ops_rejects_flow_op_targeting_node_id(monkeypatch):
@@ -658,6 +731,162 @@ async def test_atomic_repair_can_connect_a_node_it_just_added(monkeypatch):
 
     assert [op.op for op in ops] == ["add_node", "remove_flow", "add_flow", "add_flow"]
     assert ops[3].source_ref == "gw_outcome"
+
+
+async def test_atomic_repair_discards_disconnected_tasks_and_reprompts(monkeypatch):
+    """regression: rejected speculative tasks must not leak into the proposal"""
+    responses = [
+        {
+            "ops": [
+                {
+                    "op": "add_node",
+                    "id": "sf_card_feed",
+                    "node_type": "task",
+                    "process_id": "Process_expense_reimbursement",
+                    "name": None,
+                },
+                {
+                    "op": "add_node",
+                    "id": "sf_audit_escalated",
+                    "node_type": "task",
+                    "process_id": "Process_expense_reimbursement",
+                    "name": None,
+                },
+                {
+                    "op": "change_gateway_type",
+                    "id": "gw_close",
+                    "new_type": "exclusiveGateway",
+                },
+            ]
+        },
+        {
+            "ops": [
+                {
+                    "op": "add_node",
+                    "id": "flow_card_feed_to_check",
+                    "node_type": "task",
+                    "process_id": "Process_expense_reimbursement",
+                    "name": None,
+                },
+                {
+                    "op": "add_node",
+                    "id": "flow_audit_to_escalated",
+                    "node_type": "task",
+                    "process_id": "Process_expense_reimbursement",
+                    "name": None,
+                },
+            ]
+        },
+        {
+            "ops": [
+                {
+                    "op": "add_flow",
+                    "id": "sf_start_card_feed_to_check",
+                    "source_ref": "start_card_feed",
+                    "target_ref": "task_check",
+                    "name": None,
+                    "condition_expression": None,
+                },
+                {
+                    "op": "add_flow",
+                    "id": "sf_task_audit_to_escalated",
+                    "source_ref": "task_audit",
+                    "target_ref": "end_escalated",
+                    "name": None,
+                    "condition_expression": None,
+                },
+            ]
+        },
+    ]
+    prompts: list[dict[str, Any]] = []
+    schemas: list[dict[str, Any]] = []
+
+    async def fake_complete_structured(**kwargs):
+        prompts.append(json.loads(kwargs["prompt"]))
+        schemas.append(kwargs["schema"])
+        return responses[len(prompts) - 1]
+
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
+    diagram = PydanticConverter().parse(
+        Path("data/test_cases/03_expense_reimbursement.bpmn").read_bytes()
+    )
+
+    ops = await repair_with_edit_ops(
+        diagram,
+        issues=[
+            ValidationIssue(
+                rule_id="R003",
+                severity=Severity.ERROR,
+                message="Start event has no outgoing sequence flow.",
+                element_id="start_card_feed",
+            )
+        ],
+        config=ExperimentConfig(),
+    )
+
+    assert len(prompts) == 3
+    assert "repair_feedback" not in prompts[0]
+    assert "Disconnected new node(s): sf_audit_escalated, sf_card_feed" in prompts[
+        1
+    ]["repair_feedback"]
+    assert "Disconnected new node(s)" in prompts[2]["repair_feedback"]
+    assert "do not merely invent another node ID" in prompts[1]["repair_feedback"]
+    assert "Do not repeat" not in prompts[1]["repair_feedback"]
+    assert [op.op for op in ops] == ["add_flow", "add_flow"]
+    assert not any(op.op == "add_node" for op in ops)
+    gateway_ids = schemas[0]["$defs"]["ChangeGatewayTypeOp"]["properties"]["id"][
+        "enum"
+    ]
+    assert gateway_ids == ["gw_amount", "gw_close", "gw_decision", "gw_receipts"]
+    assert "task_check" not in gateway_ids
+
+
+async def test_atomic_repair_caps_runaway_disconnected_node_diagnostics(monkeypatch):
+    calls = 0
+    runaway_plan = {
+        "ops": [
+            {
+                "op": "add_node",
+                "id": f"sf_alternative_{index:02d}",
+                "node_type": "task",
+                "process_id": "proc_1",
+                "name": None,
+            }
+            for index in range(40)
+        ]
+    }
+
+    async def fake_complete_structured(**kwargs):
+        nonlocal calls
+        calls += 1
+        return runaway_plan
+
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
+
+    with pytest.raises(ValueError) as exc_info:
+        await repair_with_edit_ops(
+            _minimal_valid_diagram(),
+            issues=[
+                ValidationIssue(
+                    rule_id="R999",
+                    severity=Severity.ERROR,
+                    message="Synthetic connectivity issue.",
+                )
+            ],
+            config=ExperimentConfig(),
+        )
+
+    message = str(exc_info.value)
+    assert calls == 3
+    assert "sf_alternative_00" in message
+    assert "sf_alternative_07" in message
+    assert "sf_alternative_08" not in message
+    assert "(and 32 more)" in message
+    assert len(message) < 1_000
 
 
 async def test_atomic_repair_still_rejects_an_id_that_is_never_created(monkeypatch):

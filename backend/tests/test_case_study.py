@@ -9,7 +9,8 @@ from pathlib import Path
 
 from app.experiments import ExperimentConfig
 from app.model.formats.pydantic_ir import PydanticConverter
-from app.repair.ops import AddFlowOp, apply_edit_ops
+from app.repair.ops import AddFlowOp, ChangeGatewayTypeOp, apply_edit_ops
+from app.services.repair import dispatch_repair
 from app.services import validation as validation_service
 from app.services.validation import validate_diagram
 from app.validation.checkers import run_woflan
@@ -109,6 +110,55 @@ async def test_deep_validation_reports_formal_detail_after_connectivity_repairs(
     assert [issue.rule_id for issue in repaired.issues] == ["woflan:soundness"]
     assert repaired.issues[0].element_refs
     assert "not covered by an S-component" in repaired.issues[0].message
+
+
+async def test_case_study_repairs_all_current_errors_in_one_llm_plan(monkeypatch):
+    async def run_woflan_without_worker_thread(diagram, config):
+        return run_woflan(diagram)
+
+    monkeypatch.setattr(
+        validation_service,
+        "run_tier2_checkers",
+        run_woflan_without_worker_thread,
+    )
+    config = ExperimentConfig.model_validate({"tiers_enabled": {"t2": True}})
+    initial = await validate_diagram(_diagram(), config=config)
+    assigned: list[list[str]] = []
+
+    async def fake_atomic_repair(diagram, issues, **kwargs):
+        assigned.append([issue.rule_id for issue in issues])
+        return [
+            AddFlowOp(
+                id="sf_card_feed",
+                source_ref="start_card_feed",
+                target_ref="task_check",
+            ),
+            AddFlowOp(
+                id="sf_audit_escalated",
+                source_ref="task_audit",
+                target_ref="end_escalated",
+            ),
+            ChangeGatewayTypeOp(
+                id="gw_close",
+                new_type="exclusiveGateway",
+            ),
+        ]
+
+    result = await dispatch_repair(
+        _diagram(),
+        issues=initial.issues,
+        config=config,
+        atomic_repair_fn=fake_atomic_repair,
+    )
+
+    assert assigned == [["R003", "R004", "R008", "woflan:soundness"]]
+    assert result.iterations == 1
+    assert result.converged is True
+    assert [op.op for op in result.applied_ops] == [
+        "add_flow",
+        "add_flow",
+        "change_gateway_type",
+    ]
 
 
 def test_implicit_merge_is_not_flagged():
