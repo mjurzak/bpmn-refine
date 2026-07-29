@@ -1,6 +1,12 @@
-import React, { useState, useRef, useEffect } from "react";
-import { sendChatMessage } from "../api/client.js";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { sendChatMessage, applyEditOps } from "../api/client.js";
 import DiffBlock from "./DiffBlock.jsx";
+import { summarizeDiagramDiff } from "../utils/irDiff.js";
+import {
+  describeUnmetDependency,
+  unmetDependencies,
+  withDependencies,
+} from "../utils/editOpDeps.js";
 
 function buildAssistantMessage(reply, updatedDiagram) {
   if (!updatedDiagram) {
@@ -154,6 +160,9 @@ export default function ChatPanel({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedOpIndexes, setSelectedOpIndexes] = useState([]);
+  // diff for the currently selected subset, recomputed by actually applying it
+  const [subsetDiff, setSubsetDiff] = useState(null);
+  const [subsetError, setSubsetError] = useState(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -162,8 +171,65 @@ export default function ChatPanel({
 
   useEffect(() => {
     setSelectedOpIndexes((pendingProposal?.ops ?? []).map((_, index) => index));
+    setSubsetDiff(null);
+    setSubsetError(null);
     onFocusProposalOp?.(null);
   }, [pendingProposal]);
+
+  const proposalOps = pendingProposal?.ops ?? [];
+  const isFullSelection = selectedOpIndexes.length === proposalOps.length;
+
+  const brokenDependencies = useMemo(
+    () => unmetDependencies(proposalOps, selectedOpIndexes),
+    [proposalOps, selectedOpIndexes],
+  );
+
+  // Recompute the preview whenever the selection is a strict subset. The
+  // proposal's own diff describes the whole plan, so leaving it on screen while
+  // the user deselects operations shows a change they are no longer approving.
+  // The preview comes from `/repair/apply`, which is the same pure function the
+  // Apply button calls — a locally reimplemented apply could disagree with it.
+  useEffect(() => {
+    if (!pendingProposal || proposalOps.length === 0) return;
+    if (isFullSelection) {
+      setSubsetDiff(null);
+      setSubsetError(null);
+      return;
+    }
+
+    let cancelled = false;
+    const ops = selectedOpIndexes
+      .map((index) => proposalOps[index])
+      .filter(Boolean);
+
+    if (ops.length === 0) {
+      setSubsetDiff("  no operations selected");
+      setSubsetError(null);
+      return;
+    }
+
+    applyEditOps(pendingProposal.baseDiagram, ops)
+      .then((result) => {
+        if (cancelled) return;
+        const failed = result.op_results.filter((item) => !item.applied);
+        setSubsetError(failed.length > 0 ? failed[0].error : null);
+        setSubsetDiff(
+          summarizeDiagramDiff(
+            pendingProposal.baseDiagram,
+            result.updated_diagram,
+          ),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setSubsetError(err.message);
+        setSubsetDiff(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingProposal, selectedOpIndexes, isFullSelection]);
 
   function toggleProposalOp(index) {
     setSelectedOpIndexes((current) => (
@@ -171,6 +237,10 @@ export default function ChatPanel({
         ? current.filter((item) => item !== index)
         : [...current, index].sort((a, b) => a - b)
     ));
+  }
+
+  function selectDependencies() {
+    setSelectedOpIndexes((current) => withDependencies(proposalOps, current));
   }
 
   function selectedProposalOps() {
@@ -337,11 +407,37 @@ export default function ChatPanel({
               })}
             </div>
           )}
-          <DiffBlock content={pendingProposal.diff} />
+          {brokenDependencies.length > 0 && (
+            <div className="proposal-dependency-warning" role="alert">
+              {brokenDependencies.map((entry) => (
+                <div key={entry.index}>{describeUnmetDependency(entry)}</div>
+              ))}
+              <button
+                className="proposal-action"
+                onClick={selectDependencies}
+                type="button"
+              >
+                Select required operations
+              </button>
+            </div>
+          )}
+          {subsetError && (
+            <div className="proposal-subset-error" role="alert">
+              This subset cannot be applied: {subsetError}
+            </div>
+          )}
+          {!isFullSelection && proposalOps.length > 0 && (
+            <div className="proposal-subset-label">
+              preview of the {selectedOpIndexes.length} selected operation
+              {selectedOpIndexes.length === 1 ? "" : "s"}
+            </div>
+          )}
+          <DiffBlock content={subsetDiff ?? pendingProposal.diff} />
           <div className="proposal-card-actions">
             <button
               className="proposal-action proposal-action--apply"
               onClick={() => onApplyProposal?.(pendingProposal.ops?.length > 0 ? selectedProposalOps() : null)}
+              disabled={brokenDependencies.length > 0}
               type="button"
             >
               {pendingProposal.ops?.length > 0 ? `Apply selected (${selectedOpIndexes.length})` : "Apply"}
