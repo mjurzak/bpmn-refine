@@ -14,6 +14,12 @@ from app.llm.providers.openai import OpenAIProvider
 class OllamaProvider(OpenAIProvider):
     supports_strict = False
     supports_reasoning_effort = False
+    # the wire format is OpenAI's, but the tokenizer behind it is the local
+    # model's — a token total from here is not comparable to a hosted one
+    usage_source = "ollama"
+
+    def _output_limit(self, max_tokens: int) -> dict[str, int]:
+        return {"max_tokens": max_tokens}
 
     def __init__(self, base_url: str) -> None:
         # Ollama doesn't validate the key but the openai client requires a non-empty string

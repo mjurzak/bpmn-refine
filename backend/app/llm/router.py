@@ -6,6 +6,7 @@ than hard-coding names.  Both respect per-tier overrides from settings.
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Any
 
 from app.core.config import settings
 from app.experiments import ExperimentConfig, ModelTier
@@ -27,6 +28,25 @@ _STRONG_TASKS = {
     TaskType.REPAIR,
     TaskType.REFINEMENT,
 }
+
+
+def resolve_sampling(config: ExperimentConfig | None = None) -> dict[str, Any]:
+    """the sampling controls a call should ask its provider for
+
+    `ExperimentConfig` has declared `temperature` and `seed` since the schema was
+    written, but nothing read them, so every run was executed at whatever default
+    the provider chose while the run record named a temperature. Call sites spread
+    this into their client call; the facade then records which controls the
+    selected provider could actually forward.
+    """
+    if config is None:
+        return {}
+    controls: dict[str, Any] = {}
+    if config.temperature is not None:
+        controls["temperature"] = config.temperature
+    if config.seed is not None:
+        controls["seed"] = config.seed
+    return controls
 
 
 def resolve_model(task: TaskType, config: ExperimentConfig | None = None) -> str:

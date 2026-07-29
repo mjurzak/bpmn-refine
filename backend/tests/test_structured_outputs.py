@@ -64,16 +64,27 @@ async def test_anthropic_structured_sends_output_config_and_parses():
         )
     )
 
-    raw = await provider.complete_structured(
-        prompt="p", system="s", model="m", schema=_SCHEMA
+    response = await provider.complete_structured(
+        prompt="p",
+        system="s",
+        model="m",
+        schema=_SCHEMA,
+        reasoning_effort="medium",
+        max_tokens=1234,
     )
 
     kwargs = provider._client.messages.create.call_args.kwargs
     assert kwargs["output_config"] == {
-        "format": {"type": "json_schema", "schema": _SCHEMA}
+        "effort": "medium",
+        "format": {"type": "json_schema", "schema": _SCHEMA},
     }
+    assert "effort" not in kwargs
+    assert kwargs["max_tokens"] == 1234
     assert kwargs["system"] == "s"
-    assert json.loads(raw) == {"name": "ok"}
+    assert json.loads(response.text) == {"name": "ok"}
+    # this stub carries no usage block, so the adapter must report none rather
+    # than fabricate a zero
+    assert response.usage is None
 
 
 # ----- OpenAI / Ollama ------------------------------------------------------
@@ -85,15 +96,18 @@ async def test_openai_structured_uses_strict_response_format():
         return_value=SimpleNamespace(choices=[SimpleNamespace(message=message)])
     )
 
-    raw = await provider.complete_structured(
-        prompt="p", system=None, model="m", schema=_SCHEMA
+    response = await provider.complete_structured(
+        prompt="p", system=None, model="m", schema=_SCHEMA, max_tokens=1234
     )
 
-    fmt = provider._client.chat.completions.create.call_args.kwargs["response_format"]
+    kwargs = provider._client.chat.completions.create.call_args.kwargs
+    fmt = kwargs["response_format"]
     assert fmt["type"] == "json_schema"
     assert fmt["json_schema"]["strict"] is True
     assert fmt["json_schema"]["schema"] == _SCHEMA
-    assert json.loads(raw) == {"name": "ok"}
+    assert kwargs["max_completion_tokens"] == 1234
+    assert "max_tokens" not in kwargs
+    assert json.loads(response.text) == {"name": "ok"}
 
 
 async def test_ollama_disables_strict_flag():
@@ -103,10 +117,15 @@ async def test_ollama_disables_strict_flag():
         return_value=SimpleNamespace(choices=[SimpleNamespace(message=message)])
     )
 
-    await provider.complete_structured(prompt="p", system=None, model="m", schema=_SCHEMA)
+    await provider.complete_structured(
+        prompt="p", system=None, model="m", schema=_SCHEMA, max_tokens=1234
+    )
 
-    fmt = provider._client.chat.completions.create.call_args.kwargs["response_format"]
+    kwargs = provider._client.chat.completions.create.call_args.kwargs
+    fmt = kwargs["response_format"]
     assert fmt["json_schema"]["strict"] is False
+    assert kwargs["max_tokens"] == 1234
+    assert "max_completion_tokens" not in kwargs
 
 
 # ----- Gemini ---------------------------------------------------------------
@@ -118,15 +137,35 @@ async def test_gemini_structured_inlines_schema():
     )
 
     nested = strict_json_schema(AtomicEditOpsResult)  # has $defs/$ref
-    raw = await provider.complete_structured(
-        prompt="p", system="s", model="m", schema=nested
+    response = await provider.complete_structured(
+        prompt="p",
+        system="s",
+        model="m",
+        schema=nested,
+        reasoning_effort="high",
     )
 
     config = provider._client.aio.models.generate_content.call_args.kwargs["config"]
     assert config.response_mime_type == "application/json"
+    assert config.thinking_config.thinking_level.value == "HIGH"
     # Gemini cannot resolve refs — the schema must arrive flattened
     assert "$ref" not in json.dumps(config.response_schema)
-    assert json.loads(raw) == {"name": "ok"}
+    assert json.loads(response.text) == {"name": "ok"}
+
+
+@pytest.mark.parametrize("reasoning_effort", ["none", "xhigh"])
+async def test_gemini_rejects_reasoning_effort_without_a_native_equivalent(
+    reasoning_effort,
+):
+    provider = GeminiProvider(api_key="x")
+
+    with pytest.raises(ValueError, match="low, medium, high"):
+        await provider.complete(
+            prompt="p",
+            system=None,
+            model="m",
+            reasoning_effort=reasoning_effort,
+        )
 
 
 # ----- client facade --------------------------------------------------------

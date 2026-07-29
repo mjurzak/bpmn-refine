@@ -6,12 +6,15 @@ return them to the frontend for transparency without persisting raw prompts.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from contextvars import ContextVar, Token
 from datetime import UTC, datetime
 from typing import Any, Literal
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.llm.usage import TokenUsage, UsageTotals, total_usage
 
 
 class LlmTrace(BaseModel):
@@ -23,8 +26,18 @@ class LlmTrace(BaseModel):
     model: str
     reasoning_effort: str | None = None
     max_tokens: int
+    # what the configuration asked for...
+    temperature: float | None = None
+    seed: int | None = None
+    # ...and what the selected provider could actually forward. A control listed
+    # here reached no API: recording the request alone would let an evaluation
+    # report a seeded run that was never seeded.
+    unsupported_controls: list[str] = Field(default_factory=list)
     started_at: datetime
     duration_ms: int
+    # what the call consumed, as the provider reported it. `None` means the
+    # provider returned no usage block — not that the call was free.
+    usage: TokenUsage | None = None
     system: str | None = None
     prompt: str | None = None
     messages: list[dict[str, Any]] | None = None
@@ -52,6 +65,11 @@ def append_trace(trace: LlmTrace) -> None:
 
 def get_traces() -> list[LlmTrace]:
     return list(_traces.get() or [])
+
+
+def trace_usage(traces: Iterable[LlmTrace]) -> UsageTotals:
+    """token totals across a set of traces, including how many reported none"""
+    return total_usage(trace.usage for trace in traces)
 
 
 def utc_now() -> datetime:

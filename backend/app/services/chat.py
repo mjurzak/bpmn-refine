@@ -12,7 +12,7 @@ from app.experiments import ExperimentConfig
 from app.history import service as hist
 from app.llm import client as llm_client
 from app.llm.prompt_context import render_prompt_template
-from app.llm.router import TaskType, resolve_model, resolve_provider
+from app.llm.router import TaskType, resolve_model, resolve_provider, resolve_sampling
 from app.model.schema import BpmnDiagram
 from app.services.ir_payload import (
     call_with_ir_correction,
@@ -62,7 +62,18 @@ async def chat_diagram(
             f"```{fence}\n{diagram_text}\n```\n\n"
         )
     if issues:
-        issues_json = json.dumps([issue_to_dict(issue) for issue in issues], indent=2)
+        issues_json = json.dumps(
+            [
+                issue_to_dict(
+                    issue,
+                    include_formal_evidence=(
+                        config or ExperimentConfig()
+                    ).include_formal_evidence,
+                )
+                for issue in issues
+            ],
+            indent=2,
+        )
         context_prefix += f"Current validation issues:\n```json\n{issues_json}\n```\n\n"
 
     payload_messages: list[dict[str, str]] = []
@@ -87,6 +98,7 @@ async def chat_diagram(
             reasoning_effort=str(config.reasoning_effort)
             if config and config.reasoning_effort
             else None,
+            **resolve_sampling(config),
         )
         # raises on a fenced block that will not parse, which is what triggers a
         # correction round; a reply with no fenced diagram is not an error, it is

@@ -29,7 +29,10 @@ def test_experiment_config_defaults_match_current_runtime():
     assert data["t2_tools"] == ["bpmn_analyzer", "woflan", "bpmnspector"]
     assert data["repair_mode"] == "atomic"
     assert data["max_repair_iters"] == 5
-    assert data["temperature"] == 0.0
+    # unset by default: the provider's own default applies and the record says so
+    assert data["temperature"] is None
+    assert data["seed"] is None
+    assert data["include_formal_evidence"] is True
 
 
 def test_custom_model_tier_requires_model_override():
@@ -70,12 +73,16 @@ def test_canonical_config_json_drops_nulls_and_sorts_keys():
     canonical = canonical_config_json(config)
 
     assert canonical == (
-        '{"experiment_id":"exp-1","ir_format":"pydantic","max_repair_iters":5,'
+        '{"experiment_id":"exp-1","include_formal_evidence":true,'
+        '"ir_format":"pydantic","max_repair_iters":5,'
         '"model_tier":"strong","provider_override":"openai",'
         '"repair_mode":"atomic","seed":42,'
         '"t2_tools":["bpmn_analyzer","woflan","bpmnspector"],'
-        '"temperature":0.0,"tiers_enabled":{"t1":true,"t2":false,"t3":false}}'
+        '"tiers_enabled":{"t1":true,"t2":false,"t3":false}}'
     )
+    # an unset temperature is dropped like any other null: the run record states
+    # that the provider default applied, not a value the call never sent
+    assert "temperature" not in canonical
     assert "model_override" not in canonical
     assert "notes" not in canonical
     assert ": " not in canonical

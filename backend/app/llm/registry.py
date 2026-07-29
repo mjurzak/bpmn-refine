@@ -39,10 +39,9 @@ def get_provider(name: str | None = None) -> LLMProvider:
 def _bootstrap() -> None:
     """Register all providers whose credentials are present in settings."""
     from app.core.config import settings
-
     from app.llm.providers.anthropic import AnthropicProvider
-    from app.llm.providers.openai import OpenAIProvider
     from app.llm.providers.ollama import OllamaProvider
+    from app.llm.providers.openai import OpenAIProvider
 
     logger.debug("llm bootstrap provider=%r", settings.llm_provider)
     logger.debug(
