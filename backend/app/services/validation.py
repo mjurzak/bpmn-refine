@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from app.experiments import ExperimentConfig
 from app.llm import client as llm_client
@@ -157,13 +157,16 @@ async def _semantic_validate(
         findings = SemanticFindings.model_validate(
             parsed if isinstance(parsed, dict) else {"findings": parsed}
         )
-    except Exception:
+    except (json.JSONDecodeError, ValidationError) as exc:
         # surface malformed LLM output as a warning instead of crashing the command
         return [
             ValidationIssue(
                 rule_id="LLM_PARSE_ERROR",
                 severity=Severity.WARNING,
-                message="LLM semantic validation returned an unparseable response.",
+                message=(
+                    "LLM semantic validation returned an unparseable response: "
+                    f"{type(exc).__name__}: {exc}"
+                ),
                 tier=ValidationTier.TIER3,
                 source=SOURCE_LLM,
             )

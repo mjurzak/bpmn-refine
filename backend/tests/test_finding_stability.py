@@ -9,7 +9,6 @@ not present a half-applied plan as a clean one.
 from __future__ import annotations
 
 import pytest
-
 from app.experiments import ExperimentConfig, RepairMode
 from app.model.schema import (
     BpmnDiagram,
@@ -21,15 +20,16 @@ from app.model.schema import (
 from app.repair.ops import AddNodeOp, RemoveNodeOp
 from app.services import validation as validation_service
 from app.services.repair import (
+    OpOrigin,
     RepairResult,
     StopReason,
-    dispatch_repair,
     _is_repairable,
+    dispatch_repair,
 )
 from app.services.validation import (
+    _SEMANTIC_SCHEMA,
     SemanticFinding,
     _normalise_semantic_findings,
-    _SEMANTIC_SCHEMA,
     validate_diagram,
 )
 from app.validation.rules import (
@@ -121,6 +121,41 @@ async def test_semantic_validation_uses_the_structured_call(monkeypatch):
     assert captured["schema"] == _SEMANTIC_SCHEMA
     assert result.semantic_issues[0].rule_id == "semantic:missing_step"
     assert result.semantic_issues[0].tier == ValidationTier.TIER3
+
+
+@pytest.mark.asyncio
+async def test_a_malformed_semantic_reply_becomes_a_finding(monkeypatch):
+    """a reply that does not fit the schema is a defect in the reply"""
+
+    async def fake_complete_structured(**kwargs):
+        return {"findings": [{"category": "not_a_category"}]}
+
+    monkeypatch.setattr(
+        validation_service.llm_client, "complete_structured", fake_complete_structured
+    )
+
+    result = await validate_diagram(_diagram(), include_semantic=True)
+
+    assert [issue.rule_id for issue in result.semantic_issues] == ["LLM_PARSE_ERROR"]
+
+
+@pytest.mark.asyncio
+async def test_a_provider_failure_is_raised_rather_than_attached_to_the_diagram(
+    monkeypatch,
+):
+    """an outage is a fact about the run, not about the process being validated"""
+
+    async def failing_complete_structured(**kwargs):
+        raise ConnectionError("401 authentication_error")
+
+    monkeypatch.setattr(
+        validation_service.llm_client,
+        "complete_structured",
+        failing_complete_structured,
+    )
+
+    with pytest.raises(ConnectionError, match="authentication_error"):
+        await validate_diagram(_diagram(), include_semantic=True)
 
 
 # --------------------------------------------------------------------------
@@ -388,3 +423,6 @@ async def test_failed_operations_are_preserved_in_the_result():
     assert result.failed_ops[0].op.op == "remove_node"
     assert result.failed_ops[0].applied is False
     assert "incident flows" in (result.failed_ops[0].error or "")
+    # both halves of the plan came from the same model call, applied or not
+    assert result.applied_op_origins == [OpOrigin.MODEL_PLAN]
+    assert result.failed_op_origins == [OpOrigin.MODEL_PLAN]

@@ -18,6 +18,7 @@ from app.llm.router import TaskType, resolve_model
 from app.llm.tracing import (
     LlmTrace,
     get_traces,
+    models_called,
     reset_trace_context,
     start_trace_context,
 )
@@ -25,6 +26,7 @@ from app.model.schema import BpmnDiagram
 from app.repair.ops import EditOp, EditOpResult, apply_edit_ops
 from app.services.diagrams import export_bpmn_xml, parse_bpmn_bytes
 from app.services.repair import (
+    OpOrigin,
     StopReason,
     dispatch_repair,
     repair_diagram,
@@ -50,7 +52,9 @@ class RepairResponse(BaseModel):
     updated_xml: str
     updated_diagram: BpmnDiagram
     applied_ops: list[EditOp] = Field(default_factory=list)
+    applied_op_origins: list[OpOrigin] = Field(default_factory=list)
     failed_ops: list[EditOpResult] = Field(default_factory=list)
+    failed_op_origins: list[OpOrigin] = Field(default_factory=list)
     remaining_issues: list[ValidationIssue] = Field(default_factory=list)
     iterations: int
     converged: bool
@@ -116,6 +120,9 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
     except Exception as exc:
         traces = get_traces()
         reset_trace_context(trace_token)
+        run = _build_repair_run(
+            req.config, iterations=iterations, converged=converged, traces=traces
+        )
         return JSONResponse(
             status_code=500,
             content={
@@ -128,8 +135,10 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
     iterations = repair_result.iterations
     remaining_issues = repair_result.remaining_issues
     converged = repair_result.converged
-    run = _build_repair_run(req.config, iterations=iterations, converged=converged)
     traces = get_traces()
+    run = _build_repair_run(
+        req.config, iterations=iterations, converged=converged, traces=traces
+    )
     reset_trace_context(trace_token)
 
     return RepairResponse(
@@ -137,7 +146,9 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
         updated_xml=updated_xml,
         updated_diagram=repair_result.repaired_diagram,
         applied_ops=repair_result.applied_ops,
+        applied_op_origins=repair_result.applied_op_origins,
         failed_ops=repair_result.failed_ops,
+        failed_op_origins=repair_result.failed_op_origins,
         remaining_issues=remaining_issues,
         iterations=iterations,
         converged=converged,
@@ -170,6 +181,13 @@ async def repair_xml(req: RepairXmlRequest) -> RepairXmlResponse | JSONResponse:
     except Exception as exc:
         traces = get_traces()
         reset_trace_context(trace_token)
+        run = _build_repair_run(
+            req.config,
+            iterations=1,
+            converged=False,
+            prompt_files=xml_prompt_files,
+            traces=traces,
+        )
         return JSONResponse(
             status_code=500,
             content={
@@ -188,10 +206,14 @@ async def repair_xml(req: RepairXmlRequest) -> RepairXmlResponse | JSONResponse:
         parseable = False
         parse_error = str(exc)
 
-    run = _build_repair_run(
-        req.config, iterations=1, converged=parseable, prompt_files=xml_prompt_files
-    )
     traces = get_traces()
+    run = _build_repair_run(
+        req.config,
+        iterations=1,
+        converged=parseable,
+        prompt_files=xml_prompt_files,
+        traces=traces,
+    )
     reset_trace_context(trace_token)
     return RepairXmlResponse(
         updated_xml=updated_xml,
@@ -218,6 +240,7 @@ def _build_repair_run(
     iterations: int,
     converged: bool,
     prompt_files: dict[str, Path] | None = None,
+    traces: list[LlmTrace] | None = None,
 ) -> RunBlock:
     """describe the repair run, including what its nested revalidation invoked
 
@@ -226,13 +249,17 @@ def _build_repair_run(
     executes the formal checkers. Recording only the repair prompt understated
     the run: two records could agree on every listed field while one of them had
     additionally made a semantic call the other never did.
+
+    `model_used` comes from the traces rather than the router, because a repair
+    every issue of which had a quick fix reaches no provider at all.
     """
     resolved_prompts = prompt_files or {"repair": repair_prompt_path(config)}
     if prompt_files is None and config.tiers_enabled.t3:
         resolved_prompts = {**resolved_prompts, "validate": validate_prompt_path()}
     return build_run_block(
         config=config,
-        model_used=resolve_model(TaskType.REPAIR, config=config),
+        model_used=models_called(traces or []),
+        model_configured=resolve_model(TaskType.REPAIR, config=config),
         converter=converter_version(config),
         rules_version=RULES_VERSION,
         prompt_files=resolved_prompts,

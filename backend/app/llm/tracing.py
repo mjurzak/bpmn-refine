@@ -67,6 +67,19 @@ def get_traces() -> list[LlmTrace]:
     return list(_traces.get() or [])
 
 
+NO_MODEL_CALLED = "none"
+
+
+def models_called(traces: Iterable[LlmTrace]) -> str:
+    """the models a run actually addressed, in first-seen order"""
+    
+    seen: list[str] = []
+    for trace in traces:
+        if trace.model not in seen:
+            seen.append(trace.model)
+    return ", ".join(seen) if seen else NO_MODEL_CALLED
+
+
 def trace_usage(traces: Iterable[LlmTrace]) -> UsageTotals:
     """token totals across a set of traces, including how many reported none"""
     return total_usage(trace.usage for trace in traces)

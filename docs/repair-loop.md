@@ -39,6 +39,7 @@ Response:
 {
   updated_xml:       str,               // the proposed diagram, serialised back to BPMN XML
   applied_ops:       EditOp[],          // the sequence of ops actually applied to reach updated_xml
+  applied_op_origins: str[],            // per applied op: "quick_fix" | "model_plan" | "model_regen"
   remaining_issues:  Issue[],           // whatever the final tier-1 (and tier-2 if enabled) pass still reports
   iterations:        int,               // number of dispatcher iterations executed
   converged:         bool,              // true iff remaining_issues contains no errors
@@ -120,7 +121,7 @@ SetCondition {
 
 - Ops apply **in order** to the canonical IR.
 - An op that references a non-existent id, or would create a duplicate id, fails — the dispatcher rolls back the failed op and records it (future ops in the plan may still apply).
-- Every successful op is appended to `applied_ops` in the response.
+- Every successful op is appended to `applied_ops` in the response, and its producer to `applied_op_origins` at the same index — a deterministic quick fix and a model plan are otherwise indistinguishable once applied. `failed_ops` is annotated the same way.
 - The server re-runs tier 1 (and tier 2 if `tiers_enabled.t2`) after each dispatcher iteration — not after each op.
 
 ### structured-output constraints

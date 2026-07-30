@@ -10,7 +10,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from app.experiments import ExperimentConfig, RepairMode
 from app.history import service as hist
@@ -70,15 +70,26 @@ class StopReason(StrEnum):
     ITERATION_BUDGET = "iteration_budget"
 
 
+class OpOrigin(StrEnum):
+    """what produced an operation"""
+
+    QUICK_FIX = "quick_fix"
+    MODEL_PLAN = "model_plan"
+    MODEL_REGEN = "model_regen"
+
+
 class DispatcherRepairResult(BaseModel):
     repaired_diagram: BpmnDiagram
     applied_ops: list[EditOp] = []
+    # who produced each applied op, positionally aligned with `applied_ops`
+    applied_op_origins: list[OpOrigin] = []
     # operations the apply layer rejected. They used to be dropped here while
     # `/repair/apply` returned them, so an automatic run could report a clean
     # result built from a plan that only half executed — and a minimality metric
     # computed over `applied_ops` would count the successful remainder as the
     # whole intervention.
     failed_ops: list[EditOpResult] = []
+    failed_op_origins: list[OpOrigin] = []
     remaining_issues: list[ValidationIssue] = []
     iterations: int = 0
     # no repairable issue of any severity remains
@@ -88,6 +99,15 @@ class DispatcherRepairResult(BaseModel):
     # both — a run can drain every error and still leave warnings standing.
     errors_resolved: bool = False
     stop_reason: StopReason = StopReason.ITERATION_BUDGET
+
+    @model_validator(mode="after")
+    def _origins_cover_every_op(self) -> DispatcherRepairResult:
+        """a dropped origin is worse than none at all — it shifts every later one"""
+        if len(self.applied_op_origins) != len(self.applied_ops):
+            raise ValueError("applied_op_origins must align with applied_ops")
+        if len(self.failed_op_origins) != len(self.failed_ops):
+            raise ValueError("failed_op_origins must align with failed_ops")
+        return self
 
 
 RepairFn = Callable[..., Awaitable[RepairResult]]
@@ -273,7 +293,9 @@ async def dispatch_repair(
     current = diagram.model_copy(deep=True)
     remaining = list(issues)
     applied_ops: list[EditOp] = []
+    applied_op_origins: list[OpOrigin] = []
     failed_ops: list[EditOpResult] = []
+    failed_op_origins: list[OpOrigin] = []
     iterations = 0
     # every diagram state the loop has already produced, so an edit that undoes
     # an earlier one is recognised as a cycle rather than run to the budget
@@ -295,9 +317,12 @@ async def dispatch_repair(
             )
             current = result.repaired_diagram
             applied_ops.append(ReplaceDiagramOp(diagram=current))
+            applied_op_origins.append(OpOrigin.MODEL_REGEN)
         else:
             ops = _batch_quick_fixes(assigned_issues, current)
+            origin = OpOrigin.QUICK_FIX
             if ops is None:
+                origin = OpOrigin.MODEL_PLAN
                 assigned_ids = {id(issue) for issue in assigned_issues}
                 ops = await active_atomic_repair_fn(
                     current,
@@ -308,8 +333,13 @@ async def dispatch_repair(
                     ],
                 )
             current, op_results = apply_edit_ops(ops, current)
-            applied_ops.extend(result.op for result in op_results if result.applied)
-            failed_ops.extend(result for result in op_results if not result.applied)
+            for op_result in op_results:
+                if op_result.applied:
+                    applied_ops.append(op_result.op)
+                    applied_op_origins.append(origin)
+                else:
+                    failed_ops.append(op_result)
+                    failed_op_origins.append(origin)
 
         validation = await validate_diagram(
             current,
@@ -344,7 +374,9 @@ async def dispatch_repair(
     return DispatcherRepairResult(
         repaired_diagram=current,
         applied_ops=applied_ops,
+        applied_op_origins=applied_op_origins,
         failed_ops=failed_ops,
+        failed_op_origins=failed_op_origins,
         remaining_issues=remaining,
         iterations=iterations,
         converged=not _highest_priority_batch(remaining),

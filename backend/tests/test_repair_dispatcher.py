@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 from app.experiments import ExperimentConfig
+from app.model.formats.pydantic_ir import PydanticConverter
 from app.model.schema import (
     BpmnDiagram,
     BpmnProcess,
@@ -11,10 +12,14 @@ from app.model.schema import (
     FlowNodeType,
     SequenceFlow,
 )
-from app.model.formats.pydantic_ir import PydanticConverter
 from app.repair.ops import RenameNodeOp
 from app.services import repair as repair_service
-from app.services.repair import RepairResult, dispatch_repair, repair_with_edit_ops
+from app.services.repair import (
+    OpOrigin,
+    RepairResult,
+    dispatch_repair,
+    repair_with_edit_ops,
+)
 from app.services.validation import ValidationResult
 from app.validation.rules import (
     FormalWitness,
@@ -48,6 +53,7 @@ async def test_dispatch_repair_prefers_quick_fix_over_llm():
     assert result.converged is True
     assert result.remaining_issues == []
     assert [op.op for op in result.applied_ops] == ["add_node", "add_flow"]
+    assert result.applied_op_origins == [OpOrigin.QUICK_FIX, OpOrigin.QUICK_FIX]
     assert calls == []
 
 
@@ -75,6 +81,7 @@ async def test_dispatch_repair_uses_atomic_llm_ops_when_no_quick_fix_exists():
     assert result.converged is True
     assert result.remaining_issues == []
     assert [op.op for op in result.applied_ops] == ["rename_node"]
+    assert result.applied_op_origins == [OpOrigin.MODEL_PLAN]
     assert calls[0][1][0].rule_id == "R999"
 
 
@@ -175,6 +182,7 @@ async def test_dispatch_repair_regen_mode_uses_full_ir_replacement():
     assert result.iterations == 1
     assert result.converged is True
     assert [op.op for op in result.applied_ops] == ["replace_diagram"]
+    assert result.applied_op_origins == [OpOrigin.MODEL_REGEN]
     assert calls[0][1][0].rule_id == "R001"
     assert calls[0][2]["snapshot"] is False
 

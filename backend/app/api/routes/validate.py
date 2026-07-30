@@ -6,14 +6,27 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.experiments import ExperimentConfig, RunBlock, build_run_block, converter_version
+from app.experiments import (
+    ExperimentConfig,
+    RunBlock,
+    build_run_block,
+    converter_version,
+)
 from app.llm.router import TaskType, resolve_model
-from app.llm.tracing import LlmTrace, get_traces, reset_trace_context, start_trace_context
+from app.llm.tracing import (
+    LlmTrace,
+    get_traces,
+    models_called,
+    reset_trace_context,
+    start_trace_context,
+)
 from app.model.schema import BpmnDiagram
 from app.services.validation import (
     ValidationResult,
-    validate_diagram as run_validation,
     validate_prompt_path,
+)
+from app.services.validation import (
+    validate_diagram as run_validation,
 )
 from app.validation.checkers import checker_versions
 from app.validation.rules import RULES_VERSION
@@ -37,18 +50,26 @@ async def validate_diagram(req: ValidationRequest) -> ValidationResponse | JSONR
     """Run deterministic validation and optionally an LLM semantic pass."""
     include_semantic = req.include_semantic or req.config.tiers_enabled.t3
     include_t2 = req.config.tiers_enabled.t2
-    run = build_run_block(
-        config=req.config,
-        model_used=(
-            resolve_model(TaskType.SEMANTIC_VALIDATION, config=req.config)
-            if include_semantic
-            else "none"
-        ),
-        converter=converter_version(req.config),
-        rules_version=RULES_VERSION,
-        prompt_files={"validate": validate_prompt_path()} if include_semantic else None,
-        checkers=checker_versions(req.config) if include_t2 else None,
-    )
+
+    def _run(traces: list[LlmTrace]) -> RunBlock:
+        # built from the traces, so a semantic pass that failed before reaching
+        # the provider is not recorded as a model that answered
+        return build_run_block(
+            config=req.config,
+            model_used=models_called(traces),
+            model_configured=(
+                resolve_model(TaskType.SEMANTIC_VALIDATION, config=req.config)
+                if include_semantic
+                else None
+            ),
+            converter=converter_version(req.config),
+            rules_version=RULES_VERSION,
+            prompt_files=(
+                {"validate": validate_prompt_path()} if include_semantic else None
+            ),
+            checkers=checker_versions(req.config) if include_t2 else None,
+        )
+
     trace_token = start_trace_context()
     try:
         result = await run_validation(
@@ -64,10 +85,10 @@ async def validate_diagram(req: ValidationRequest) -> ValidationResponse | JSONR
             status_code=500,
             content={
                 "detail": str(exc),
-                "run": run.model_dump(mode="json"),
+                "run": _run(traces).model_dump(mode="json"),
                 "llm_traces": [trace.model_dump(mode="json") for trace in traces],
             },
         )
     traces = get_traces()
     reset_trace_context(trace_token)
-    return ValidationResponse(**result.model_dump(), run=run, llm_traces=traces)
+    return ValidationResponse(**result.model_dump(), run=_run(traces), llm_traces=traces)

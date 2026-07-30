@@ -157,7 +157,10 @@ def _git_commit() -> str:
 
 
 class RunBlock(BaseModel):
+    # what was actually called, "none" when nothing was
     model_used: str
+    # what the configuration resolved to, called or not.
+    model_configured: str | None = None
     prompt_versions: dict[str, PromptVersion] = Field(default_factory=dict)
     converter: str
     rules_version: str
@@ -177,6 +180,7 @@ def build_run_block(
     model_used: str,
     converter: str,
     rules_version: str,
+    model_configured: str | None = None,
     prompt_files: Mapping[str, Path] | None = None,
     checkers: dict[str, str] | None = None,
     request_id: str | None = None,
@@ -186,6 +190,7 @@ def build_run_block(
 ) -> RunBlock:
     return RunBlock(
         model_used=model_used,
+        model_configured=model_configured,
         prompt_versions={
             name: prompt_version(path) for name, path in (prompt_files or {}).items()
         },

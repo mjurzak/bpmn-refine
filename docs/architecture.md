@@ -91,7 +91,8 @@ Every backend response includes a `run` block:
 
 ```
 run {
-  model_used:         str              // model the provider actually answered with
+  model_used:         str              // model(s) actually called, "none" if no call was made
+  model_configured?:  str              // what the config resolved to, called or not
   prompt_versions:    {
     validate: { name: "validate_v1", hash: "ab34cd5e78f9" },
     repair:   { name: "repair_v1",   hash: "... 12 hex chars" },
