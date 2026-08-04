@@ -57,6 +57,7 @@ class ValidationTier(StrEnum):
     TIER2 = "tier2"
     TIER3 = "tier3"
 
+
 class SemanticCategory(StrEnum):
     """The kind of semantic defect a tier-3 finding reports."""
 
@@ -131,11 +132,10 @@ def issue_to_dict(
 ) -> dict[str, Any]:
     """convert an issue to the compact, BPMN-level form used in LLM prompts
 
-    `include_formal_evidence` is the ablation switch for the counterexample
-    condition. With it off the issue still reaches the model — same verdict, same
-    affected elements, produced by the same formal checker run — but without the
-    traces, dead elements, uncovered places, and marking that localise it. That
-    isolates the contribution of the evidence from the contribution of the check.
+    `include_formal_evidence` is the counterexample ablation switch. Off, the
+    issue still reaches the model with the same verdict and affected elements,
+    but without the traces and markings that localise it — which isolates the
+    evidence's contribution from the check's.
     """
     affected_elements: list[str] = []
     if issue.element_id:

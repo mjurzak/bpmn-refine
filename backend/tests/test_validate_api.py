@@ -90,15 +90,18 @@ def test_semantic_issues_are_stamped_as_llm(monkeypatch):
 
     async def fake_complete_structured(**kwargs):
         return {
-            "findings": [
-                {
-                    "category": "improper_termination",
-                    "severity": "warning",
-                    "message": "Rejected reports end at 'Expense Reimbursed'.",
-                    "element_refs": ["end_1"],
-                    "suggestion": None,
-                }
-            ]
+            "description": "One semantic issue found.",
+            "result": {
+                "findings": [
+                    {
+                        "category": "improper_termination",
+                        "severity": "warning",
+                        "message": "Rejected reports end at 'Expense Reimbursed'.",
+                        "element_refs": ["end_1"],
+                        "suggestion": None,
+                    }
+                ]
+            },
         }
 
     monkeypatch.setattr(

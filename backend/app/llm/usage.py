@@ -1,25 +1,18 @@
 """Token accounting for LLM calls.
 
-Cost is one of the few quantities an evaluation can measure objectively, and it
-is the one measurement that cannot be recovered afterwards: a provider reports
-usage only in the response that carried it, so a call whose usage block was
-dropped is unmeasurable forever. Every adapter therefore reads its own usage
-block through this module.
+Usage is reported only in the response that carried it, so a dropped usage block
+is unmeasurable forever. Every adapter reads its own through this module.
 
-Two conventions differ between providers and the difference matters to anything
-that sums these numbers:
+Providers disagree on what `input_tokens` includes, and summing across them
+without knowing which convention applies is wrong:
 
-* **Anthropic** reports `input_tokens` *excluding* cache reads and writes, so the
-  billed prompt size is `input_tokens + cached_input_tokens`.
-* **OpenAI** (and Ollama's compatible endpoint) reports `prompt_tokens`
-  *including* cached tokens, so `cached_input_tokens` is a subset, not an addend.
-* **Gemini** follows the OpenAI convention: `prompt_token_count` is the total.
+* **Anthropic** excludes cache reads/writes — billed prompt size is
+  `input_tokens + cached_input_tokens`.
+* **OpenAI**, **Ollama**, and **Gemini** include them — `cached_input_tokens` is
+  a subset, not an addend.
 
-Rather than normalise these into one number and lose the distinction, each field
-is stored as the provider reported it and `source` records which convention was
-used. Nothing here invents a count: a field the provider did not report stays
-`None`, because a missing count and a zero count mean different things and
-collapsing them would quietly understate a total.
+Fields are stored as reported and `source` records the convention. A field the
+provider omitted stays `None`, never 0 — collapsing the two understates totals.
 """
 
 from __future__ import annotations
@@ -35,9 +28,8 @@ class TokenUsage(BaseModel):
 
     input_tokens: int | None = None
     output_tokens: int | None = None
-    # kept separate from `input_tokens` because a cached prompt token bills
-    # differently — and because whether it is already counted in `input_tokens`
-    # depends on `source`, see the module docstring
+    # separate because cached prompt tokens bill differently, and whether they
+    # are already inside `input_tokens` depends on `source`
     cached_input_tokens: int | None = None
     reasoning_tokens: int | None = None
     #: which provider's reporting convention produced these fields
@@ -55,10 +47,8 @@ class TokenUsage(BaseModel):
 class UsageTotals(BaseModel):
     """summed usage across a set of calls
 
-    `calls_missing_usage` is not decoration: without it a total reads as
-    complete even when half the calls reported nothing, which is exactly how a
-    cost comparison between two configurations turns into a comparison between
-    two different sample sizes.
+    `calls_missing_usage` keeps a partial total from reading as a complete one —
+    otherwise a cost comparison silently becomes a sample-size comparison.
     """
 
     calls: int = 0
@@ -95,9 +85,8 @@ def total_usage(usages: Iterable[TokenUsage | None]) -> UsageTotals:
 # ---------------------------------------------------------------------------
 # per-provider extraction
 #
-# All of these read defensively. SDK response objects gain and lose fields
-# between releases, and a usage block that moved is a reason to record nothing
-# for that call — never a reason to fail a repair the user is waiting on.
+# Read defensively: SDK fields move between releases, and a usage block that
+# moved should record nothing, not fail a repair the user is waiting on.
 # ---------------------------------------------------------------------------
 
 

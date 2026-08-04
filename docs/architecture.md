@@ -182,12 +182,14 @@ Conversational diagram evolution driven by **user intent**. Chat does not react 
 
 - Endpoint: `/chat`
 - Input: `{ messages, xml, ExperimentConfig }`
-- Output: free-form reply plus an optional proposed change expressed per `repair_mode`:
-  - `atomic` — a list of `EditOp`s
-  - `regen` — a fenced replacement IR
+- Provider output: a schema-constrained envelope whose `description` becomes
+  the conversational reply and whose `result.diagram` is either a serialized
+  complete IR or `null`.
 - The change is previewed in bpmn-js; applied only on user acceptance.
 
-Chat and repair share the `EditOp` schema; they differ only in what triggers them and what context accompanies the prompt. Chat can produce a repair-shaped response when the user asks for a fix — but what drives it is the conversation (history, stated goal), not a checker counterexample.
+Chat and repair share the common outer response convention but use different
+task-specific result schemas. What drives chat is the conversation (history,
+stated goal), not a checker counterexample.
 
 Chat is **not** auto-triggered and never applies changes silently.
 
@@ -319,7 +321,7 @@ user clicks "Repair" on one or more issues
 ```
 user types in chat
   -> POST /chat { messages, xml, ExperimentConfig }
-  -> LLM emits an EditOp plan or a fenced diagram, per repair_mode
+  -> LLM emits a description plus an optional serialized complete diagram
   -> frontend renders as a proposed change
   -> change is applied only on explicit user acceptance
 ```

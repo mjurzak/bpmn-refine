@@ -82,3 +82,34 @@ def test_chat_can_return_unsnapshotted_proposal(monkeypatch):
 
     assert response.status_code == 200
     assert captured["snapshot_changes"] is False
+
+
+async def test_a_rejected_envelope_still_returns_the_model_text(monkeypatch):
+    """the fallback promises the user the model's prose, not an empty bubble
+
+    Reading `description` only after the envelope validated left a rejected
+    envelope — missing `result` here — showing nothing at all.
+    """
+    from app.services import chat as chat_service
+
+    calls = 0
+
+    async def fake_complete_structured_with_history(**kwargs):
+        nonlocal calls
+        calls += 1
+        # well-formed prose, malformed envelope — `result` is missing entirely
+        return {"description": "Here is what I would change and why."}
+
+    monkeypatch.setattr(
+        chat_service.llm_client,
+        "complete_structured_with_history",
+        fake_complete_structured_with_history,
+    )
+
+    result = await chat_service.chat_diagram(
+        messages=[chat_service.ChatMessage(role="user", content="Refine it.")],
+    )
+
+    assert result.reply == "Here is what I would change and why."
+    assert result.updated_diagram is None
+    assert calls == 2

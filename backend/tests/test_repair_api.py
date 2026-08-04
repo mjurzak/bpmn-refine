@@ -1,3 +1,5 @@
+import json
+
 from fastapi.testclient import TestClient
 
 from app.experiments import CONVERTER_VERSION, ExperimentConfig, config_hash
@@ -58,6 +60,7 @@ def test_repair_response_includes_run_and_proposed_xml(monkeypatch):
     assert payload["remaining_issues"] == []
     assert payload["iterations"] == 1
     assert payload["converged"] is True
+    assert payload["single_plan"] is True
     expected_config = ExperimentConfig.model_validate(config)
     assert captured["config"] == expected_config
     assert captured["snapshot"] is False
@@ -111,6 +114,84 @@ def test_apply_selected_edit_ops_returns_updated_diagram():
     assert task["name"] == "Reviewed task"
     assert body["op_results"][0]["applied"] is True
     assert body["updated_xml"].startswith("<?xml")
+
+
+def test_manual_semantic_repair_makes_one_plan_and_labels_revalidation(monkeypatch):
+    class FakeProvider:
+        async def complete_structured(self, **kwargs):
+            schema_defs = kwargs["schema"].get("$defs", {})
+            if "AtomicEditOpsResult" in schema_defs:
+                return json.dumps(
+                    {
+                        "description": "Rename the decision task.",
+                        "result": {
+                            "ops": [
+                                {
+                                    "op": "rename_node",
+                                    "id": "task_1",
+                                    "new_name": "Review outcome",
+                                }
+                            ]
+                        },
+                    }
+                )
+            return json.dumps(
+                {
+                    "description": "One new issue remains.",
+                    "result": {
+                        "findings": [
+                            {
+                                "category": "missing_exception_handling",
+                                "severity": "warning",
+                                "message": "A new failure case needs review.",
+                                "element_refs": ["task_1"],
+                                "suggestion": "Handle the failure in a later proposal.",
+                            }
+                        ]
+                    },
+                }
+            )
+
+    monkeypatch.setattr(
+        "app.llm.client.get_provider",
+        lambda provider=None: FakeProvider(),
+    )
+    response = client.post(
+        "/api/v1/repair",
+        json={
+            "xml": _minimal_valid_xml(),
+            "issues": [
+                {
+                    "rule_id": "semantic:inconsistent_naming",
+                    "severity": "warning",
+                    "message": "The task name contradicts its outcome.",
+                    "tier": "tier3",
+                    "source": "llm",
+                    "element_id": "task_1",
+                }
+            ],
+            "config": {
+                "model_tier": "custom",
+                "model_override": "trace-model",
+                "provider_override": "openai",
+                "tiers_enabled": {"t1": False, "t2": False, "t3": True},
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["single_plan"] is True
+    assert payload["iterations"] == 1
+    assert payload["stop_reason"] == "proposal_ready"
+    assert [op["op"] for op in payload["applied_ops"]] == ["rename_node"]
+    assert [trace["task"] for trace in payload["llm_traces"]] == [
+        "repair",
+        "semantic_validation",
+    ]
+    assert [issue["rule_id"] for issue in payload["remaining_issues"]] == [
+        "semantic:missing_exception_handling"
+    ]
 
 
 def _minimal_valid_xml() -> str:

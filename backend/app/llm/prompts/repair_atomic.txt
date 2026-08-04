@@ -25,8 +25,11 @@ Read `id_constraints` before choosing an operation:
 
 Use these operation meanings:
 
-- `add_flow`: connect two existing nodes. Use a new flow ID plus existing
-  `source_ref` and `target_ref` node IDs.
+- `add_flow`: connect two nodes in one existing process. Set `process_id` to
+  that process, use a new sequence-flow `id`, and use existing `source_ref` and
+  `target_ref` node IDs (or a node created earlier in this plan). Its fields are
+  `op`, `process_id`, `id`, `source_ref`, `target_ref`, `name`, and
+  `condition_expression`; it does not use `node_type`.
 - `remove_flow`: delete an existing sequence flow.
 - `change_gateway_type`: change one existing gateway to another gateway type.
 - `remove_node`: delete an existing leftover node; set `cascade=true` when its
@@ -75,7 +78,8 @@ Before returning the plan, verify:
 
 1. Every ID in `affected_elements` was looked up in `id_constraints`.
 2. Existing affected nodes are referenced, not recreated.
-3. Every `add_flow.source_ref` and `target_ref` is a node ID.
+3. Every `add_flow.process_id` is an existing process, and both its
+   `source_ref` and `target_ref` nodes belong to that process.
 4. Every `add_node` is necessary and connected within this plan.
 5. Shared root causes use one edit rather than duplicate edits.
 6. Every assigned issue is addressed, with no unrelated changes.
@@ -85,5 +89,6 @@ On a correction attempt, return a complete replacement plan that incorporates
 operation type rather than inventing alternative IDs for the same rejected
 operation. Return one solution only—never enumerate candidate names or plans.
 
-Return only the schema-constrained JSON object with the ordered `ops` array. No
-prose or markdown.
+Use the provider response schema. Its required `description` briefly explains
+the plan for a human reviewer; put the ordered operation list in `result.ops`.
+Do not use markdown.

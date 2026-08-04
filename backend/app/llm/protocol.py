@@ -88,3 +88,17 @@ class LLMProvider(Protocol):
         for parsing (the client facade does this and returns the decoded object).
         """
         ...
+
+    async def complete_structured_with_history(
+        self,
+        messages: list[dict],
+        system: str | None,
+        model: str,
+        schema: dict[str, Any],
+        max_tokens: int = 4096,
+        reasoning_effort: str | None = None,
+        temperature: float | None = None,
+        seed: int | None = None,
+    ) -> LlmResponse:
+        """Schema-constrained multi-turn completion."""
+        ...

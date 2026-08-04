@@ -68,6 +68,7 @@ class RemoveNodeOp(BaseModel):
 
 class AddFlowOp(BaseModel):
     op: Literal[EditOpType.ADD_FLOW] = EditOpType.ADD_FLOW
+    process_id: str = Field(description="Process ID to add the sequence flow to")
     id: SequenceFlowId = Field(
         description="ID for the new sequence flow, not a node ID"
     )
@@ -148,11 +149,7 @@ edit_op_list_adapter = TypeAdapter(list[EditOp])
 
 
 class AtomicEditOpsResult(BaseModel):
-    """Envelope for atomic repair under structured outputs.
-
-    Provider response schemas must be a top-level object, so the EditOp[] list
-    is wrapped in a single `ops` field rather than returned as a bare array.
-    """
+    """Task-specific atomic-repair result nested in the common LLM envelope."""
 
     ops: list[AtomicEditOp] = Field(
         default_factory=list,
@@ -240,13 +237,22 @@ def _apply_remove_node(op: RemoveNodeOp, diagram: BpmnDiagram) -> None:
 
 
 def _apply_add_flow(op: AddFlowOp, diagram: BpmnDiagram) -> None:
+    proc = _require_process(diagram, op.process_id)
     _require_unique_id(diagram, op.id)
     source_proc, source = _require_node(diagram, op.source_ref)
     target_proc, target = _require_node(diagram, op.target_ref)
-    if source_proc.id != target_proc.id:
-        raise EditOpError("source and target nodes must belong to the same process")
+    if source_proc.id != proc.id:
+        raise EditOpError(
+            f"source node '{op.source_ref}' belongs to process '{source_proc.id}', "
+            f"not '{proc.id}'"
+        )
+    if target_proc.id != proc.id:
+        raise EditOpError(
+            f"target node '{op.target_ref}' belongs to process '{target_proc.id}', "
+            f"not '{proc.id}'"
+        )
 
-    source_proc.sequence_flows.append(
+    proc.sequence_flows.append(
         SequenceFlow(
             id=op.id,
             source_ref=op.source_ref,

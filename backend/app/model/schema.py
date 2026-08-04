@@ -117,14 +117,10 @@ class BpmnDiagram(BaseModel):
     def _reject_duplicate_ids(self) -> Self:
         """Enforce document-scoped ID uniqueness, as BPMN 2.0 types `id` as xsd:ID.
 
-        This lives on the model rather than in the XML parser on purpose. Every
-        input path — the five IR formats, LLM-authored payloads, edit-op results —
-        builds a `BpmnDiagram`, so this is the one place that covers all of them.
-        A parser-level check only ever guarded uploaded files.
-
-        Uniqueness is not a cosmetic concern here: `_Graph` keys its adjacency
-        index by node ID, so a duplicate silently shadows its twin and the
-        reachability rules go on to read the wrong node's edges.
+        On the model rather than the XML parser, because every input path builds
+        a `BpmnDiagram` while a parser check only guarded uploaded files. Not
+        cosmetic: `_Graph` keys adjacency by node ID, so a duplicate shadows its
+        twin and the reachability rules read the wrong node's edges.
         """
         duplicates = [
             element_id
@@ -144,21 +140,13 @@ class BpmnDiagram(BaseModel):
     def _rebuild_adjacency(self) -> Self:
         """Derive every node's `incoming`/`outgoing` from the sequence flows.
 
-        BPMN XML states each connection twice — once on the flow's `sourceRef` /
-        `targetRef`, once on the node's `incoming` / `outgoing` children — and the
-        two can disagree in a file that was edited outside a modelling tool. The
-        XML parser already resolves that by trusting the flow, but a direct
-        `BpmnDiagram` JSON payload used to skip the parser entirely: Pydantic
-        type-checked both representations without ever comparing them, so a flow
-        out of `Task_A` could coexist with an empty `Task_A.outgoing`.
-
-        That left two readings of the same document. `_Graph` builds its adjacency
-        from the flows and would traverse the edge; R003/R004 read the node lists
-        and would call the same task disconnected. Rebuilding here gives every
-        input path — XML, the five IR formats, LLM-authored payloads — one graph.
-
-        The rebuild reproduces what the parser does, in flow order, so re-running
-        it on an already-consistent diagram is a no-op.
+        BPMN states each connection twice — on the flow's `sourceRef`/`targetRef`
+        and on the node's `incoming`/`outgoing` — and the two can disagree. The
+        XML parser resolves that by trusting the flow, but a direct JSON payload
+        skipped the parser, so a flow out of `Task_A` could coexist with an empty
+        `Task_A.outgoing`: `_Graph` traversed the edge while R003/R004 called the
+        same task disconnected. Rebuilding here gives every input path one graph,
+        and is a no-op on an already-consistent diagram.
         """
         for proc in self.processes:
             node_index = {node.id: node for node in proc.flow_nodes}
@@ -178,9 +166,8 @@ class BpmnDiagram(BaseModel):
     def element_ids(self) -> list[str]:
         """every ID the document declares, in the order BPMN scopes them
 
-        Public because uniqueness is not only a construction-time concern: edit
-        operations mutate an existing diagram in place, so they need the same
-        notion of "taken" that `_reject_duplicate_ids` enforces here.
+        Public because edit operations mutate a diagram in place and need the
+        same notion of "taken" that `_reject_duplicate_ids` enforces.
         """
         ids: list[str] = []
         for proc in self.processes:

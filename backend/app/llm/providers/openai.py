@@ -129,6 +129,40 @@ class OpenAIProvider:
         response = await self._client.chat.completions.create(**kwargs)
         return self._response(response)
 
+    async def complete_structured_with_history(
+        self,
+        messages: list[dict],
+        system: str | None,
+        model: str,
+        schema: dict[str, Any],
+        max_tokens: int = 4096,
+        reasoning_effort: str | None = None,
+        temperature: float | None = None,
+        seed: int | None = None,
+    ) -> LlmResponse:
+        full_messages: list[dict] = []
+        if system:
+            full_messages.append({"role": "system", "content": system})
+        full_messages.extend(messages)
+        kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": full_messages,
+            **self._output_limit(max_tokens),
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "response",
+                    "strict": self.supports_strict,
+                    "schema": schema,
+                },
+            },
+        }
+        if reasoning_effort and self.supports_reasoning_effort:
+            kwargs["reasoning_effort"] = reasoning_effort
+        kwargs.update(self._sampling(temperature, seed))
+        response = await self._client.chat.completions.create(**kwargs)
+        return self._response(response)
+
     def _response(self, response: Any) -> LlmResponse:
         text = response.choices[0].message.content or ""
         return LlmResponse(text, from_openai(response, source=self.usage_source))

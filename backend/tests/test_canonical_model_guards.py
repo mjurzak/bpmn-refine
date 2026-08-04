@@ -163,7 +163,12 @@ def test_applied_edit_leaves_the_diagram_revalidated():
                 process_id="Process_1",
                 name="Second",
             ),
-            AddFlowOp(id="sf_3", source_ref="task_1", target_ref="task_2"),
+            AddFlowOp(
+                process_id="Process_1",
+                id="sf_3",
+                source_ref="task_1",
+                target_ref="task_2",
+            ),
         ],
         diagram,
     )
@@ -206,6 +211,7 @@ def test_new_flow_id_cannot_collide_with_a_process_id():
             [
                 {
                     "op": "add_flow",
+                    "process_id": "Process_1",
                     "id": "Process_1",
                     "source_ref": "start_1",
                     "target_ref": "end_1",
@@ -221,6 +227,7 @@ def test_new_flow_id_cannot_collide_with_an_existing_flow():
             [
                 {
                     "op": "add_flow",
+                    "process_id": "Process_1",
                     "id": "sf_1",
                     "source_ref": "start_1",
                     "target_ref": "end_1",
@@ -273,6 +280,7 @@ def test_node_added_earlier_is_a_legal_endpoint_later():
             },
             {
                 "op": "add_flow",
+                "process_id": "Process_1",
                 "id": "sf_new",
                 "source_ref": "task_1",
                 "target_ref": "task_new",
@@ -280,6 +288,30 @@ def test_node_added_earlier_is_a_legal_endpoint_later():
         ],
         _diagram(),
     )
+
+
+def test_add_flow_endpoints_must_belong_to_its_process():
+    diagram = _diagram()
+    diagram.processes.append(
+        BpmnProcess(
+            id="Process_2",
+            flow_nodes=[FlowNode(id="task_other", type=FlowNodeType.TASK)],
+        )
+    )
+
+    with pytest.raises(ValueError, match="belongs to process 'Process_2'"):
+        _validate_atomic_op_ids(
+            [
+                {
+                    "op": "add_flow",
+                    "process_id": "Process_1",
+                    "id": "sf_cross_process",
+                    "source_ref": "task_1",
+                    "target_ref": "task_other",
+                }
+            ],
+            diagram,
+        )
 
 
 # --------------------------------------------------------------------------

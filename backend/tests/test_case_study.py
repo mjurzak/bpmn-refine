@@ -91,11 +91,13 @@ async def test_deep_validation_reports_formal_detail_after_connectivity_repairs(
     connected, op_results = apply_edit_ops(
         [
             AddFlowOp(
+                process_id="Process_expense_reimbursement",
                 id="sf_card_feed",
                 source_ref="start_card_feed",
                 target_ref="task_check",
             ),
             AddFlowOp(
+                process_id="Process_expense_reimbursement",
                 id="sf_audit_escalated",
                 source_ref="task_audit",
                 target_ref="end_escalated",
@@ -129,11 +131,13 @@ async def test_case_study_repairs_all_current_errors_in_one_llm_plan(monkeypatch
         assigned.append([issue.rule_id for issue in issues])
         return [
             AddFlowOp(
+                process_id="Process_expense_reimbursement",
                 id="sf_card_feed",
                 source_ref="start_card_feed",
                 target_ref="task_check",
             ),
             AddFlowOp(
+                process_id="Process_expense_reimbursement",
                 id="sf_audit_escalated",
                 source_ref="task_audit",
                 target_ref="end_escalated",

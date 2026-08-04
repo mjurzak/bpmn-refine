@@ -10,11 +10,12 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.experiments import ExperimentConfig, RepairMode
 from app.history import service as hist
 from app.llm import client as llm_client
+from app.llm.envelope import LlmResponseEnvelope
 from app.llm.prompt_context import render_prompt_template
 from app.llm.router import TaskType, resolve_model, resolve_provider, resolve_sampling
 from app.llm.schema import strict_json_schema
@@ -26,12 +27,13 @@ from app.repair.ops import (
     EditOpResult,
     ReplaceDiagramOp,
     apply_edit_ops,
-    atomic_edit_op_list_adapter,
 )
 from app.repair.quick_fixes import propose_quick_fix
+from app.services.diagrams import parse_bpmn_bytes
 from app.services.ir_payload import (
     call_with_ir_correction,
     diagram_payload,
+    ir_correction_feedback,
     parse_diagram_payload,
 )
 from app.services.validation import validate_diagram
@@ -42,8 +44,6 @@ _REPAIR_PROMPT = _PROMPT_DIR / "repair.txt"
 _ATOMIC_REPAIR_PROMPT = _PROMPT_DIR / "repair_atomic.txt"
 _XML_REPAIR_PROMPT = _PROMPT_DIR / "repair_xml.txt"
 
-# computed once — the EditOp union has no open dicts, so it is fully strict-expressible
-_ATOMIC_OPS_SCHEMA = strict_json_schema(AtomicEditOpsResult)
 # One initial plan plus two corrections. Invalid plans are never applied, so
 # these attempts cost latency but cannot leak speculative edits into a proposal.
 ATOMIC_PLAN_ATTEMPTS = 3
@@ -52,6 +52,26 @@ ATOMIC_PLAN_ATTEMPTS = 3
 class UnresolvedRepair(BaseModel):
     rule_id: str | None = None
     reason: str
+
+
+class RegenerationResult(BaseModel):
+    ir: str = Field(description="Complete repaired diagram in the requested IR format.")
+    unresolved: list[UnresolvedRepair] = Field(default_factory=list)
+
+
+class RawXmlResult(BaseModel):
+    xml: str = Field(description="Complete corrected BPMN 2.0 XML document.")
+
+
+RegenerationResponse = LlmResponseEnvelope[RegenerationResult]
+AtomicRepairResponse = LlmResponseEnvelope[AtomicEditOpsResult]
+RawXmlResponse = LlmResponseEnvelope[RawXmlResult]
+
+# Complete diagrams and XML remain strings inside strict envelopes. Their
+# contents are validated by the existing IR/XML parsers after generation.
+_REGENERATION_SCHEMA = strict_json_schema(RegenerationResponse)
+_ATOMIC_OPS_SCHEMA = strict_json_schema(AtomicRepairResponse)
+_RAW_XML_SCHEMA = strict_json_schema(RawXmlResponse)
 
 
 class RepairResult(BaseModel):
@@ -67,6 +87,7 @@ class StopReason(StrEnum):
     CONVERGED = "converged"
     NO_PROGRESS = "no_progress"
     REPEATED_STATE = "repeated_state"
+    PROPOSAL_READY = "proposal_ready"
     ITERATION_BUDGET = "iteration_budget"
 
 
@@ -83,20 +104,17 @@ class DispatcherRepairResult(BaseModel):
     applied_ops: list[EditOp] = []
     # who produced each applied op, positionally aligned with `applied_ops`
     applied_op_origins: list[OpOrigin] = []
-    # operations the apply layer rejected. They used to be dropped here while
-    # `/repair/apply` returned them, so an automatic run could report a clean
-    # result built from a plan that only half executed — and a minimality metric
-    # computed over `applied_ops` would count the successful remainder as the
-    # whole intervention.
+    # operations the apply layer rejected. Dropping them let a half-executed
+    # plan report a clean result, and a minimality metric over `applied_ops`
+    # count the successful remainder as the whole intervention
     failed_ops: list[EditOpResult] = []
     failed_op_origins: list[OpOrigin] = []
     remaining_issues: list[ValidationIssue] = []
     iterations: int = 0
     # no repairable issue of any severity remains
     converged: bool = False
-    # the weaker, historical signal: no error-severity issue remains. Kept
-    # separate because the two answer different questions and Chapter 6 reports
-    # both — a run can drain every error and still leave warnings standing.
+    # the weaker signal: no error-severity issue remains. Separate because a run
+    # can drain every error and still leave warnings standing
     errors_resolved: bool = False
     stop_reason: StopReason = StopReason.ITERATION_BUDGET
 
@@ -138,8 +156,10 @@ async def repair_diagram(
         prompt = json.dumps(payload)
         if feedback:
             prompt = f"{prompt}\n\n{feedback}"
-        raw = await llm_client.complete(
+        parsed = await llm_client.complete_structured(
             prompt=prompt,
+            schema=_REGENERATION_SCHEMA,
+            task=TaskType.REPAIR,
             system=render_prompt_template(_REPAIR_PROMPT, config=config),
             model=resolve_model(TaskType.REPAIR, config=config),
             provider=resolve_provider(TaskType.REPAIR, config=config),
@@ -148,10 +168,10 @@ async def repair_diagram(
             else None,
             **resolve_sampling(config),
         )
-        parsed = json.loads(raw)
+        response = RegenerationResponse.model_validate(parsed)
         return (
-            parse_diagram_payload(parsed["ir"], config),
-            [_normalise_unresolved(item) for item in parsed.get("unresolved", [])],
+            parse_diagram_payload(response.result.ir, config),
+            response.result.unresolved,
         )
 
     repaired_diagram, unresolved = await call_with_ir_correction(attempt)
@@ -192,18 +212,47 @@ async def repair_raw_xml(
     raw XML directly; the caller is responsible for re-parsing the result.
     """
     prompt = xml if not instruction else f"{xml}\n\n## User instruction\n{instruction}"
-    raw = await llm_client.complete(
-        prompt=prompt,
-        system=render_prompt_template(_XML_REPAIR_PROMPT, config=config),
-        model=resolve_model(TaskType.REPAIR, config=config),
-        provider=resolve_provider(TaskType.REPAIR, config=config),
-        max_tokens=16384,
-        reasoning_effort=str(config.reasoning_effort)
-        if config and config.reasoning_effort
-        else None,
-        **resolve_sampling(config),
-    )
-    return _strip_code_fences(raw)
+    feedback: str | None = None
+    for attempt_number in range(1, 3):
+        attempt_prompt = prompt
+        if feedback:
+            attempt_prompt = f"{prompt}\n\n{feedback}"
+        try:
+            parsed = await llm_client.complete_structured(
+                prompt=attempt_prompt,
+                schema=_RAW_XML_SCHEMA,
+                task=TaskType.REPAIR,
+                system=render_prompt_template(_XML_REPAIR_PROMPT, config=config),
+                model=resolve_model(TaskType.REPAIR, config=config),
+                provider=resolve_provider(TaskType.REPAIR, config=config),
+                max_tokens=16384,
+                reasoning_effort=str(config.reasoning_effort)
+                if config and config.reasoning_effort
+                else None,
+                **resolve_sampling(config),
+            )
+            response = RawXmlResponse.model_validate(parsed)
+        except (ValueError, KeyError, TypeError) as exc:
+            if attempt_number == 2:
+                raise
+            feedback = ir_correction_feedback(exc)
+            continue
+
+        # the schema asks for a bare document, but a model that wraps it in a
+        # fence anyway would otherwise burn both attempts and return the fence
+        corrected = _strip_code_fences(response.result.xml)
+        try:
+            parse_bpmn_bytes(corrected.encode("utf-8"))
+        except (ValueError, KeyError, TypeError) as exc:
+            if attempt_number == 2:
+                # Preserve the public `/repair/xml` contract: the route reports
+                # `parseable=false` and the parser error for an exhausted repair.
+                return corrected
+            feedback = ir_correction_feedback(exc)
+            continue
+        return corrected
+
+    raise AssertionError("unreachable: XML correction loop either returns or raises")
 
 
 def _strip_code_fences(text: str) -> str:
@@ -227,9 +276,8 @@ async def repair_with_edit_ops(
 ) -> AtomicEditOpList:
     """repair the assigned issues by asking the LLM for one atomic EditOp plan
 
-    `context_issues` are lower-priority issues open on the same diagram. They
-    are passed as background so the plan for `issues` does not walk straight
-    into a known problem, not as work to do in this round.
+    `context_issues` are lower-priority issues open on the same diagram, passed
+    as background so the plan does not walk into a known problem — not as work.
     """
     active_config = config or ExperimentConfig()
     show_evidence = active_config.include_formal_evidence
@@ -261,6 +309,7 @@ async def repair_with_edit_ops(
             parsed = await llm_client.complete_structured(
                 prompt=json.dumps(attempt_payload),
                 schema=response_schema,
+                task=TaskType.REPAIR,
                 system=system_prompt,
                 model=resolve_model(TaskType.REPAIR, config=config),
                 provider=resolve_provider(TaskType.REPAIR, config=config),
@@ -269,9 +318,10 @@ async def repair_with_edit_ops(
                 else None,
                 **resolve_sampling(config),
             )
-            ops_data = parsed.get("ops", parsed) if isinstance(parsed, dict) else parsed
+            ops_data = parsed["result"]["ops"]
             _validate_atomic_op_ids(ops_data, diagram)
-            return list(atomic_edit_op_list_adapter.validate_python(ops_data))
+            response = AtomicRepairResponse.model_validate(parsed)
+            return list(response.result.ops)
         except (ValueError, KeyError, TypeError) as exc:
             if attempt == ATOMIC_PLAN_ATTEMPTS:
                 raise
@@ -285,8 +335,14 @@ async def dispatch_repair(
     config: ExperimentConfig | None = None,
     repair_fn: RepairFn | None = None,
     atomic_repair_fn: AtomicRepairFn | None = None,
+    single_plan: bool = False,
 ) -> DispatcherRepairResult:
-    """run the closed repair loop until convergence or iteration cap"""
+    """repair issues once for review, or run the closed loop to convergence
+
+    `single_plan` is the human-review path: one plan for the highest-priority
+    batch, applied to the candidate diagram and revalidated once. Anything newly
+    found goes back to the reviewer instead of triggering another round.
+    """
     active_config = config or ExperimentConfig()
     active_repair_fn = repair_fn or repair_diagram
     active_atomic_repair_fn = atomic_repair_fn or repair_with_edit_ops
@@ -302,7 +358,8 @@ async def dispatch_repair(
     seen_states = {_state_fingerprint(current)}
     stop_reason = StopReason.ITERATION_BUDGET
 
-    while iterations < active_config.max_repair_iters:
+    iteration_limit = 1 if single_plan else active_config.max_repair_iters
+    while iterations < iteration_limit:
         assigned_issues = _highest_priority_batch(remaining)
         if not assigned_issues:
             stop_reason = StopReason.CONVERGED
@@ -349,11 +406,8 @@ async def dispatch_repair(
         remaining = validation.issues + validation.semantic_issues
         iterations += 1
 
-        # An iteration that leaves the diagram exactly as it was cannot make the
-        # next one turn out differently: the same issue is selected, the same
-        # prompt is built, and the budget drains on a loop that has stalled. A
-        # state seen earlier means the same thing one step removed — the edits
-        # are cycling between states rather than converging on one.
+        # an unchanged diagram builds the same prompt next round, so the budget
+        # would drain on a stalled loop; a state seen earlier means it is cycling
         fingerprint = _state_fingerprint(current)
         if fingerprint in seen_states:
             stop_reason = (
@@ -370,6 +424,12 @@ async def dispatch_repair(
     ):
         # the budget ran out on the same iteration that cleared the last issue
         stop_reason = StopReason.CONVERGED
+    elif (
+        single_plan
+        and iterations == 1
+        and stop_reason is StopReason.ITERATION_BUDGET
+    ):
+        stop_reason = StopReason.PROPOSAL_READY
 
     return DispatcherRepairResult(
         repaired_diagram=current,
@@ -388,9 +448,7 @@ async def dispatch_repair(
 def _state_fingerprint(diagram: BpmnDiagram) -> str:
     """a stable identity for one diagram state
 
-    Layout is included: an edit that only moves a shape is still a change, and
-    excluding geometry would let a repair that repositions elements read as a
-    stalled iteration.
+    Layout included — a repair that only repositions elements is still progress.
     """
     return hashlib.sha256(
         json.dumps(diagram.model_dump(mode="json"), sort_keys=True).encode("utf-8")
@@ -428,6 +486,7 @@ def _atomic_ops_schema_for_diagram(diagram: BpmnDiagram) -> dict[str, Any]:
         ("RenameFlowOp", "id", flow_ids),
         ("SetConditionOp", "flow_id", flow_ids),
         ("AddNodeOp", "process_id", process_ids),
+        ("AddFlowOp", "process_id", process_ids),
     ]:
         _set_schema_enum(schema, def_name, field_name, enum_values)
 
@@ -505,18 +564,11 @@ def _diagram_id_constraints(diagram: BpmnDiagram) -> dict[str, list[str]]:
 def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
     """reject ops referencing ids that will not exist when the op is applied
 
-    Ops apply in order, so the set of valid ids is walked forward with them: a
-    node introduced by an earlier `add_node` is a legal endpoint for a later
-    `add_flow`, and one removed by an earlier `remove_node` is not. Pinning the
-    check to the diagram as it arrived would make `add_node` useless — a new node
-    could never be connected to anything, which is a defect in itself.
-
-    The walk tracks three things beyond node and flow existence. Process IDs join
-    the taken set, because BPMN scopes `id` over the whole document and a new
-    flow named after its own process is a collision the old check waved through.
-    Flow endpoints are simulated too, so a `remove_node` with `cascade` also
-    retires the flows it takes with it — otherwise a later op could address a
-    flow that no longer exists by the time it runs.
+    Ops apply in order, so valid ids are walked forward with them: a node from an
+    earlier `add_node` is a legal endpoint later, one removed by `remove_node` is
+    not. The walk also holds process ids in the taken set (BPMN scopes `id`
+    document-wide) and simulates flow endpoints, so a cascading `remove_node`
+    retires the flows it takes with it.
     """
     if not isinstance(ops_data, list):
         return
@@ -532,6 +584,11 @@ def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
         flow.id: (flow.source_ref, flow.target_ref)
         for proc in diagram.processes
         for flow in proc.sequence_flows
+    }
+    node_processes = {
+        node.id: proc.id
+        for proc in diagram.processes
+        for node in proc.flow_nodes
     }
     introduced_node_ids: set[str] = set()
 
@@ -554,7 +611,12 @@ def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
             )
             if op == "remove_node":
                 _simulate_remove_node(
-                    op_data, node_ids, flow_ids, taken, endpoints
+                    op_data,
+                    node_ids,
+                    flow_ids,
+                    taken,
+                    endpoints,
+                    node_processes,
                 )
                 gateway_ids.discard(op_data.get("id"))
         elif op == "change_gateway_type":
@@ -567,6 +629,14 @@ def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
                 sorted(gateway_ids),
             )
         elif op == "add_flow":
+            _require_id_in_enum(
+                op_data.get("process_id"),
+                process_ids,
+                "process",
+                index,
+                "process_id",
+                sorted(process_ids),
+            )
             _require_id_in_enum(
                 op_data.get("source_ref"),
                 node_ids,
@@ -583,6 +653,21 @@ def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
                 "target_ref",
                 sorted(node_ids),
             )
+            process_id = op_data.get("process_id")
+            for field_name in ("source_ref", "target_ref"):
+                node_id = op_data.get(field_name)
+                actual_process = node_processes.get(node_id)
+                if (
+                    isinstance(process_id, str)
+                    and isinstance(node_id, str)
+                    and actual_process is not None
+                    and actual_process != process_id
+                ):
+                    raise ValueError(
+                        f"Invalid repair operation at ops[{index}].{field_name}: "
+                        f"node '{node_id}' belongs to process '{actual_process}', "
+                        f"not '{process_id}'."
+                    )
             _reject_taken_id(op_data.get("id"), taken, index, "add_flow")
             flow_id = op_data.get("id")
             _register_new_id(flow_id, flow_ids, taken)
@@ -629,6 +714,9 @@ def _validate_atomic_op_ids(ops_data: Any, diagram: BpmnDiagram) -> None:
             _register_new_id(node_id, node_ids, taken)
             if isinstance(node_id, str) and node_id:
                 introduced_node_ids.add(node_id)
+                process_id = op_data.get("process_id")
+                if isinstance(process_id, str):
+                    node_processes[node_id] = process_id
 
     disconnected = sorted(
         node_id
@@ -658,16 +746,13 @@ def _simulate_remove_node(
     flow_ids: set[str],
     taken: set[str],
     endpoints: dict[str, tuple[str, str]],
+    node_processes: dict[str, str],
 ) -> None:
     """advance the simulated state past a `remove_node`
 
-    The node goes whatever `cascade` says: a plan that removes an element and
-    then addresses it has contradicted itself, and catching that here is the
-    whole point of walking the list in order. Whether `apply_edit_ops` would
-    happen to roll the removal back does not make the plan coherent.
-
-    `cascade` additionally retires the flows the removal takes with it, so a
-    later op cannot address a flow that is gone by the time it runs.
+    The node goes whatever `cascade` says — a plan that removes an element and
+    then addresses it has contradicted itself. `cascade` also retires the
+    incident flows, so a later op cannot address one that is already gone.
     """
     node_id = op_data.get("id")
     if not isinstance(node_id, str):
@@ -682,6 +767,7 @@ def _simulate_remove_node(
             _retire_flow(flow_id, flow_ids, taken, endpoints)
     node_ids.discard(node_id)
     taken.discard(node_id)
+    node_processes.pop(node_id, None)
 
 
 def _retire_flow(
@@ -749,11 +835,8 @@ def _is_repairable(issue: ValidationIssue) -> bool:
 def _highest_priority_batch(issues: list[ValidationIssue]) -> list[ValidationIssue]:
     """issues assigned to the next plan: all errors first, then all warnings
 
-    A batch gives the model one chance to produce a coherent repair plan for the
-    current state. The dispatcher applies the plan and revalidates once; only
-    findings that remain or appear after that validation cause another call.
-    Errors and warnings stay in separate rounds because warnings may disappear
-    as a consequence of repairing the errors.
+    Errors and warnings stay in separate rounds because repairing the errors may
+    make the warnings disappear on its own.
     """
     repairable = [issue for issue in issues if _is_repairable(issue)]
     errors = [issue for issue in repairable if issue.severity == "error"]
@@ -766,13 +849,25 @@ def _batch_quick_fixes(
     issues: list[ValidationIssue],
     diagram: BpmnDiagram,
 ) -> list[EditOp] | None:
-    """combine deterministic fixes only when every assigned issue has one"""
+    """combine deterministic fixes only when every assigned issue has one
+
+    Duplicates are collapsed: every fix is proposed against the same unmodified
+    diagram, so two issues on one element yield the same op twice. R005 and R006
+    both fire on a flow with two unknown endpoints and both want the same
+    `remove_flow`; the second application would fail and read as a broken fix.
+    """
     combined: list[EditOp] = []
+    seen: set[str] = set()
     for issue in issues:
         ops = propose_quick_fix(issue, diagram)
         if ops is None:
             return None
-        combined.extend(ops)
+        for op in ops:
+            key = op.model_dump_json()
+            if key in seen:
+                continue
+            seen.add(key)
+            combined.append(op)
     return combined
 
 

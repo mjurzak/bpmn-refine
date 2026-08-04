@@ -7,15 +7,13 @@ Adding a new representation (flat JSON, NetworkX graph, ...) means implementing
 this protocol and registering it via registry.register().  No other code needs
 to change.
 
-Parsing has two entry points.  `parse` returns the model alone and keeps the
+Parsing has two entry points.  `parse` returns the model alone, keeping the
 round-trip property readable: parse(serialize(d)) == d.  `parse_with_diagnostics`
-additionally reports the parts of the *input document* the IR does not
-represent; the diagnostics stay off `BpmnDiagram` on purpose, since a re-parse of
-exported bytes would otherwise compare unequal to the model it came from.
+also reports what the IR does not represent.  Diagnostics stay off `BpmnDiagram`
+so a re-parse of exported bytes still compares equal to its source model.
 
-Most formats serialise the IR itself and so have nothing to leave behind —
-BaseDiagramConverter gives them the empty-diagnostics default, and only a
-converter reading a richer external vocabulary (BPMN XML) overrides it.
+Only a converter reading a richer vocabulary than the IR (BPMN XML) overrides
+the empty-diagnostics default in BaseDiagramConverter.
 """
 from __future__ import annotations
 

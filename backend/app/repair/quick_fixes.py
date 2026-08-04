@@ -46,6 +46,7 @@ def _fix_missing_start(
     if target is not None:
         ops.append(
             AddFlowOp(
+                process_id=proc.id,
                 id=_unique_flow_id(diagram, f"flow_{start_id}_to_{target.id}"),
                 source_ref=start_id,
                 target_ref=target.id,
@@ -71,6 +72,7 @@ def _fix_missing_end(
     if source is not None:
         ops.append(
             AddFlowOp(
+                process_id=proc.id,
                 id=_unique_flow_id(diagram, f"flow_{source.id}_to_{end_id}"),
                 source_ref=source.id,
                 target_ref=end_id,
@@ -197,15 +199,10 @@ def _safe_id(value: str) -> str:
 
 
 # A quick fix must be right whenever it fires — an issue it handles never reaches
-# the LLM. R003 and R004 are therefore unregistered on purpose: connecting an
-# orphan event needs a judgement about intent (wire it in, or delete it) that no
-# local heuristic has the context to make. Both had one, and it picked the only
-# node lacking a flow on the side it needed — which on a diagram with more than
-# one connectivity defect is another orphan. Observed on case 09: repairing R003
-# wired an unconnected start event straight into an unconnected end event,
-# producing a process that escalated every imported card statement without
-# looking at it. Both rules now fall through to the LLM, which sees the whole
-# diagram and the other open issues.
+# the LLM. R003 and R004 are unregistered on purpose: wiring an orphan event in
+# versus deleting it is a judgement no local heuristic can make. On case 09 the
+# old heuristic joined an unconnected start straight to an unconnected end,
+# producing a process that escalated every statement without looking at it.
 _REGISTRY: dict[str, QuickFix] = {
     "R001": _fix_missing_start,            # no start event
     "R002": _fix_missing_end,              # no end event

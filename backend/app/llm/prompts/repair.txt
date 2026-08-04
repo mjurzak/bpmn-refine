@@ -39,8 +39,9 @@ Rules:
 - Preserve all element IDs unless an ID conflict forces a rename.
 - If an issue cannot be fixed without additional business context, leave it
   unchanged and note it in the "unresolved" list.
-- Return ONLY a JSON object with two keys:
-    "ir"         — the complete repaired diagram in the requested IR format
-    "unresolved" — list of rule_ids you could not fix, with a brief reason each
-
-No prose, no markdown code fences.
+- Use the provider response schema. Its required `description` briefly explains
+  the repair for a human reviewer.
+- Put the complete repaired diagram, serialized in the requested IR format, in
+  `result.ir`.
+- Put issues that require more business context in `result.unresolved`.
+- Do not use markdown code fences inside the machine-readable result.

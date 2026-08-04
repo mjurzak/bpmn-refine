@@ -21,7 +21,15 @@ class LlmTrace(BaseModel):
     model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     trace_id: str = Field(default_factory=lambda: str(uuid4()))
-    kind: Literal["complete", "complete_with_history", "complete_structured"]
+    kind: Literal[
+        "complete",
+        "complete_with_history",
+        "complete_structured",
+        "complete_structured_with_history",
+    ]
+    # logical task, independent of the call shape: a structured completion
+    # inside /repair may be a repair plan or a semantic revalidation
+    task: str | None = None
     provider: str | None = None
     model: str
     reasoning_effort: str | None = None

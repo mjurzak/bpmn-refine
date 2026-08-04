@@ -6,20 +6,21 @@ import json
 import logging
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.experiments import ExperimentConfig
 from app.history import service as hist
 from app.llm import client as llm_client
+from app.llm.envelope import LlmResponseEnvelope
 from app.llm.prompt_context import render_prompt_template
 from app.llm.router import TaskType, resolve_model, resolve_provider, resolve_sampling
+from app.llm.schema import strict_json_schema
 from app.model.schema import BpmnDiagram
 from app.services.ir_payload import (
     call_with_ir_correction,
     diagram_fence,
     diagram_payload_text,
-    parse_diagram_from_fenced_reply,
-    strip_diagram_from_fenced_reply,
+    parse_diagram_payload,
 )
 from app.validation.rules import ValidationIssue, issue_to_dict
 
@@ -39,6 +40,31 @@ class ChatResult(BaseModel):
     updated_diagram: BpmnDiagram | None = None
     rev_id: str | None = None
     session_id: str | None = None
+
+
+class ChatMachineResult(BaseModel):
+    diagram: str | None = Field(
+        default=None,
+        description=(
+            "Complete updated diagram in the requested IR format, or null when "
+            "the response proposes no diagram change."
+        ),
+    )
+
+
+ChatResponseEnvelope = LlmResponseEnvelope[ChatMachineResult]
+_CHAT_SCHEMA = strict_json_schema(ChatResponseEnvelope)
+
+
+def _best_effort_description(parsed: object) -> str:
+    """the model's prose, before the envelope has been validated
+
+    A rejected envelope still usually carries something a human can read.
+    """
+    if not isinstance(parsed, dict):
+        return ""
+    description = parsed.get("description")
+    return description.strip() if isinstance(description, str) else ""
 
 
 async def chat_diagram(
@@ -90,8 +116,10 @@ async def chat_diagram(
         turns = list(payload_messages)
         if feedback:
             turns.append({"role": "user", "content": feedback})
-        last_reply = await llm_client.complete_with_history(
+        parsed = await llm_client.complete_structured_with_history(
             messages=turns,
+            schema=_CHAT_SCHEMA,
+            task=TaskType.REFINEMENT,
             system=system_prompt,
             model=resolve_model(TaskType.REFINEMENT, config=config),
             provider=resolve_provider(TaskType.REFINEMENT, config=config),
@@ -100,10 +128,18 @@ async def chat_diagram(
             else None,
             **resolve_sampling(config),
         )
-        # raises on a fenced block that will not parse, which is what triggers a
-        # correction round; a reply with no fenced diagram is not an error, it is
-        # the model answering a question
-        return last_reply, parse_diagram_from_fenced_reply(last_reply, config)
+        # captured before validation: the fallback below promises the user the
+        # model's text even when the envelope is rejected, and assigning only
+        # after model_validate would leave that promise unfulfilled
+        last_reply = _best_effort_description(parsed) or last_reply
+        response = ChatResponseEnvelope.model_validate(parsed)
+        last_reply = response.description
+        updated = (
+            parse_diagram_payload(response.result.diagram, config)
+            if response.result.diagram is not None
+            else None
+        )
+        return last_reply, updated
 
     try:
         reply, updated_diagram = await call_with_ir_correction(attempt)
@@ -114,9 +150,6 @@ async def chat_diagram(
         reply, updated_diagram = last_reply, None
     rev_id: str | None = None
     new_session_id: str | None = None
-
-    if updated_diagram is not None:
-        reply = strip_diagram_from_fenced_reply(reply, config)
 
     if updated_diagram is not None and snapshot_changes:
         active_session_id = session_id

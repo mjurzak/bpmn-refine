@@ -15,7 +15,7 @@ async def test_semantic_validation_prompt_uses_selected_ir_format(monkeypatch):
 
     async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return {"findings": []}
+        return {"description": "No semantic issues.", "result": {"findings": []}}
 
     # tier 3 is schema-constrained, so it goes through the structured call
     monkeypatch.setattr(
@@ -43,16 +43,19 @@ async def test_regen_repair_parses_selected_ir_format(monkeypatch):
     )
     captured = {}
 
-    async def fake_complete(**kwargs):
+    async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return json.dumps(
-            {
+        return {
+            "description": "No repair needed.",
+            "result": {
                 "ir": diagram_payload_text(diagram, config),
                 "unresolved": [],
-            }
-        )
+            },
+        }
 
-    monkeypatch.setattr(repair_service.llm_client, "complete", fake_complete)
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
 
     result = await repair_diagram(
         diagram,
@@ -79,14 +82,17 @@ async def test_chat_context_and_reply_use_selected_ir_format(monkeypatch):
     config = ExperimentConfig(ir_format=IrFormat.MERMAID)
     captured = {}
 
-    async def fake_complete_with_history(**kwargs):
+    async def fake_complete_structured_with_history(**kwargs):
         captured.update(kwargs)
-        return f"Updated diagram:\n```mermaid\n{diagram_payload_text(diagram, config)}```"
+        return {
+            "description": "Updated diagram.",
+            "result": {"diagram": diagram_payload_text(diagram, config)},
+        }
 
     monkeypatch.setattr(
         chat_service.llm_client,
-        "complete_with_history",
-        fake_complete_with_history,
+        "complete_structured_with_history",
+        fake_complete_structured_with_history,
     )
 
     result = await chat_service.chat_diagram(
@@ -99,5 +105,46 @@ async def test_chat_context_and_reply_use_selected_ir_format(monkeypatch):
     assert "Current diagram (mermaid):" in first_message
     assert "```mermaid" in first_message
     assert "flowchart TD" in first_message
-    assert result.reply == "Updated diagram:"
+    assert result.reply == "Updated diagram."
+    assert result.updated_diagram == diagram
+
+
+async def test_chat_reprompts_a_schema_valid_but_invalid_diagram(monkeypatch):
+    diagram = canonical_full_diagram()
+    calls = []
+
+    async def fake_complete_structured_with_history(**kwargs):
+        calls.append(kwargs)
+        if len(calls) == 1:
+            return {
+                "description": "Broken proposal.",
+                "result": {
+                    "diagram": (
+                        '{"definitions_id":"defs","processes":[{"id":"proc",'
+                        '"flow_nodes":[{"id":"dup","type":"task"},'
+                        '{"id":"dup","type":"task"}],"sequence_flows":[]}]}'
+                    )
+                },
+            }
+        return {
+            "description": "Corrected proposal.",
+            "result": {"diagram": diagram.model_dump_json()},
+        }
+
+    monkeypatch.setattr(
+        chat_service.llm_client,
+        "complete_structured_with_history",
+        fake_complete_structured_with_history,
+    )
+
+    result = await chat_service.chat_diagram(
+        messages=[chat_service.ChatMessage(role="user", content="Refine it.")],
+        diagram=diagram,
+        config=ExperimentConfig(),
+        snapshot_changes=False,
+    )
+
+    assert len(calls) == 2
+    assert "previous response was rejected" in calls[1]["messages"][-1]["content"]
+    assert result.reply == "Corrected proposal."
     assert result.updated_diagram == diagram

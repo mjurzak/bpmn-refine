@@ -168,7 +168,13 @@ The default converter is registered at import time. Additional converters regist
 
 For user upload/export, the active converter is still resolved from `DIAGRAM_CONVERTER` via `get_converter()`.
 
-For LLM-facing validation, chat, and repair payloads, `ExperimentConfig.ir_format` selects the active candidate per request. `pydantic` keeps the legacy JSON-object payload shape; `pydantic_json`, `yaml`, `mermaid`, and `compact_json` serialise the `diagram` field as a string in the selected format. LLM responses that return a full replacement diagram are parsed with the same selected format.
+For LLM-facing validation, chat, and repair payloads,
+`ExperimentConfig.ir_format` selects the active candidate per request.
+`pydantic` keeps the JSON-object input shape; `pydantic_json`, `yaml`,
+`mermaid`, and `compact_json` serialize the input `diagram` field as a string.
+LLM responses use the common structured envelope and carry every complete
+replacement diagram as a string in `result.ir` or `result.diagram`. The
+selected converter parses that string before it can become canonical state.
 
 ---
 

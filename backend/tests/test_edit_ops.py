@@ -125,6 +125,7 @@ def test_apply_edit_ops_adds_node_and_flow_without_mutating_original():
             },
             {
                 "op": "add_flow",
+                "process_id": "proc_1",
                 "id": "sf_3",
                 "source_ref": "task_1",
                 "target_ref": "task_2",
@@ -378,6 +379,7 @@ def test_apply_edit_ops_add_flow_rejects_missing_target():
         [
             {
                 "op": "add_flow",
+                "process_id": "proc_1",
                 "id": "sf_3",
                 "source_ref": "task_1",
                 "target_ref": "missing_node",
@@ -398,6 +400,7 @@ def test_apply_edit_ops_add_flow_rejects_duplicate_id():
         [
             {
                 "op": "add_flow",
+                "process_id": "proc_1",
                 "id": "sf_1",
                 "source_ref": "task_1",
                 "target_ref": "end_1",
@@ -410,6 +413,37 @@ def test_apply_edit_ops_add_flow_rejects_duplicate_id():
     assert results[0].applied is False
     assert "already exists" in (results[0].error or "")
     assert [flow.id for flow in updated.processes[0].sequence_flows] == ["sf_1", "sf_2"]
+
+
+def test_apply_edit_ops_add_flow_rejects_cross_process_endpoints():
+    diagram = _minimal_valid_diagram()
+    diagram.processes.append(
+        BpmnProcess(
+            id="proc_2",
+            flow_nodes=[FlowNode(id="task_2", type=FlowNodeType.TASK)],
+        )
+    )
+    ops = edit_op_list_adapter.validate_python(
+        [
+            {
+                "op": "add_flow",
+                "process_id": "proc_1",
+                "id": "sf_cross_process",
+                "source_ref": "task_1",
+                "target_ref": "task_2",
+            }
+        ]
+    )
+
+    updated, results = apply_edit_ops(ops, diagram)
+
+    assert results[0].applied is False
+    assert "belongs to process 'proc_2', not 'proc_1'" in (results[0].error or "")
+    assert all(
+        flow.id != "sf_cross_process"
+        for process in updated.processes
+        for flow in process.sequence_flows
+    )
 
 
 def test_apply_edit_ops_set_condition_rejects_missing_flow():

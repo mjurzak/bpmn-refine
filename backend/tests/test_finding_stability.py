@@ -30,6 +30,7 @@ from app.services.validation import (
     _SEMANTIC_SCHEMA,
     SemanticFinding,
     _normalise_semantic_findings,
+    _sort_issues_by_severity,
     validate_diagram,
 )
 from app.validation.rules import (
@@ -73,6 +74,30 @@ def _finding(**overrides) -> SemanticFinding:
     return SemanticFinding(**data)
 
 
+def test_validation_findings_put_errors_first_and_keep_stable_order():
+    issues = [
+        ValidationIssue(rule_id="warning:first", severity=Severity.WARNING, message="m"),
+        ValidationIssue(rule_id="error:first", severity=Severity.ERROR, message="m"),
+        ValidationIssue(rule_id="warning:second", severity=Severity.WARNING, message="m"),
+        ValidationIssue(rule_id="error:second", severity=Severity.ERROR, message="m"),
+    ]
+
+    ordered = _sort_issues_by_severity(issues)
+
+    assert [issue.rule_id for issue in ordered] == [
+        "error:first",
+        "error:second",
+        "warning:first",
+        "warning:second",
+    ]
+    assert [issue.rule_id for issue in issues] == [
+        "warning:first",
+        "error:first",
+        "warning:second",
+        "error:second",
+    ]
+
+
 # --------------------------------------------------------------------------
 # a closed vocabulary and an enforced schema
 # --------------------------------------------------------------------------
@@ -102,6 +127,7 @@ def test_the_response_schema_is_strict():
     findings = _SEMANTIC_SCHEMA["$defs"]["SemanticFinding"]
     assert findings["additionalProperties"] is False
     assert _SEMANTIC_SCHEMA["additionalProperties"] is False
+    assert _SEMANTIC_SCHEMA["required"] == ["description", "result"]
 
 
 @pytest.mark.asyncio
@@ -110,7 +136,10 @@ async def test_semantic_validation_uses_the_structured_call(monkeypatch):
 
     async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return {"findings": [_finding().model_dump(mode="json")]}
+        return {
+            "description": "One semantic issue found.",
+            "result": {"findings": [_finding().model_dump(mode="json")]},
+        }
 
     monkeypatch.setattr(
         validation_service.llm_client, "complete_structured", fake_complete_structured
@@ -128,7 +157,10 @@ async def test_a_malformed_semantic_reply_becomes_a_finding(monkeypatch):
     """a reply that does not fit the schema is a defect in the reply"""
 
     async def fake_complete_structured(**kwargs):
-        return {"findings": [{"category": "not_a_category"}]}
+        return {
+            "description": "Malformed finding.",
+            "result": {"findings": [{"category": "not_a_category"}]},
+        }
 
     monkeypatch.setattr(
         validation_service.llm_client, "complete_structured", fake_complete_structured

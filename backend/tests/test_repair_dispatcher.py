@@ -17,6 +17,7 @@ from app.services import repair as repair_service
 from app.services.repair import (
     OpOrigin,
     RepairResult,
+    StopReason,
     dispatch_repair,
     repair_with_edit_ops,
 )
@@ -28,6 +29,10 @@ from app.validation.rules import (
     ValidationIssue,
     ValidationTier,
 )
+
+
+def _atomic_response(ops: list[dict[str, Any]]) -> dict[str, Any]:
+    return {"description": "Atomic repair plan.", "result": {"ops": ops}}
 
 
 async def test_dispatch_repair_prefers_quick_fix_over_llm():
@@ -130,6 +135,67 @@ async def test_dispatch_repair_batches_errors_then_retries_only_what_remains(
     assert result.iterations == 2
     assert result.converged is True
     assert len(result.applied_ops) == 2
+
+
+async def test_single_plan_targets_errors_before_warnings_without_chasing_new_ones(
+    monkeypatch,
+):
+    assigned: list[list[str]] = []
+    context: list[list[str]] = []
+    validation_calls = 0
+    newly_discovered = ValidationIssue(
+        rule_id="semantic:missing_exception_handling",
+        severity=Severity.WARNING,
+        message="A newly discovered semantic concern.",
+        tier=ValidationTier.TIER3,
+        element_id="task_1",
+    )
+
+    async def fake_atomic_repair(diagram, issues, **kwargs):
+        assigned.append([issue.rule_id for issue in issues])
+        context.append([issue.rule_id for issue in kwargs["context_issues"]])
+        return [RenameNodeOp(id="task_1", new_name="Proposed repair")]
+
+    async def fake_validate(diagram, **kwargs):
+        nonlocal validation_calls
+        validation_calls += 1
+        return ValidationResult(
+            is_valid=True,
+            issues=[],
+            semantic_issues=[newly_discovered],
+        )
+
+    monkeypatch.setattr(repair_service, "validate_diagram", fake_validate)
+    result = await dispatch_repair(
+        _minimal_valid_diagram(),
+        issues=[
+            ValidationIssue(
+                rule_id="semantic:improper_termination",
+                severity=Severity.ERROR,
+                message="Rejected claims end as reimbursed.",
+                tier=ValidationTier.TIER3,
+                element_id="end_1",
+            ),
+            ValidationIssue(
+                rule_id="semantic:inconsistent_naming",
+                severity=Severity.WARNING,
+                message="The decision label contradicts its outcomes.",
+                tier=ValidationTier.TIER3,
+                element_id="task_1",
+            ),
+        ],
+        config=ExperimentConfig(max_repair_iters=5),
+        atomic_repair_fn=fake_atomic_repair,
+        single_plan=True,
+    )
+
+    assert assigned == [["semantic:improper_termination"]]
+    assert context == [["semantic:inconsistent_naming"]]
+    assert validation_calls == 1
+    assert result.iterations == 1
+    assert result.remaining_issues == [newly_discovered]
+    assert result.stop_reason == StopReason.PROPOSAL_READY
+    assert result.converged is False
 
 
 async def test_dispatch_repair_uses_one_llm_call_when_batched_plan_converges():
@@ -287,15 +353,15 @@ async def test_repair_with_edit_ops_parses_atomic_llm_output(monkeypatch):
 
     async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return {
-            "ops": [
+        return _atomic_response(
+            [
                 {
                     "op": "rename_node",
                     "id": "task_1",
                     "new_name": "Renamed task",
                 }
             ]
-        }
+        )
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured
@@ -329,7 +395,7 @@ async def test_repair_with_edit_ops_sends_diagram_specific_id_enums(monkeypatch)
 
     async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return {"ops": []}
+        return _atomic_response([])
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured
@@ -358,6 +424,7 @@ async def test_repair_with_edit_ops_sends_diagram_specific_id_enums(monkeypatch)
     # list has to be a legal endpoint, and a frozen enum cannot express that.
     # _validate_atomic_op_ids enforces the real constraint instead.
     source_ref = schema_defs["AddFlowOp"]["properties"]["source_ref"]
+    assert schema_defs["AddFlowOp"]["properties"]["process_id"]["enum"] == ["proc_1"]
     assert "enum" not in source_ref
     assert "end_1" in source_ref["description"]
     assert "add_node" in source_ref["description"]
@@ -369,16 +436,17 @@ async def test_repair_with_edit_ops_sends_diagram_specific_id_enums(monkeypatch)
     # guidance and overemphasised add_node.
     assert '"sf_1"' not in captured["system"]
     assert len(captured["system"]) < 7_000
-    op_choices = captured["schema"]["properties"]["ops"]["items"]["anyOf"]
+    ops_schema = schema_defs["AtomicEditOpsResult"]["properties"]["ops"]
+    op_choices = ops_schema["items"]["anyOf"]
     assert op_choices[0] == {"$ref": "#/$defs/AddFlowOp"}
     assert op_choices[1] == {"$ref": "#/$defs/ChangeGatewayTypeOp"}
     assert {"$ref": "#/$defs/AddNodeOp"} in op_choices
-    assert captured["schema"]["properties"]["ops"]["maxItems"] == 32
+    assert ops_schema["maxItems"] == 32
 
 
 async def test_repair_with_edit_ops_rejects_flow_op_targeting_node_id(monkeypatch):
     async def fake_complete_structured(**kwargs):
-        return {"ops": [{"op": "remove_flow", "id": "task_1"}]}
+        return _atomic_response([{"op": "remove_flow", "id": "task_1"}])
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured
@@ -403,7 +471,7 @@ async def test_repair_with_edit_ops_compacts_formal_issue_in_payload(monkeypatch
 
     async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return {"ops": []}
+        return _atomic_response([])
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured
@@ -460,13 +528,19 @@ async def test_repair_with_edit_ops_compacts_formal_issue_in_payload(monkeypatch
 async def test_repair_diagram_compacts_formal_issue_in_payload(monkeypatch):
     captured = {}
 
-    async def fake_complete(**kwargs):
+    async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return json.dumps(
-            {"ir": _minimal_valid_diagram().model_dump(mode="json"), "unresolved": []}
-        )
+        return {
+            "description": "Regenerated diagram.",
+            "result": {
+                "ir": _minimal_valid_diagram().model_dump_json(),
+                "unresolved": [],
+            },
+        }
 
-    monkeypatch.setattr(repair_service.llm_client, "complete", fake_complete)
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
 
     issue_with_witness = ValidationIssue(
         rule_id="woflan:soundness",
@@ -509,7 +583,7 @@ async def test_structural_issue_payload_uses_affected_elements(monkeypatch):
 
     async def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return {"ops": []}
+        return _atomic_response([])
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured
@@ -696,8 +770,8 @@ async def test_atomic_repair_can_connect_a_node_it_just_added(monkeypatch):
     whole insert-a-gateway repair class was unreachable.
     """
     async def fake_complete_structured(**kwargs):
-        return {
-            "ops": [
+        return _atomic_response(
+            [
                 {
                     "op": "add_node",
                     "id": "gw_outcome",
@@ -708,18 +782,20 @@ async def test_atomic_repair_can_connect_a_node_it_just_added(monkeypatch):
                 {"op": "remove_flow", "id": "sf_2"},
                 {
                     "op": "add_flow",
+                    "process_id": "proc_1",
                     "id": "sf_to_gw",
                     "source_ref": "task_1",
                     "target_ref": "gw_outcome",
                 },
                 {
                     "op": "add_flow",
+                    "process_id": "proc_1",
                     "id": "sf_from_gw",
                     "source_ref": "gw_outcome",
                     "target_ref": "end_1",
                 },
             ]
-        }
+        )
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured
@@ -789,6 +865,7 @@ async def test_atomic_repair_discards_disconnected_tasks_and_reprompts(monkeypat
             "ops": [
                 {
                     "op": "add_flow",
+                    "process_id": "Process_expense_reimbursement",
                     "id": "sf_start_card_feed_to_check",
                     "source_ref": "start_card_feed",
                     "target_ref": "task_check",
@@ -797,6 +874,7 @@ async def test_atomic_repair_discards_disconnected_tasks_and_reprompts(monkeypat
                 },
                 {
                     "op": "add_flow",
+                    "process_id": "Process_expense_reimbursement",
                     "id": "sf_task_audit_to_escalated",
                     "source_ref": "task_audit",
                     "target_ref": "end_escalated",
@@ -812,7 +890,10 @@ async def test_atomic_repair_discards_disconnected_tasks_and_reprompts(monkeypat
     async def fake_complete_structured(**kwargs):
         prompts.append(json.loads(kwargs["prompt"]))
         schemas.append(kwargs["schema"])
-        return responses[len(prompts) - 1]
+        return {
+            "description": "Corrected repair plan.",
+            "result": responses[len(prompts) - 1],
+        }
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured
@@ -869,7 +950,7 @@ async def test_atomic_repair_caps_runaway_disconnected_node_diagnostics(monkeypa
     async def fake_complete_structured(**kwargs):
         nonlocal calls
         calls += 1
-        return runaway_plan
+        return {"description": "Runaway plan.", "result": runaway_plan}
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured
@@ -900,16 +981,17 @@ async def test_atomic_repair_caps_runaway_disconnected_node_diagnostics(monkeypa
 async def test_atomic_repair_still_rejects_an_id_that_is_never_created(monkeypatch):
     """relaxing the enum must not reopen the hallucinated-id hole"""
     async def fake_complete_structured(**kwargs):
-        return {
-            "ops": [
+        return _atomic_response(
+            [
                 {
                     "op": "add_flow",
+                    "process_id": "proc_1",
                     "id": "sf_new",
                     "source_ref": "task_1",
                     "target_ref": "gw_never_added",
                 }
             ]
-        }
+        )
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured
@@ -932,8 +1014,8 @@ async def test_atomic_repair_still_rejects_an_id_that_is_never_created(monkeypat
 async def test_atomic_repair_rejects_add_node_onto_an_existing_id(monkeypatch):
     """seen live on R004: the model re-added the orphan instead of removing it"""
     async def fake_complete_structured(**kwargs):
-        return {
-            "ops": [
+        return _atomic_response(
+            [
                 {
                     "op": "add_node",
                     "id": "task_1",
@@ -941,7 +1023,7 @@ async def test_atomic_repair_rejects_add_node_onto_an_existing_id(monkeypatch):
                     "process_id": "proc_1",
                 }
             ]
-        }
+        )
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured
@@ -964,17 +1046,18 @@ async def test_atomic_repair_rejects_add_node_onto_an_existing_id(monkeypatch):
 async def test_atomic_repair_rejects_reference_to_a_node_removed_earlier(monkeypatch):
     """the id set shrinks as well as grows"""
     async def fake_complete_structured(**kwargs):
-        return {
-            "ops": [
+        return _atomic_response(
+            [
                 {"op": "remove_node", "id": "task_1", "cascade": False},
                 {
                     "op": "add_flow",
+                    "process_id": "proc_1",
                     "id": "sf_new",
                     "source_ref": "task_1",
                     "target_ref": "end_1",
                 },
             ]
-        }
+        )
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured

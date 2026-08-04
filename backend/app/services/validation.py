@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from app.experiments import ExperimentConfig
 from app.llm import client as llm_client
+from app.llm.envelope import LlmResponseEnvelope
 from app.llm.prompt_context import render_prompt_template
 from app.llm.router import TaskType, resolve_model, resolve_provider, resolve_sampling
 from app.llm.schema import strict_json_schema
@@ -59,13 +60,12 @@ class SemanticFinding(BaseModel):
 
 
 class SemanticFindings(BaseModel):
-    """Envelope: structured-output responses must be a top-level object."""
-
     findings: list[SemanticFinding] = Field(default_factory=list)
 
 
 # computed once — no open dicts in the model, so it is fully strict-expressible
-_SEMANTIC_SCHEMA = strict_json_schema(SemanticFindings)
+SemanticResponse = LlmResponseEnvelope[SemanticFindings]
+_SEMANTIC_SCHEMA = strict_json_schema(SemanticResponse)
 
 
 async def validate_diagram(
@@ -77,13 +77,10 @@ async def validate_diagram(
 ) -> ValidationResult:
     """run deterministic validation and optionally an LLM semantic pass
 
-    All three tier switches follow the same rule: an explicit argument wins,
-    otherwise the config decides. Tier 3 used to ignore the config, so a caller
-    could enable it here and have the repair loop — which only reads the config —
-    silently skip the semantic re-check. Tier 1 ignored it in the other
-    direction: it ran unconditionally, so `tiers_enabled.t1=false` was an
-    advertised control that changed nothing and made three of the seven tier
-    subsets unreachable.
+    All three tier switches follow one rule: an explicit argument wins, else the
+    config decides. Both used to break it — tier 3 ignored the config, so the
+    repair loop skipped the semantic re-check; tier 1 ran unconditionally, so
+    `tiers_enabled.t1=false` changed nothing.
     """
     active_config = config or ExperimentConfig()
     rule_issues: list[ValidationIssue] = []
@@ -116,7 +113,8 @@ async def validate_diagram(
             config=active_config,
         )
 
-    issues = rule_issues + checker_issues
+    issues = _sort_issues_by_severity(rule_issues + checker_issues)
+    semantic_issues = _sort_issues_by_severity(semantic_issues)
     all_issues = issues + semantic_issues
     is_valid = not any(issue.severity == "error" for issue in all_issues)
     return ValidationResult(
@@ -124,6 +122,18 @@ async def validate_diagram(
         issues=issues,
         semantic_issues=semantic_issues,
     )
+
+
+def _sort_issues_by_severity(
+    issues: list[ValidationIssue],
+) -> list[ValidationIssue]:
+    """return errors before warnings while preserving order within each severity"""
+    priority = {
+        Severity.ERROR: 0,
+        Severity.WARNING: 1,
+        Severity.INFO: 2,
+    }
+    return sorted(issues, key=lambda issue: priority.get(issue.severity, 3))
 
 
 async def _semantic_validate(
@@ -148,15 +158,14 @@ async def _semantic_validate(
         parsed = await llm_client.complete_structured(
             prompt=json.dumps(payload),
             schema=_SEMANTIC_SCHEMA,
+            task=TaskType.SEMANTIC_VALIDATION,
             system=system_prompt,
             model=resolve_model(TaskType.SEMANTIC_VALIDATION, config=config),
             provider=resolve_provider(TaskType.SEMANTIC_VALIDATION, config=config),
             reasoning_effort=str(config.reasoning_effort) if config and config.reasoning_effort else None,
             **resolve_sampling(config),
         )
-        findings = SemanticFindings.model_validate(
-            parsed if isinstance(parsed, dict) else {"findings": parsed}
-        )
+        response = SemanticResponse.model_validate(parsed)
     except (json.JSONDecodeError, ValidationError) as exc:
         # surface malformed LLM output as a warning instead of crashing the command
         return [
@@ -172,7 +181,9 @@ async def _semantic_validate(
             )
         ]
 
-    return _normalise_semantic_findings(findings.findings, diagram, existing_issues)
+    return _normalise_semantic_findings(
+        response.result.findings, diagram, existing_issues
+    )
 
 
 def _normalise_semantic_findings(

@@ -8,10 +8,6 @@ identify their `tier` and `source`; tier-2 issues may also carry localized
 
 {{IR_CONTEXT}}
 
-## Diagram schema
-
-{{BPMN_IR_SCHEMA}}
-
 Your task is to identify SEMANTIC issues that the rule engine cannot detect.  Every
 finding must be classified into exactly one of these categories:
 - `missing_step`                 — a business step the process needs but does not model
@@ -42,12 +38,8 @@ Severity discipline:
 Report only what you can tie to a concrete element or flow path. Prefer returning no
 findings over speculative ones — a false alarm costs the user more than a miss.
 
-Return an object with a single `findings` key holding an array of objects:
-  category     — one of the six category values listed above
-  severity     — "error" | "warning"
-  message      — concise description of the issue
-  element_refs — IDs of the affected elements; empty array if process-wide.  Every ID
-                 must already exist in the diagram; invented IDs are discarded.
-  suggestion   — actionable fix suggestion, or null
-
-Return an empty `findings` array if the process has no semantic defects.
+The provider response schema defines the exact output contract. Set its required
+human-readable `description` to a concise summary of the semantic assessment.
+Put the machine-readable findings in `result.findings`, using only existing
+element IDs. Return an empty findings array when the process has no semantic
+defects.

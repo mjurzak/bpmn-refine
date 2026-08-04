@@ -3,8 +3,7 @@
 All LLM calls in the application MUST go through this module.
 The actual work is delegated to the provider selected by LLM_PROVIDER in settings.
 
-Call sites use complete() / complete_with_history() / complete_structured() and
-never import a provider directly.
+Call sites use the completion functions here and never import a provider directly.
 """
 from __future__ import annotations
 
@@ -28,6 +27,7 @@ async def complete(
     reasoning_effort: str | None = None,
     temperature: float | None = None,
     seed: int | None = None,
+    task: str | None = None,
 ) -> str:
     """Single-turn completion.
 
@@ -51,6 +51,7 @@ async def complete(
     except Exception as exc:
         _append_trace(
             kind="complete",
+            task=task,
             provider=provider,
             model=resolved_model,
             max_tokens=max_tokens,
@@ -68,6 +69,7 @@ async def complete(
     output, usage = _unpack(result)
     _append_trace(
         kind="complete",
+        task=task,
         provider=provider,
         model=resolved_model,
         max_tokens=max_tokens,
@@ -94,6 +96,7 @@ async def complete_with_history(
     reasoning_effort: str | None = None,
     temperature: float | None = None,
     seed: int | None = None,
+    task: str | None = None,
 ) -> str:
     """Multi-turn completion.
 
@@ -118,6 +121,7 @@ async def complete_with_history(
     except Exception as exc:
         _append_trace(
             kind="complete_with_history",
+            task=task,
             provider=provider,
             model=resolved_model,
             max_tokens=max_tokens,
@@ -135,6 +139,7 @@ async def complete_with_history(
     output, usage = _unpack(result)
     _append_trace(
         kind="complete_with_history",
+        task=task,
         provider=provider,
         model=resolved_model,
         max_tokens=max_tokens,
@@ -162,6 +167,7 @@ async def complete_structured(
     reasoning_effort: str | None = None,
     temperature: float | None = None,
     seed: int | None = None,
+    task: str | None = None,
 ) -> Any:
     """Schema-constrained completion, returning the parsed JSON object.
 
@@ -192,6 +198,7 @@ async def complete_structured(
     except Exception as exc:
         _append_trace(
             kind="complete_structured",
+            task=task,
             provider=provider,
             model=resolved_model,
             max_tokens=max_tokens,
@@ -210,6 +217,7 @@ async def complete_structured(
     raw, usage = _unpack(result)
     _append_trace(
         kind="complete_structured",
+        task=task,
         provider=provider,
         model=resolved_model,
         max_tokens=max_tokens,
@@ -228,13 +236,80 @@ async def complete_structured(
     return json.loads(raw)
 
 
+async def complete_structured_with_history(
+    messages: list[dict],
+    schema: dict[str, Any],
+    system: str | None = None,
+    model: str | None = None,
+    provider: str | None = None,
+    max_tokens: int = 4096,
+    reasoning_effort: str | None = None,
+    temperature: float | None = None,
+    seed: int | None = None,
+    task: str | None = None,
+) -> Any:
+    """Schema-constrained multi-turn completion, returning parsed JSON."""
+    resolved_model = model or settings.llm_fast_model
+    adapter = get_provider(provider)
+    honored, unsupported = _resolve_sampling(adapter, temperature, seed)
+    started_at = utc_now()
+    started = perf_counter()
+    try:
+        result = await adapter.complete_structured_with_history(
+            messages=messages,
+            system=system,
+            model=resolved_model,
+            schema=schema,
+            max_tokens=max_tokens,
+            reasoning_effort=reasoning_effort,
+            **honored,
+        )
+    except Exception as exc:
+        _append_trace(
+            kind="complete_structured_with_history",
+            task=task,
+            provider=provider,
+            model=resolved_model,
+            max_tokens=max_tokens,
+            reasoning_effort=reasoning_effort,
+            temperature=honored.get("temperature"),
+            seed=honored.get("seed"),
+            unsupported_controls=unsupported,
+            started_at=started_at,
+            started=started,
+            system=system,
+            messages=messages,
+            schema=schema,
+            error=str(exc),
+        )
+        raise
+    raw, usage = _unpack(result)
+    _append_trace(
+        kind="complete_structured_with_history",
+        task=task,
+        provider=provider,
+        model=resolved_model,
+        max_tokens=max_tokens,
+        reasoning_effort=reasoning_effort,
+        temperature=honored.get("temperature"),
+        seed=honored.get("seed"),
+        unsupported_controls=unsupported,
+        started_at=started_at,
+        started=started,
+        system=system,
+        messages=messages,
+        schema=schema,
+        output=raw,
+        usage=usage,
+    )
+    return json.loads(raw)
+
+
 def _unpack(result: LlmResponse | str) -> tuple[str, TokenUsage | None]:
     """accept either the response envelope or a bare string
 
-    Adapters return `LlmResponse`. Plain strings are still accepted so a test
-    double or an out-of-tree provider written against the older contract keeps
-    working — it simply reports no usage, which the totals then count as a call
-    with an unknown cost rather than a free one.
+    Adapters return `LlmResponse`; a bare string keeps an older test double
+    working and simply reports no usage, counted as unknown cost, not free.
     """
     if isinstance(result, LlmResponse):
         return result.text, result.usage
@@ -248,12 +323,9 @@ def _resolve_sampling(
 ) -> tuple[dict[str, Any], list[str]]:
     """split the requested sampling controls into forwarded and dropped
 
-    Providers differ in what they accept — Anthropic's Messages API has no
-    sampling seed, for instance — and an adapter cannot report that after the
-    fact. Asking the adapter up front lets the trace state which controls
-    executed, so an evaluation record never implies a seeded run that the API
-    never saw. A provider predating these flags is assumed to accept both, which
-    matches how the facade behaved before.
+    Providers differ in what they accept — Anthropic has no sampling seed — so
+    asking up front lets the trace record which controls actually executed,
+    rather than implying a seeded run the API never saw.
     """
     honored: dict[str, Any] = {}
     unsupported: list[str] = []
@@ -274,7 +346,13 @@ def _resolve_sampling(
 
 def _append_trace(
     *,
-    kind: Literal["complete", "complete_with_history", "complete_structured"],
+    kind: Literal[
+        "complete",
+        "complete_with_history",
+        "complete_structured",
+        "complete_structured_with_history",
+    ],
+    task: str | None,
     provider: str | None,
     model: str,
     max_tokens: int,
@@ -295,6 +373,7 @@ def _append_trace(
     append_trace(
         LlmTrace(
             kind=kind,
+            task=task,
             provider=provider,
             model=model,
             reasoning_effort=reasoning_effort,

@@ -103,17 +103,14 @@ async def call_with_ir_correction(
 ) -> T:
     """Run an LLM call that yields a diagram, letting the model fix its own output.
 
-    A model can return something well-formed for its IR format that still violates
-    a diagram invariant — duplicate element IDs being the case that motivated this.
-    Neither available response is good on its own: failing the turn costs the user
-    their request, and silently accepting the payload corrupts the session, since
-    the diagram exports but can no longer be re-parsed. So the rejection is handed
-    back as feedback and the model is asked to reissue.
+    A reply can be well-formed for its IR format and still violate a diagram
+    invariant (duplicate element IDs, the case that motivated this). Failing the
+    turn costs the user their request; accepting it corrupts the session. So the
+    rejection goes back as feedback and the model reissues.
 
-    `attempt` receives `None` on the first call and correction text afterwards; it
-    is responsible for both the LLM call and the parse, so that whatever it raises
-    describes the actual defect. Only content errors are retried
-    (see `_CORRECTABLE_ERRORS`); transport failures propagate untouched.
+    `attempt` receives `None` first, correction text afterwards, and owns both
+    the call and the parse so its exception describes the real defect. Only
+    content errors retry (`_CORRECTABLE_ERRORS`); transport failures propagate.
     """
     feedback: str | None = None
     for number in range(1, max_attempts + 1):
@@ -142,8 +139,9 @@ def ir_correction_feedback(error: Exception) -> str:
     return (
         "Your previous response was rejected before it could be applied.\n\n"
         f"Reason: {error}\n\n"
-        "Reissue the complete diagram in the same format with this problem fixed. "
-        "Change nothing else, and do not explain the correction."
+        "Reissue the complete machine-readable result in the same format with this "
+        "problem fixed. Change nothing else; keep the required human-readable "
+        "description concise."
     )
 
 

@@ -181,7 +181,7 @@ async def test_evidence_control_reaches_the_repair_prompt(monkeypatch):
 
     async def fake_complete_structured(**kwargs):
         seen.append(kwargs["prompt"])
-        return {"ops": []}
+        return {"description": "No edits.", "result": {"ops": []}}
 
     monkeypatch.setattr(
         repair_service.llm_client, "complete_structured", fake_complete_structured

@@ -60,15 +60,10 @@ class PydanticConverter(BaseDiagramConverter):
     ) -> tuple[BpmnDiagram, list[UnsupportedElement]]:
         """Parse BPMN XML, also reporting the children the IR does not represent.
 
-        The converter covers direct process-level control flow. Everything else
-        in a BPMN 2.0 document — collaborations, lane sets, data objects,
-        artifacts, extension elements — used to be read past in silence, so an
-        upload could lose half its content and still look like a clean import.
-        Losing what we cannot yet represent is a scope boundary; losing it
-        without saying so is a defect, and this is the channel that says so.
-
-        This is the one converter that overrides the empty-diagnostics default,
-        because XML is the only external format richer than the IR.
+        The IR covers process-level control flow. Collaborations, lane sets, data
+        objects, artifacts and extensions were read past in silence, so an upload
+        could lose half its content and still look like a clean import. Dropping
+        them is a scope boundary; dropping them quietly is a defect.
         """
         root = etree.fromstring(payload)
         ns = _extract_namespaces(root)
@@ -278,9 +273,8 @@ def _collect_unsupported_definitions_children(
 ) -> None:
     """report document-level children that carry meaning the IR drops
 
-    A `collaboration` is the one that matters most in practice: it is where pools,
-    participants, and message flows live, so a file whose processes look thin
-    usually has its structure here rather than nowhere.
+    `collaboration` matters most: pools, participants and message flows live
+    there, so a file whose processes look thin usually has its structure here.
     """
     root_id = root.get("id", "definitions")
     for child in root:

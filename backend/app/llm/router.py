@@ -33,11 +33,10 @@ _STRONG_TASKS = {
 def resolve_sampling(config: ExperimentConfig | None = None) -> dict[str, Any]:
     """the sampling controls a call should ask its provider for
 
-    `ExperimentConfig` has declared `temperature` and `seed` since the schema was
-    written, but nothing read them, so every run was executed at whatever default
-    the provider chose while the run record named a temperature. Call sites spread
-    this into their client call; the facade then records which controls the
-    selected provider could actually forward.
+    `ExperimentConfig` declared `temperature` and `seed` long before anything
+    read them, so runs used provider defaults while the record named a
+    temperature. Call sites spread this into the client, which then records
+    which controls the provider could actually forward.
     """
     if config is None:
         return {}

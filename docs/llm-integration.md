@@ -7,10 +7,15 @@ All LLM usage in the system routes through a single facade (`backend/app/llm/cli
 ## client facade
 
 ```python
-from app.llm.client import complete, complete_with_history, complete_structured
+from app.llm.client import (
+    complete,
+    complete_with_history,
+    complete_structured,
+    complete_structured_with_history,
+)
 ```
 
-Three async entry points; all delegate to the provider resolved for the call:
+Four async entry points; all delegate to the provider resolved for the call:
 
 ```python
 await complete(
@@ -37,6 +42,12 @@ await complete_structured(
     provider: str | None = None,
     max_tokens: int = 4096,
 ) -> Any                           # parsed JSON (dict/list), not a string
+
+await complete_structured_with_history(
+    messages: list[dict],
+    schema: dict,
+    ...
+) -> Any
 ```
 
 No other module imports `anthropic`, `openai`, `google-genai`, or any provider SDK directly. If a new feature needs vendor-specific capability (e.g. tool use, response-format enforcement), it is added here — not called from a route handler.
@@ -45,7 +56,8 @@ No other module imports `anthropic`, `openai`, `google-genai`, or any provider S
 
 ## provider abstraction
 
-`backend/app/llm/protocol.py` defines the `LLMProvider` protocol: three async methods (`complete`, `complete_with_history`, `complete_structured`) with identical signatures to the client facade. Every provider implements it.
+`backend/app/llm/protocol.py` defines the `LLMProvider` protocol with matching
+single-turn, history, and structured variants. Every provider implements it.
 
 Current providers (`backend/app/llm/providers/`):
 
@@ -115,7 +127,9 @@ For a deliberate A/B run, rename the parallel version `prompt_v2.txt`, register 
 
 ## structured outputs
 
-`complete_structured(prompt, schema, ...)` constrains the model's reply to a JSON schema. The four providers each map the same `schema` onto their **native structured-output mechanism** — one unified facade over four different vendor features:
+`complete_structured(...)` and `complete_structured_with_history(...)` constrain
+the model's reply to a JSON schema. The four providers each map the same
+`schema` onto their native structured-output mechanism:
 
 | Provider | Native mechanism |
 |---|---|
@@ -124,7 +138,27 @@ For a deliberate A/B run, rename the parallel version `prompt_v2.txt`, register 
 | Ollama | same `response_format` (inherited from `OpenAIProvider`); served by Ollama's `format`/GBNF constrained decoding, so `strict` is left off |
 | Gemini | `responseSchema` + `response_mime_type="application/json"` |
 
-The provider returns a JSON **string**; the client facade decodes it so call sites get a dict/list. This replaces the old fenced-JSON convention and its best-effort string scraping.
+The provider returns a JSON string; the client facade decodes it so call sites
+get a dict/list. Traces retain both the actual schema sent to the adapter and
+the raw structured output.
+
+### common response envelope
+
+Every provider-backed task uses a strict outer contract:
+
+```json
+{
+  "description": "Human-readable explanation",
+  "result": {}
+}
+```
+
+`description` is required and application validation rejects blank or
+whitespace-only values. `result` has a separate model for each task:
+semantic findings, atomic edit operations, regenerated IR plus unresolved
+issues, an optional chat diagram, or corrected XML. Complete diagrams and XML
+stay serialized as strings inside the strict envelope; the normal IR and BPMN
+parsers validate their contents after generation.
 
 ### schema preparation — `backend/app/llm/schema.py`
 
@@ -135,16 +169,12 @@ Pydantic's raw `model_json_schema()` is not what the strict APIs want, so `stric
 
 `inline_defs(schema)` additionally flattens `$ref`/`$defs` for Gemini, which does not resolve references. Both helpers require **non-recursive** schemas — fine for the current IR, since subprocess nesting is out of scope.
 
-### what is migrated
-
-- **`repair_mode = atomic`** (`repair_with_edit_ops`) is fully migrated. The `AtomicEditOp` union has only scalar fields (no open dicts), so `AtomicEditOpsResult` (`{"ops": EditOp[]}`) is fully strict-expressible. The constrained reply validates straight into typed `EditOp`s — no fence scraping, no JSON repair.
-
-### deliberately not migrated (yet)
-
-- **`repair_mode = regen`** returns a full `BpmnDiagram`, which carries open `dict` fields (`namespaces`, `FlowNode.extra`) that round-trip fidelity depends on. Those cannot satisfy `additionalProperties: false`, so a *strict* full-diagram schema would have to drop them and break the IR round-trip. Regen therefore keeps its current plain-JSON contract.
-- **`/chat`** is conversational: a free-text reply *with* an optional embedded diagram. That is not a pure-JSON shape, so the fenced-diagram convention (`parse_diagram_from_fenced_reply`) remains the right fit there.
-
-> Thesis note (Ch. 6, Implementation): a single `complete_structured` facade over four distinct native structured-output mechanisms is a clean illustration of the LLM abstraction layer — worth describing alongside the strict-schema limitation that scopes which call sites can adopt it.
+The full `BpmnDiagram` is deliberately not used as a provider schema because
+`namespaces` and `FlowNode.extra` are open dictionaries needed for round-trip
+fidelity. A schema around the serialized string standardizes the response
+shape; it does not claim to validate the YAML, Mermaid, compact JSON, canonical
+JSON, or XML encoded inside it. That validation remains a separate parser step
+with at most one correction round.
 
 ---
 
@@ -152,13 +182,15 @@ Pydantic's raw `model_json_schema()` is not what the strict APIs want, so `stric
 
 Under `repair_mode = atomic`, the LLM emits a list of edit operations over the canonical IR. The schema is shared with the repair loop ([`repair-loop.md`](repair-loop.md)) and is documented authoritatively there. This doc covers only how it enters the prompt.
 
-`repair.txt` (and, when the user asks for a fix, `chat_system.txt`) contains:
+`repair_atomic.txt` contains:
 
 - a description of the `EditOp` union (each op type, its fields, its preconditions);
-- an instruction that the model MUST return an op list and nothing else (hard under plain text; trivial under structured outputs);
+- operation-selection and locality guidance; the provider schema supplies the
+  exact response shape;
 - constraints that keep edits local (e.g. do not rename unaffected elements).
 
-Under `repair_mode = regen`, the same prompts include a fallback branch asking for a full replacement IR instead.
+Under `repair_mode = regen`, `repair.txt` asks for a serialized full replacement
+IR inside the common envelope.
 
 ---
 
@@ -202,7 +234,8 @@ Responses never omit `run`. If a provider call fails, the route returns an error
 
 ```
 backend/app/llm/
-├── client.py         # public entry points (complete, complete_with_history, complete_structured)
+├── client.py         # single-turn/history, plain/structured entry points
+├── envelope.py       # common description + task-specific result contract
 ├── protocol.py       # LLMProvider protocol
 ├── registry.py       # provider registration + resolution
 ├── router.py         # TaskType enum, tier/provider resolvers

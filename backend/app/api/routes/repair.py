@@ -45,6 +45,14 @@ class RepairRequest(BaseModel):
     xml: str
     issues: list[ValidationIssue] = Field(default_factory=list)
     config: ExperimentConfig = Field(default_factory=ExperimentConfig)
+    single_plan: bool = Field(
+        default=True,
+        description=(
+            "Return one human-reviewable plan for the highest-priority current "
+            "findings: all errors, or warnings only when no errors remain. Set "
+            "false only for an explicitly requested closed-loop auto-repair."
+        ),
+    )
 
 
 class RepairResponse(BaseModel):
@@ -60,6 +68,7 @@ class RepairResponse(BaseModel):
     converged: bool
     errors_resolved: bool = False
     stop_reason: StopReason = StopReason.ITERATION_BUDGET
+    single_plan: bool = True
     run: RunBlock
     llm_traces: list[LlmTrace] = Field(default_factory=list)
 
@@ -115,6 +124,7 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
             issues=req.issues,
             config=req.config,
             repair_fn=repair_diagram,
+            single_plan=req.single_plan,
         )
         updated_xml = export_bpmn_xml(repair_result.repaired_diagram)
     except Exception as exc:
@@ -154,6 +164,7 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
         converged=converged,
         errors_resolved=repair_result.errors_resolved,
         stop_reason=repair_result.stop_reason,
+        single_plan=req.single_plan,
         run=run,
         llm_traces=traces,
     )
@@ -244,14 +255,10 @@ def _build_repair_run(
 ) -> RunBlock:
     """describe the repair run, including what its nested revalidation invoked
 
-    Each dispatcher iteration revalidates, so a repair with Tier 3 enabled also
-    executes the semantic-validation prompt and a repair with Tier 2 enabled also
-    executes the formal checkers. Recording only the repair prompt understated
-    the run: two records could agree on every listed field while one of them had
-    additionally made a semantic call the other never did.
-
-    `model_used` comes from the traces rather than the router, because a repair
-    every issue of which had a quick fix reaches no provider at all.
+    Each iteration revalidates, so tier 3 also runs the semantic prompt and tier
+    2 the formal checkers; recording only the repair prompt understated the run.
+    `model_used` comes from the traces, not the router, because an all-quick-fix
+    repair reaches no provider at all.
     """
     resolved_prompts = prompt_files or {"repair": repair_prompt_path(config)}
     if prompt_files is None and config.tiers_enabled.t3:

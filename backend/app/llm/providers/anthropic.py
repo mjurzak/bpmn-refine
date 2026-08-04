@@ -102,3 +102,27 @@ class AnthropicProvider:
         response = await self._client.messages.create(**kwargs)
         text = next(block.text for block in response.content if block.type == "text")
         return LlmResponse(text, from_anthropic(response))
+
+    async def complete_structured_with_history(
+        self,
+        messages: list[dict],
+        system: str | None,
+        model: str,
+        schema: dict[str, Any],
+        max_tokens: int = 4096,
+        reasoning_effort: str | None = None,
+        temperature: float | None = None,
+        seed: int | None = None,
+    ) -> LlmResponse:
+        kwargs: dict = {
+            "model": model,
+            "max_tokens": max_tokens,
+            "messages": messages,
+            "output_config": self._output_config(reasoning_effort, schema),
+        }
+        if system:
+            kwargs["system"] = system
+        kwargs.update(self._sampling(temperature))
+        response = await self._client.messages.create(**kwargs)
+        text = next(block.text for block in response.content if block.type == "text")
+        return LlmResponse(text, from_anthropic(response))

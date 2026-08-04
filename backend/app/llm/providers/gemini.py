@@ -113,6 +113,31 @@ class GeminiProvider:
         )
         return LlmResponse(response.text or "", from_gemini(response))
 
+    async def complete_structured_with_history(
+        self,
+        messages: list[dict],
+        system: str | None,
+        model: str,
+        schema: dict[str, Any],
+        max_tokens: int = 4096,
+        reasoning_effort: str | None = None,
+        temperature: float | None = None,
+        seed: int | None = None,
+    ) -> LlmResponse:
+        config = types.GenerateContentConfig(
+            system_instruction=system,
+            max_output_tokens=max_tokens,
+            response_mime_type="application/json",
+            response_schema=inline_defs(schema),
+            **self._reasoning(reasoning_effort),
+            **self._sampling(temperature, seed),
+        )
+        contents = cast(types.ContentListUnionDict, _to_contents(messages))
+        response = await self._client.aio.models.generate_content(
+            model=model, contents=contents, config=config
+        )
+        return LlmResponse(response.text or "", from_gemini(response))
+
 
 def _to_contents(messages: list[dict]) -> list[dict]:
     """Map OpenAI-style roles onto Gemini's `contents` shape (assistant -> model)."""

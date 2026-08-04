@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services import repair as repair_service
 from app.services.repair import _strip_code_fences
 
 
@@ -73,3 +74,81 @@ def test_repair_xml_reports_still_unparseable(monkeypatch):
     assert body["diagram"] is None
     assert "task_main" in body["parse_error"]
     assert body["run"]["converged"] is False
+
+
+async def test_raw_xml_repair_uses_envelope_and_corrects_invalid_xml(monkeypatch):
+    responses = [
+        {
+            "description": "First attempt.",
+            "result": {"xml": _DUPLICATE_ID_XML},
+        },
+        {
+            "description": "Renamed the duplicate element.",
+            "result": {"xml": _FIXED_XML},
+        },
+    ]
+    prompts = []
+
+    async def fake_complete_structured(**kwargs):
+        prompts.append(kwargs)
+        return responses[len(prompts) - 1]
+
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
+
+    repaired = await repair_service.repair_raw_xml(_DUPLICATE_ID_XML)
+
+    assert repaired == _FIXED_XML
+    assert len(prompts) == 2
+    assert prompts[0]["schema"]["required"] == ["description", "result"]
+    assert "previous response was rejected" in prompts[1]["prompt"]
+
+
+async def test_raw_xml_repair_unwraps_a_fenced_document(monkeypatch):
+    """the schema asks for a bare document; a fence must not cost the repair
+
+    A fenced `result.xml` used to burn both attempts and come back fenced, so a
+    correct fix surfaced as `parseable=false`.
+    """
+    calls = 0
+
+    async def fake_complete_structured(**kwargs):
+        nonlocal calls
+        calls += 1
+        return {
+            "description": "Renamed the duplicate element.",
+            "result": {"xml": f"```xml\n{_FIXED_XML}\n```"},
+        }
+
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
+
+    repaired = await repair_service.repair_raw_xml(_DUPLICATE_ID_XML)
+
+    assert repaired == _FIXED_XML
+    assert calls == 1
+
+
+async def test_raw_xml_repair_returns_last_attempt_for_parseable_false_contract(
+    monkeypatch,
+):
+    calls = 0
+
+    async def fake_complete_structured(**kwargs):
+        nonlocal calls
+        calls += 1
+        return {
+            "description": "Could not resolve the duplicate.",
+            "result": {"xml": _DUPLICATE_ID_XML},
+        }
+
+    monkeypatch.setattr(
+        repair_service.llm_client, "complete_structured", fake_complete_structured
+    )
+
+    repaired = await repair_service.repair_raw_xml(_DUPLICATE_ID_XML)
+
+    assert repaired == _DUPLICATE_ID_XML
+    assert calls == 2

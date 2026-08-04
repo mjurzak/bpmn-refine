@@ -2,7 +2,13 @@
 
 Repair is one of the three top-level operations (see [`architecture.md`](architecture.md)). It takes **issues** (found by tier 1, tier 2, and/or tier 3) and a diagram, and produces **proposed changes** — never silent mutations. The user decides whether to apply them.
 
-Internally, the repair endpoint is a **closed loop**: dispatcher -> apply -> re-validate -> stop-or-iterate. The loop is what makes repair more than a single-turn LLM call: it tightens convergence on a correct diagram, and it produces a record (`iterations`, `applied_ops`) that is useful both to the user and to Phase 3 evaluation.
+The repair endpoint has two orchestration modes. Manual approval uses one
+**single plan**: dispatcher -> apply to an isolated candidate -> re-validate ->
+return for review. Newly discovered findings are reported but are not repaired
+inside the same request. Explicit auto-approval may use the **closed loop**:
+dispatcher -> apply -> re-validate -> stop-or-iterate. The closed loop remains
+available for unattended runs and Phase 3 evaluation without moving the human
+review gate behind several model-generated plans.
 
 **Status (2026-07-20):** the loop, both repair modes, the quick-fix registry (R001–R006), the `/repair`, `/repair/xml`, and `/repair/apply` endpoints, and the `tier2_findings` prompt section are all wired. The one gap is the *content* of the counterexample: the witness structure below is populated only with a diagnosis, not a firing trace, because the wired tier-2 checker (Woflan) does not emit one. The trace fields in the examples that follow are the target shape, not current output.
 
@@ -29,7 +35,8 @@ Request:
 {
   xml:            str,                  // current BPMN XML (server re-parses to canonical IR)
   issues:         Issue[],              // from tier 1/2/3 validation
-  ExperimentConfig: { ... }             // see architecture.md
+  config:         ExperimentConfig,     // see architecture.md
+  single_plan:    bool                  // default true; false for explicit closed-loop repair
 }
 ```
 
@@ -42,7 +49,8 @@ Response:
   applied_op_origins: str[],            // per applied op: "quick_fix" | "model_plan" | "model_regen"
   remaining_issues:  Issue[],           // whatever the final tier-1 (and tier-2 if enabled) pass still reports
   iterations:        int,               // number of dispatcher iterations executed
-  converged:         bool,              // true iff remaining_issues contains no errors
+  converged:         bool,              // true iff no repairable error or warning remains
+  single_plan:       bool,              // orchestration mode used for this response
   run:               { ... }            // response envelope, see run.md
 }
 ```
@@ -80,6 +88,7 @@ RemoveNode {
 
 AddFlow {
   op: "add_flow",
+  process_id: str,               // process containing both endpoints
   id: str,
   source_ref: str,
   target_ref: str,
@@ -126,13 +135,15 @@ SetCondition {
 
 ### structured-output constraints
 
-Atomic LLM repair uses provider-level structured outputs with a top-level
-`{"ops": [...]}` envelope. The schema is generated per repair request from the
-current diagram so existing-reference fields are narrowed to the correct ID set:
+Atomic LLM repair uses provider-level structured outputs with the common
+`{"description": "...", "result": {"ops": [...]}}` envelope. The schema is
+generated per repair request from the current diagram so existing-reference
+fields are narrowed to the correct ID set:
 node-targeting operations accept only current `node_ids`, flow-targeting
 operations accept only current `flow_ids`, `add_flow.source_ref` /
-`add_flow.target_ref` accept current node IDs, and `add_node.process_id` accepts
-current process IDs. New IDs (`add_node.id`, `add_flow.id`) remain free strings
+`add_flow.target_ref` accept current node IDs, and `add_node.process_id` plus
+`add_flow.process_id` accept current process IDs. New IDs (`add_node.id`,
+`add_flow.id`) remain free strings
 because they must not already exist; duplicate prevention is enforced by the
 server when applying ops.
 
@@ -163,33 +174,42 @@ Under `regen`, the response shape is identical but `applied_ops` is a synthetic 
 
 ## dispatcher
 
+With `single_plan=true`, the highest-priority current batch is assigned to one
+coherent plan: all errors when any exist, otherwise all warnings. The candidate
+is revalidated once. Remaining or newly discovered findings are returned to the
+reviewer instead of becoming more repair work inside the same request.
+
+With `single_plan=false`, errors are drained before warnings and the dispatcher
+may continue until convergence or `max_repair_iters`.
+
 ```
-input: diagram, issues[], ExperimentConfig
+input: diagram, issues[], ExperimentConfig, single_plan
 state: iteration = 0, applied = []
 
-while iteration < ExperimentConfig.max_repair_iters:
-    pick the highest-severity unresolved issue i
-    if no issue left or all remaining are info-severity:
+limit = 1 if single_plan else ExperimentConfig.max_repair_iters
+
+while iteration < limit:
+    assigned = highest_severity_batch
+    if assigned is empty:
         break
 
-    quick_fix = deterministic_fix_for(i)        # from the tier 1 category map + Analyzer 2.0 quick-fixes
-    if quick_fix is not None:
-        ops = [quick_fix]
+    quick_fixes = deterministic_fixes_for(assigned)
+    if quick_fixes cover every assigned issue:
+        ops = quick_fixes
     else:
         ops = llm_repair(
             diagram,
-            issue = i,
-            counterexample = i.counterexample,      # if any
+            issues = assigned,
             mode = ExperimentConfig.repair_mode,
         )
 
     diagram, op_results = apply(ops, diagram)
     applied += op_results.successful
 
-    issues = revalidate(diagram, tiers = [1] + ([2] if cfg.tiers_enabled.t2 else []))
+    issues = revalidate(diagram, configured_tiers)
     iteration += 1
 
-return diagram, applied, issues, iteration, converged = no_errors_in(issues)
+return diagram, applied, issues, iteration, converged = no_repairable_issues(issues)
 ```
 
 ### deterministic quick-fixes
@@ -242,7 +262,11 @@ The LLM reasons about *why* the trace deadlocks (the classic exclusive-split / p
 ## convergence and iteration bound
 
 - `ExperimentConfig.max_repair_iters` caps the outer loop. Default: **5**.
-- The loop stops early if remaining issues contain no errors (warnings and infos are acceptable).
+- Manual approval sets `single_plan=true`, so exactly one candidate plan and one
+  revalidation run before the proposal is shown.
+- Explicit auto-approval sets `single_plan=false` and may use the full iteration
+  budget.
+- The loop stops early when no repairable error or warning remains.
 - `iterations` is written to `run.iterations` so experiments can report convergence behaviour against the 4/δ theoretical bound (Dantas et al., 2025; see Initial-Research.md §4).
 - A non-converged result is still returned — the user sees a partial repair and decides whether to accept, refine in chat, or try a different repair mode.
 

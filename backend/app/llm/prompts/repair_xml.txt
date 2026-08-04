@@ -11,4 +11,6 @@ Guidelines:
 - Do not invent new business steps. If two elements collide on an ID but are clearly distinct, keep both with distinct IDs; if they are an accidental exact duplicate, you may drop the redundant one.
 - If an optional user instruction is provided, take it into account.
 
-Return only the corrected BPMN XML document without explanations or code fences.
+Use the provider response schema. Its required `description` briefly explains
+the correction for a human reviewer. Put the complete corrected BPMN XML
+document in `result.xml`, without markdown fences.

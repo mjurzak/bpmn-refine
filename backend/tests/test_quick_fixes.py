@@ -1,7 +1,46 @@
 from app.model.schema import BpmnDiagram, BpmnProcess, FlowNode, FlowNodeType, SequenceFlow
 from app.repair.ops import apply_edit_ops
 from app.repair.quick_fixes import propose_quick_fix
+from app.services.repair import _batch_quick_fixes, _highest_priority_batch
 from app.validation.rules import validate
+
+
+def test_a_batch_never_proposes_the_same_fix_twice():
+    """R005 and R006 fire together on a flow with two unknown endpoints
+
+    Both resolve to the same `remove_flow`; the duplicate used to fail on apply
+    and surface as a broken deterministic fix.
+    """
+    diagram = _diagram_with_doubly_dangling_flow()
+    issues = validate(diagram).errors()
+
+    assert sorted(issue.rule_id for issue in issues) == ["R005", "R006"]
+
+    ops = _batch_quick_fixes(_highest_priority_batch(issues), diagram)
+    updated, results = apply_edit_ops(ops or [], diagram)
+
+    assert [op.op for op in ops or []] == ["remove_flow"]
+    assert all(result.applied for result in results)
+    assert validate(updated).is_valid is True
+
+
+def _diagram_with_doubly_dangling_flow() -> BpmnDiagram:
+    return BpmnDiagram(
+        definitions_id="defs_1",
+        processes=[
+            BpmnProcess(
+                id="proc_1",
+                flow_nodes=[
+                    FlowNode(id="start_1", type=FlowNodeType.START_EVENT),
+                    FlowNode(id="end_1", type=FlowNodeType.END_EVENT),
+                ],
+                sequence_flows=[
+                    SequenceFlow(id="sf_1", source_ref="start_1", target_ref="end_1"),
+                    SequenceFlow(id="sf_bad", source_ref="ghost_a", target_ref="ghost_b"),
+                ],
+            )
+        ],
+    )
 
 
 def test_quick_fix_adds_missing_start_event_and_entry_flow():
