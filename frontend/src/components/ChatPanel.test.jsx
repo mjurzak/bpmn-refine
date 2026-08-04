@@ -43,7 +43,13 @@ const BASE_DIAGRAM = {
 // op 1 connects the node op 0 creates, so it cannot be applied alone
 const OPS = [
   { op: "add_node", id: "end_1", node_type: "endEvent", process_id: "Process_1" },
-  { op: "add_flow", id: "sf_2", source_ref: "task_1", target_ref: "end_1" },
+  {
+    op: "add_flow",
+    process_id: "Process_1",
+    id: "sf_2",
+    source_ref: "task_1",
+    target_ref: "end_1",
+  },
 ];
 
 function withNode(diagram, node, flow) {
@@ -116,6 +122,26 @@ describe("manual acceptance of a repair proposal", () => {
   it("does not apply anything on render", () => {
     const { onApplyProposal } = renderPanel();
     expect(onApplyProposal).not.toHaveBeenCalled();
+  });
+});
+
+describe("operation labels", () => {
+  it("renders typed rename operations as human-readable actions", () => {
+    renderPanel({
+      pendingProposal: repairProposal({
+        ops: [
+          {
+            op: "rename_node",
+            id: "task_1",
+            new_name: "Assess claim",
+          },
+        ],
+      }),
+    });
+
+    expect(
+      screen.getByText('Rename node task_1 to "Assess claim"'),
+    ).toBeInTheDocument();
   });
 });
 

@@ -1,4 +1,5 @@
 import React from "react";
+import { sortValidationFindings } from "../utils/validationFindings.js";
 
 const SEVERITY_CLASS = {
   error: "error",
@@ -27,14 +28,14 @@ export default function ValidationPanel({
   errorCount = 0,
   modelUsed = null,
 }) {
-  // tag each issue with its origin so the user can tell a deterministic verdict
-  // from an LLM suggestion. the backend stamps issue.source, which is the only
-  // signal that survives a repair — remaining_issues comes back as one flat list,
-  // so which array an issue arrived in says nothing about who produced it
-  const all = [...issues, ...semanticIssues].map((issue) => ({
-    issue,
-    origin: issue.source === "llm" ? "llm" : "rules",
-  }));
+  // issue.source is the only origin signal that survives a repair — after one,
+  // remaining_issues is a flat list and the array an issue came in says nothing
+  const all = sortValidationFindings([...issues, ...semanticIssues]).map(
+    (issue) => ({
+      issue,
+      origin: issue.source === "llm" ? "llm" : "rules",
+    }),
+  );
 
   // pick a badge variant for the header
   let badge = null;

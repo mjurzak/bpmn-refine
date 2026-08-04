@@ -7,6 +7,7 @@ import {
   unmetDependencies,
   withDependencies,
 } from "../utils/editOpDeps.js";
+import { opLabel } from "../utils/editOps.js";
 
 function buildAssistantMessage(reply, updatedDiagram) {
   if (!updatedDiagram) {
@@ -37,33 +38,6 @@ function stripDiagramPayloads(content) {
   }
 
   return segments.join("\n").trim();
-}
-
-function opLabel(op) {
-  switch (op.op) {
-    case "add_node":
-      return `Add ${op.node_type} ${op.name ? `"${op.name}"` : op.id}`;
-    case "remove_node":
-      return `Remove node ${op.id}${op.cascade ? " and incident flows" : ""}`;
-    case "add_flow":
-      return `Add flow ${op.id}: ${op.source_ref} -> ${op.target_ref}`;
-    case "remove_flow":
-      return `Remove flow ${op.id}`;
-    case "rename_element":
-      return `Rename ${op.id} to "${op.new_name}"`;
-    case "change_node_type":
-      return `Change ${op.id} to ${op.new_type}`;
-    case "change_gateway_type":
-      return `Change gateway ${op.id} to ${op.new_type}`;
-    case "set_condition":
-      return op.condition_expression
-        ? `Set condition on ${op.flow_id}`
-        : `Clear condition on ${op.flow_id}`;
-    case "replace_diagram":
-      return "Replace full diagram";
-    default:
-      return op.op;
-  }
 }
 
 function renderInlineMarkdown(text) {

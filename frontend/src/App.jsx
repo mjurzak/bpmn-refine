@@ -17,6 +17,9 @@ import {
   commitRevision,
 } from "./api/client.js";
 import { summarizeDiagramDiff } from "./utils/irDiff.js";
+import { opElementIds } from "./utils/editOps.js";
+import { llmTraceTitle } from "./utils/llmTraceLabels.js";
+import { sortValidationFindings } from "./utils/validationFindings.js";
 import useResize from "./hooks/useResize.js";
 import "./app.css";
 
@@ -141,7 +144,7 @@ function apiTraceEntries(title, traces = []) {
     id: trace.trace_id ?? newLogId("llm"),
     type: "llm",
     status: trace.error ? "error" : "success",
-    title: `${title} LLM call ${traces.length > 1 ? index + 1 : ""}`.trim(),
+    title: llmTraceTitle(title, trace, index, traces.length),
     summary: `${trace.model}${trace.reasoning_effort ? ` / ${trace.reasoning_effort}` : ""}`,
     timestamp: trace.started_at ?? new Date().toISOString(),
     durationMs: trace.duration_ms,
@@ -648,26 +651,6 @@ function LlmSettingsPanel({ settings, onChange, onClose }) {
   );
 }
 
-function proposalOpElementIds(op) {
-  if (!op) return [];
-  switch (op.op) {
-    case "add_node":
-    case "remove_node":
-    case "rename_element":
-    case "change_node_type":
-    case "change_gateway_type":
-      return [op.id];
-    case "add_flow":
-      return [op.source_ref, op.target_ref].filter(Boolean);
-    case "remove_flow":
-      return [op.id];
-    case "set_condition":
-      return [op.flow_id];
-    default:
-      return [];
-  }
-}
-
 export default function App() {
   const [xml, setXml] = useState(null);
   const [diagram, setDiagram] = useState(null);
@@ -1113,8 +1096,7 @@ export default function App() {
       editorRef.current?.clearDiff();
       return;
     }
-    const ids = proposalOpElementIds(op);
-    editorRef.current?.highlightElements(ids);
+    editorRef.current?.highlightElements(opElementIds(op));
   }
 
   async function handleRevert(revertedDiagram, newRevId) {
@@ -1225,6 +1207,8 @@ export default function App() {
           interactionConfig(llmSettings.repair),
           lastValidationTiers ? { tiers_enabled: lastValidationTiers } : {},
         ),
+        // the closed loop only runs when the user has waived review up front
+        approvalMode !== APPROVAL_MODES.AUTO,
       );
       const proposedDiagram = res.updated_diagram;
       if (approvalMode === APPROVAL_MODES.AUTO) {
@@ -1267,6 +1251,7 @@ export default function App() {
           applied_ops: res.applied_ops?.length ?? 0,
           remaining_issues: res.remaining_issues?.length ?? 0,
           approval_mode: approvalMode,
+          single_plan: res.single_plan,
         },
       });
     } catch (err) {
@@ -1285,10 +1270,10 @@ export default function App() {
     }
   }
 
-  const allIssues = [
+  const allIssues = sortValidationFindings([
     ...(validationResult?.issues ?? []),
     ...(validationResult?.semantic_issues ?? []),
-  ];
+  ]);
   const errorCount = allIssues.filter((i) => i.severity === "error").length;
   // code-only mode: file loaded but not parseable into the IR
   const isUnparsed = parseError !== null;

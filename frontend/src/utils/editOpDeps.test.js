@@ -9,7 +9,13 @@ import {
 // a plan where op 1 connects the node op 0 creates
 const PLAN = [
   { op: "add_node", id: "task_new", node_type: "task", process_id: "Process_1" },
-  { op: "add_flow", id: "sf_new", source_ref: "task_1", target_ref: "task_new" },
+  {
+    op: "add_flow",
+    process_id: "Process_1",
+    id: "sf_new",
+    source_ref: "task_1",
+    target_ref: "task_new",
+  },
   { op: "set_condition", flow_id: "sf_new", condition_expression: "${x}" },
   { op: "rename_node", id: "task_1", new_name: "Review" },
 ];

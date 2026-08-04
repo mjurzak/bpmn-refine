@@ -1,11 +1,9 @@
 // Dependency analysis over an atomic repair plan.
 //
-// Operations are applied in order, so one can depend on another: an `add_flow`
-// whose endpoint is a node an earlier `add_node` creates cannot be applied on
-// its own. The review gate lets a user deselect individual operations, and
-// until now the consequence only surfaced as an error from `/repair/apply`
-// after the fact — the user picked a subset, pressed Apply, and was told it was
-// impossible. Reporting the dependency up front makes the choice informed.
+// Ops apply in order, so one can depend on another: an `add_flow` whose endpoint
+// comes from an earlier `add_node` cannot be applied alone. The review gate lets
+// a user deselect ops, and the consequence used to surface only as an error from
+// `/repair/apply` after they pressed Apply.
 
 // which element IDs an operation introduces
 function producedIds(op) {
@@ -22,7 +20,7 @@ function producedIds(op) {
 function requiredIds(op) {
   switch (op?.op) {
     case "add_flow":
-      return [op.source_ref, op.target_ref].filter(Boolean);
+      return [op.process_id, op.source_ref, op.target_ref].filter(Boolean);
     case "remove_node":
     case "rename_node":
     case "rename_flow":

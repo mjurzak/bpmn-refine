@@ -63,11 +63,21 @@ export async function sendChatMessage(
   });
 }
 
-export async function repairDiagram(xml, issues = [], config = {}) {
+export async function repairDiagram(
+  xml,
+  issues = [],
+  config = {},
+  singlePlan = true,
+) {
   return request("/repair", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ xml, issues, config }),
+    body: JSON.stringify({
+      xml,
+      issues,
+      config,
+      single_plan: singlePlan,
+    }),
   });
 }
 
