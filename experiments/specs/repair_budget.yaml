@@ -1,0 +1,27 @@
+# Phase 3c — repair mode and iteration budget.
+#
+# The full product: two repair modes against five budgets. The budget values
+# match the ones the convergence analysis is stated over, so the observed
+# iteration counts can be read against the Dantas et al. bound directly.
+experiment_id: repair-budget
+notes: >-
+  Atomic edit operations versus whole-diagram regeneration, across iteration
+  budgets 1, 2, 3, 5, 10.
+
+inputs:
+  - data/test_cases/*.bpmn
+  - data/rule_cases/*.broken.bpmn
+
+exclude:
+  # rejected by the canonical model at parse time; see counterexample_evidence.yaml
+  - data/test_cases/02_duplicate_ids.bpmn
+
+base:
+  model_tier: strong
+  tiers_enabled: { t1: true, t2: true, t3: false }
+
+axes:
+  repair_mode: [atomic, regen]
+  max_repair_iters: [1, 2, 3, 5, 10]
+
+repeats: 1

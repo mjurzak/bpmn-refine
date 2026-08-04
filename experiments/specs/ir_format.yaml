@@ -1,0 +1,36 @@
+# Phase 3c — IR surface comparison.
+#
+# The five candidate serialisations under otherwise identical conditions. The
+# measurement that distinguishes this from a format preference is cost: each
+# trial records prompt characters and provider-reported input tokens, and
+# `input_bytes` carries the raw XML size the reduction is stated against.
+experiment_id: ir-format
+notes: >-
+  Repair quality and token cost per IR surface. Tiers are pinned so the only
+  thing varying is how the diagram is presented to the model.
+
+inputs:
+  - data/test_cases/*.bpmn
+  - data/rule_cases/*.broken.bpmn
+
+exclude:
+  # rejected by the canonical model at parse time; see counterexample_evidence.yaml
+  - data/test_cases/02_duplicate_ids.bpmn
+
+base:
+  model_tier: strong
+  repair_mode: atomic
+  max_repair_iters: 5
+  tiers_enabled: { t1: true, t2: true, t3: false }
+
+axes:
+  ir_format:
+    - pydantic
+    - pydantic_json
+    - yaml
+    - mermaid
+    - compact_json
+
+# a model that is free to vary between formats confounds the comparison, so
+# each condition is run three times and compared on the distribution
+repeats: 3

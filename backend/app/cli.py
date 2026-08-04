@@ -312,6 +312,130 @@ def repair_command(
         raise typer.Exit(code=1)
 
 
+@app.command("dry-run")
+def dry_run_command(
+    out: Path = typer.Option(
+        ...,
+        "--out",
+        dir_okay=False,
+        help="where to write the self-contained run record",
+    ),
+    inputs: list[Path] = typer.Option(
+        None,
+        "--input",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="BPMN file to run the matrix against; repeatable",
+    ),
+) -> None:
+    """Exercise every ablation control with mocked providers, writing a record.
+
+    Makes no paid API call. Confirms that each control reaches the executed path
+    before any experiment is run against it.
+    """
+    from app.dry_run import DEFAULT_INPUTS, execute
+
+    record = asyncio.run(execute(inputs or list(DEFAULT_INPUTS)))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(record, indent=2, sort_keys=True), encoding="utf-8")
+
+    typer.echo(f"Wrote {record['case_count']} ablation cases to {out}")
+    typer.echo(f"Implementation commit: {record['app_commit']}")
+    typer.echo("No API calls were made; every model response was mocked.")
+
+
+@app.command("run-experiment")
+def run_experiment_command(
+    spec: Path = typer.Option(
+        ...,
+        "--spec",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="sweep specification (JSON or YAML)",
+    ),
+    out: Path = typer.Option(
+        ..., "--out", file_okay=False, help="directory for results.jsonl and manifest"
+    ),
+    root: Path = typer.Option(
+        Path("."), "--root", file_okay=False, help="base directory for spec inputs"
+    ),
+    mock: bool = typer.Option(
+        False, "--mock", help="rehearse against canned responses; makes no API call"
+    ),
+    resume: bool = typer.Option(
+        True,
+        "--resume/--no-resume",
+        help="skip trials already present in results.jsonl",
+    ),
+    limit: int | None = typer.Option(
+        None, "--limit", help="run at most this many pending trials"
+    ),
+    keep_payloads: bool = typer.Option(
+        False, "--keep-payloads", help="record full prompts and responses per call"
+    ),
+) -> None:
+    """Run an ablation sweep and persist one JSON record per trial.
+
+    Results are appended as they complete, so an interrupted sweep resumes where
+    it stopped. Rehearse a new spec with --mock before spending on it.
+    """
+    from app.experiment_runner import execute_sweep, load_spec
+
+    loaded = load_spec(spec)
+
+    def report(index: int, total: int, record) -> None:
+        status = "FAIL" if record.error else "ok"
+        typer.echo(
+            f"[{index}/{total}] {status} {record.trial_id} "
+            f"{Path(record.input_path).name} cfg={record.run.config_hash} "
+            f"tokens={record.usage.total_tokens}"
+        )
+        if record.error:
+            typer.secho(f"        {record.error}", fg=typer.colors.RED, err=True)
+
+    summary = asyncio.run(
+        execute_sweep(
+            loaded,
+            out_dir=out,
+            root=root,
+            resume=resume,
+            mock=mock,
+            limit=limit,
+            keep_payloads=keep_payloads,
+            on_trial=report,
+        )
+    )
+
+    typer.echo("")
+    typer.echo(f"Experiment:   {summary.experiment_id}")
+    typer.echo(f"Commit:       {summary.app_commit}")
+    typer.echo(
+        f"Trials:       {summary.executed} executed, "
+        f"{summary.skipped} already done, {summary.failed} failed "
+        f"({summary.planned} planned)"
+    )
+    typer.echo(
+        f"Tokens:       {summary.usage.total_tokens} "
+        f"(in {summary.usage.input_tokens} / out {summary.usage.output_tokens})"
+    )
+    if not summary.usage.complete:
+        typer.secho(
+            f"        {summary.usage.calls_missing_usage} call(s) reported no usage; "
+            "the token total is a lower bound.",
+            fg=typer.colors.YELLOW,
+            err=True,
+        )
+    typer.echo(f"Results:      {summary.results_path}")
+    typer.echo(f"Manifest:     {summary.manifest_path}")
+    if mock:
+        typer.echo("Rehearsal only; every model response was mocked.")
+
+    if summary.failed:
+        raise typer.Exit(code=1)
+
+
 @app.command("batch-validate")
 def batch_validate_command(
     path: Path = typer.Argument(..., exists=True, readable=True),

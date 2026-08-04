@@ -1,0 +1,35 @@
+# Phase 3c — tier contribution.
+#
+# All seven non-empty subsets of {t1,t2,t3}, so a finding can be attributed to
+# the tier that is uniquely able to produce it. The subsets are listed rather
+# than generated because the empty set is not a valid condition and a product
+# over three booleans would include it.
+experiment_id: tier-contribution
+notes: >-
+  Which validation tier contributes which findings, and what each costs.
+  Repair is left at its default so the tiers vary alone.
+
+inputs:
+  - data/test_cases/*.bpmn
+  - data/rule_cases/*.broken.bpmn
+
+exclude:
+  # rejected by the canonical model at parse time; see counterexample_evidence.yaml
+  - data/test_cases/02_duplicate_ids.bpmn
+
+base:
+  model_tier: strong
+  repair_mode: atomic
+  max_repair_iters: 5
+
+axes:
+  tiers_enabled:
+    - { t1: true, t2: false, t3: false }
+    - { t1: false, t2: true, t3: false }
+    - { t1: false, t2: false, t3: true }
+    - { t1: true, t2: true, t3: false }
+    - { t1: true, t2: false, t3: true }
+    - { t1: false, t2: true, t3: true }
+    - { t1: true, t2: true, t3: true }
+
+repeats: 1

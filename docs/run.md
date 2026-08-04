@@ -10,7 +10,8 @@ Every backend response includes a `run` block. It records what produced the resp
 
 ```
 run {
-  model_used:       str                   // model the provider actually answered with
+  model_used:       str                   // model(s) actually called, "none" if no call was made
+  model_configured?: str                  // what the config resolved to, called or not
   prompt_versions:  {
     validate: { name: "validate_v1",    hash: "ab34cd5e78f9" },
     repair:   { name: "repair_v1",      hash: "..." },
@@ -33,9 +34,17 @@ Fields marked `?` are per-endpoint additions; everything else is always present.
 
 ## field rationale
 
-### `model_used`
+### `model_used` and `model_configured`
 
 The provider's response carries the *actual* model id it served. Some providers route internally (model aliases, fallback chains), so the id requested in `ExperimentConfig.model_override` is not necessarily the id that answered. Record what answered, not what was asked.
+
+`model_used` is built from the request's LLM traces, so it names only models a call was actually addressed to — comma-separated if a run spanned more than one, and `"none"` when nothing reached a provider. That case is common and not an edge: a tier-1-only validation, or a repair every issue of which had a deterministic quick fix, makes no call at all. `model_configured` keeps the id the configuration resolved to, so "this model repaired it" stays separable from "this model would have been asked".
+
+Each LLM trace also carries its logical `task` (`repair`,
+`semantic_validation`, or `refinement`). This differs from the low-level
+completion `kind`: one `/repair` request can contain both repair generation and
+semantic revalidation calls even though both use structured completion. The
+frontend uses `task` to label those calls accurately.
 
 ### `prompt_versions`
 
@@ -68,7 +77,9 @@ Boring but load-bearing. `timestamp` is UTC ISO-8601. `request_id` is a UUID gen
 
 ### `iterations` and `converged`
 
-Repair-loop-only. `iterations` counts dispatcher rounds; `converged` is `true` iff `remaining_issues` has no errors. See [`repair-loop.md`](repair-loop.md).
+Repair-loop-only. `iterations` counts dispatcher rounds; `converged` is `true`
+iff `remaining_issues` contains no repairable error or warning. See
+[`repair-loop.md`](repair-loop.md).
 
 ---
 
