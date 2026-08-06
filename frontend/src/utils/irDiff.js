@@ -1,14 +1,7 @@
-// compute a structural diff between two BpmnDiagram IR objects
-// returns { added: string[], modified: string[], removed: RemovedElement[] }
-// where each value is a list of element IDs (added/modified) or objects (removed)
-//
-// The comparison covers every semantic field the delivered edit operations can
-// change. It used to look only at `name` and `type`, so a proposal that
-// rerouted a flow, set a branch condition, or renamed a process produced an
-// empty summary — the reviewer was asked to approve a change the diff did not
-// show. Geometry is deliberately excluded: no edit operation moves a shape, and
-// the fallback layout assigns coordinates to new elements, which would report a
-// move on every addition.
+// structural diff between two BpmnDiagram IR objects
+// added/modified are element IDs, removed is a list of { id, name, type }
+// geometry is excluded on purpose: no edit operation moves a shape, and the
+// fallback layout would report a move on every addition
 
 function collectElements(diagram) {
   const map = new Map();
@@ -50,7 +43,7 @@ function show(value) {
   return String(value);
 }
 
-// the semantic fields, per element kind, that a reviewer needs to see change
+// the fields per element kind that a reviewer needs to see change
 const NODE_FIELDS = [
   ["type", "type"],
   ["name", "name"],

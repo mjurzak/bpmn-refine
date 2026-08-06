@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { opElementIds, opLabel } from "./editOps.js";
 
-// The op names below are the ones the backend actually emits (EditOpType in
-// backend/app/repair/ops.py). The regression these guard is a switch that
-// handled `rename_element`, which is not one of them.
+// op names below are the ones the backend emits (EditOpType in backend/app/repair/ops.py)
 
 describe("operation element ids", () => {
   it("resolves the node a rename addresses", () => {

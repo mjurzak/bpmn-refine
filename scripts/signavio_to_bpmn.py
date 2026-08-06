@@ -5,8 +5,8 @@ maps Signavio stencil types to the project IR (BpmnDiagram), then serializes
 using the existing PydanticConverter so the output is identical in structure
 to what a user uploads through the UI.
 
-pools, lanes, annotations, data objects and message flows are intentionally
-dropped — the IR focuses on the executable flow graph.
+pools, lanes, annotations, data objects and message flows are dropped; the IR
+covers the executable flow graph only.
 
 the JSON traversal in _get_elements_flat is adapted from BpmnModelParser in
 the SAP-SAM project (https://github.com/signavio/sap-sam, Apache 2.0,
@@ -131,7 +131,7 @@ def signavio_to_diagram(model_json: dict) -> BpmnDiagram:
     """convert a parsed Signavio JSON dict to a BpmnDiagram IR object"""
     elements = _get_elements_flat(model_json)
 
-    # map each edge ID back to the node that lists it in outgoing — reconstructs sourceRef
+    # map each edge ID back to the node that lists it in outgoing, rebuilding sourceRef
     edge_to_source: dict[str, str] = {}
     for el in elements:
         if el["category"] in _SKIP:
@@ -167,11 +167,11 @@ def signavio_to_diagram(model_json: dict) -> BpmnDiagram:
             continue
 
         if cat in _EDGES:
-            continue  # associations and message flows — not part of the flow graph
+            continue  # associations and message flows are not part of the flow graph
 
         node_type = _STENCIL_MAP.get(cat)
         if node_type is None:
-            continue  # unknown stencil, skip gracefully
+            continue  # unknown stencil
 
         name_raw = el["label"] or props.get("label") or None
         flow_nodes.append(FlowNode(id=eid, type=node_type, name=name_raw))

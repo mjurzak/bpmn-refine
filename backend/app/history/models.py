@@ -13,10 +13,10 @@ class Revision(BaseModel):
 
     rev_id: str                          # zero-padded index, e.g. "0000"
     session_id: str
-    index: int                           # 0-based integer revision number
+    index: int                           # 0-based
     timestamp: datetime
-    author: Literal["user", "llm"]       # who produced this revision
-    message: str                         # short description of the change
+    author: Literal["user", "llm"]
+    message: str
     diagram: BpmnDiagram
 
 

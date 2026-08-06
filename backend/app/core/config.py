@@ -12,24 +12,21 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
-    # llm provider — must match a name registered in app.llm.registry
+    # default provider for both tiers; must be registered in app.llm.registry
     # options: anthropic | openai | ollama | gemini
-    # used as the default for both tiers unless overridden below
     llm_provider: str = "openai"
 
-    # per-tier provider overrides — leave empty to fall back to llm_provider
-    # example: llm_strong_provider=anthropic, llm_fast_provider=openai
+    # per-tier overrides, empty falls back to llm_provider
     llm_strong_provider: str = ""
     llm_fast_provider: str = ""
 
-    # model names — must be valid for the chosen provider
-    # "strong" model for reasoning-critical tasks (repair, semantic validation)
+    # model names, must be valid for the chosen provider
+    # strong tier: reasoning-critical tasks (repair, semantic validation)
     llm_strong_model: str = "gpt-5.6-sol"
-    # "fast" model for mechanical transformations (format conversion, simple checks)
+    # fast tier: mechanical transformations (format conversion, simple checks)
     llm_fast_model: str = "gpt-5.6-luna"
 
-    # provider credentials / endpoints
-    # empty string = key not set; actual values must come from .env
+    # provider credentials, real values come from .env
     anthropic_api_key: str = ""
     openai_api_key: str = ""
     gemini_api_key: str = ""

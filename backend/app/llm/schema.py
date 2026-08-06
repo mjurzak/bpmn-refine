@@ -1,18 +1,11 @@
 """JSON-schema helpers for provider structured-output APIs.
 
-Providers expose schema-constrained output through slightly different shapes
-(Anthropic `output_config.format`, OpenAI/Ollama `response_format` json_schema,
-Gemini `responseSchema`).  They share two requirements that Pydantic's raw
-`model_json_schema()` does not satisfy out of the box:
+Two things Pydantic's raw `model_json_schema()` does not give:
 
-- strict providers (Anthropic, OpenAI) want every object to set
-  `additionalProperties: false` and list all its keys in `required`
+- strict providers (Anthropic, OpenAI) want `additionalProperties: false` and all keys in `required`
 - Gemini does not resolve `$ref`/`$defs`, so the schema must be inlined
 
-The helpers here turn a Pydantic model or `TypeAdapter` into a schema each
-provider accepts.  Schemas must be non-recursive (the BPMN IR is — subprocess
-nesting is intentionally out of scope), otherwise `inline_defs` would not
-terminate.
+Schemas must be non-recursive, otherwise `inline_defs` does not terminate.
 """
 from __future__ import annotations
 
@@ -25,13 +18,7 @@ class _SchemaSource(Protocol):
 
 
 def strict_json_schema(source: Any) -> dict[str, Any]:
-    """Return a strict JSON schema for a Pydantic model or TypeAdapter.
-
-    Accepts a BaseModel subclass (uses `model_json_schema()`) or a TypeAdapter
-    (uses `json_schema()`).  Every object gets `additionalProperties: false` and
-    a `required` entry covering all its declared properties — the shape strict
-    structured-output APIs validate against.
-    """
+    """Return a strict JSON schema for a Pydantic model or TypeAdapter."""
     if hasattr(source, "model_json_schema"):
         schema = source.model_json_schema()
     else:
@@ -40,11 +27,7 @@ def strict_json_schema(source: Any) -> dict[str, Any]:
 
 
 def inline_defs(schema: dict[str, Any]) -> dict[str, Any]:
-    """Inline every `$ref` into `$defs`, returning a self-contained schema.
-
-    Gemini's controlled generation does not resolve references, so the schema
-    handed to it must already be flattened.  Only safe for non-recursive schemas.
-    """
+    """Inline every `$ref` into `$defs` for Gemini, which does not resolve them. Non-recursive schemas only."""
     defs = schema.get("$defs", {})
     resolved = _resolve_refs(copy.deepcopy(schema), defs)
     resolved.pop("$defs", None)

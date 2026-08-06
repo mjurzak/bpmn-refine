@@ -1,14 +1,4 @@
-"""Validate the data/rule_cases fixtures against their expected issues.
-
-Each rule gets a `.broken` fixture that isolates exactly one rule and a `.fixed`
-counterpart that is the repaired model. This keeps the rule->example mapping
-honest: if a rule changes, its fixture either still fires the expected id or the
-test fails loudly. The `.fixed` half doubles as repair ground truth — whatever
-the dispatcher produces for the broken input should be equivalent to it.
-
-All fixtures share one mnemonic theme (a pizza order) so the shape of a defect is
-what differs between them, not the vocabulary.
-"""
+"""Check the data/rule_cases fixtures against their expected issues."""
 from pathlib import Path
 
 import pytest
@@ -16,8 +6,7 @@ import pytest
 from app.model.formats.pydantic_ir import PydanticConverter
 from app.validation.rules import validate
 
-# every rule with a fixture pair; the broken half must fire exactly {rule}, the
-# fixed half must be clean
+# the broken half must fire exactly {rule}, the fixed half must be clean
 PAIRED_RULES: dict[str, str] = {
     "R001": "R001_no_start_event",
     "R002": "R002_no_end_event",
@@ -66,7 +55,7 @@ def test_every_fixture_is_covered():
 
 
 def test_every_rule_in_the_engine_has_a_fixture():
-    """RULES_VERSION names the rule range; every id in it needs a worked example"""
+    """RULES_VERSION names the rule range; every id in it needs a worked example."""
     from app.validation.rules import RULES_VERSION
 
     first, last = RULES_VERSION.split("-")

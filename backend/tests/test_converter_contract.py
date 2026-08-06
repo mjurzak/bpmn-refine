@@ -30,7 +30,7 @@ def test_converter_preserves_supported_canonical_ir(converter_name, diagram_fact
 
 @pytest.mark.parametrize(("converter_name", "diagram_factory"), CONVERTER_CASES)
 def test_every_converter_exposes_the_diagnostic_channel(converter_name, diagram_factory):
-    """round-tripping a converter's own output loses nothing, so it reports nothing"""
+    """Round-tripping a converter's own output loses nothing, so it reports nothing."""
     converter = get_converter(converter_name)
     diagram = diagram_factory()
 

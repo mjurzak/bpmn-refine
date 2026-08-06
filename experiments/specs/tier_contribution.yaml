@@ -1,9 +1,5 @@
-# Phase 3c — tier contribution.
-#
-# All seven non-empty subsets of {t1,t2,t3}, so a finding can be attributed to
-# the tier that is uniquely able to produce it. The subsets are listed rather
-# than generated because the empty set is not a valid condition and a product
-# over three booleans would include it.
+# Phase 3c. All seven non-empty subsets of {t1,t2,t3}, listed rather than
+# generated because a product over three booleans would include the empty set
 experiment_id: tier-contribution
 notes: >-
   Which validation tier contributes which findings, and what each costs.

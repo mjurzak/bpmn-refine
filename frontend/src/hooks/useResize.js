@@ -1,10 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 
-// generic drag-to-resize hook
-// axis: "horizontal" (changes width) or "vertical" (changes height)
-// direction controls whether dragging toward larger coordinates increases size
-// use -1 for right-anchored panels whose left handle is dragged
-// returns { size, isDragging, handleMouseDown }
+// drag-to-resize hook, returning { size, isDragging, handleMouseDown }
+// direction -1 is for right-anchored panels dragged by their left handle
 export default function useResize({ initial, min, max, axis = "horizontal", direction = 1 }) {
   const [size, setSize] = useState(initial);
   const [isDragging, setIsDragging] = useState(false);

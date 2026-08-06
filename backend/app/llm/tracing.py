@@ -1,8 +1,4 @@
-"""In-request LLM trace collection.
-
-Traces are intentionally request-scoped and in-memory only. API routes can
-return them to the frontend for transparency without persisting raw prompts.
-"""
+"""In-request LLM trace collection. Traces are request-scoped and in-memory only, never persisted."""
 
 from __future__ import annotations
 
@@ -27,24 +23,19 @@ class LlmTrace(BaseModel):
         "complete_structured",
         "complete_structured_with_history",
     ]
-    # logical task, independent of the call shape: a structured completion
-    # inside /repair may be a repair plan or a semantic revalidation
+    # logical task, independent of the call shape
     task: str | None = None
     provider: str | None = None
     model: str
     reasoning_effort: str | None = None
     max_tokens: int
-    # what the configuration asked for...
     temperature: float | None = None
     seed: int | None = None
-    # ...and what the selected provider could actually forward. A control listed
-    # here reached no API: recording the request alone would let an evaluation
-    # report a seeded run that was never seeded.
+    # controls listed here were requested but never reached the provider
     unsupported_controls: list[str] = Field(default_factory=list)
     started_at: datetime
     duration_ms: int
-    # what the call consumed, as the provider reported it. `None` means the
-    # provider returned no usage block — not that the call was free.
+    # `None` means the provider reported no usage, not that the call was free
     usage: TokenUsage | None = None
     system: str | None = None
     prompt: str | None = None

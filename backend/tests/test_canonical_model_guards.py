@@ -1,11 +1,4 @@
-"""Regression tests for the four canonical-model boundaries.
-
-Each of these guards a way the diagram could previously be left in a state the
-rest of the pipeline had no single interpretation of: contradictory adjacency,
-an ID collision the per-op checks did not scope widely enough, a plan whose
-later ops address elements earlier ops removed, and an import that dropped what
-it could not represent without saying so.
-"""
+"""Canonical-model boundaries: adjacency, id scoping, edit-plan order, import diagnostics."""
 
 from __future__ import annotations
 
@@ -55,11 +48,7 @@ def _diagram() -> BpmnDiagram:
 
 
 def test_direct_json_payload_gets_its_adjacency_rebuilt():
-    """a JSON diagram whose node lists contradict its flows is normalised
-
-    This is the path that used to skip the XML parser entirely: Pydantic checked
-    both representations for type but never against each other.
-    """
+    """A JSON diagram whose node lists contradict its flows is normalised."""
     payload = {
         "definitions_id": "defs_1",
         "processes": [
@@ -70,7 +59,7 @@ def test_direct_json_payload_gets_its_adjacency_rebuilt():
                     {"id": "task_a", "type": "task", "outgoing": ["ghost_flow"]},
                     {"id": "task_b", "type": "task"},
                 ],
-                # ...while the real flow out of task_a is not listed on it at all
+                # the real flow out of task_a is not listed on it
                 "sequence_flows": [
                     {"id": "sf_1", "source_ref": "task_a", "target_ref": "task_b"}
                 ],
@@ -86,14 +75,14 @@ def test_direct_json_payload_gets_its_adjacency_rebuilt():
 
 
 def test_adjacency_rebuild_is_idempotent_on_a_consistent_diagram():
-    """re-validating a parsed diagram must not reorder or duplicate its edges"""
+    """Re-validating a parsed diagram must not reorder or duplicate its edges."""
     diagram = _diagram()
     revalidated = BpmnDiagram.model_validate(diagram.model_dump())
     assert revalidated == diagram
 
 
 def test_dangling_flow_endpoint_wires_nothing_but_is_retained():
-    """R005/R006 need the broken flow to survive so they can name it"""
+    """R005/R006 need the broken flow to survive so they can name it."""
     diagram = BpmnDiagram.model_validate(
         {
             "definitions_id": "defs_1",
@@ -119,7 +108,7 @@ def test_dangling_flow_endpoint_wires_nothing_but_is_retained():
 
 
 def test_added_node_cannot_take_a_process_id():
-    """`xsd:ID` is document-scoped, so a process name is a taken name"""
+    """`xsd:ID` is document-scoped, so a process id is a taken id."""
     diagram = _diagram()
     updated, results = apply_edit_ops(
         [
@@ -153,7 +142,7 @@ def test_added_node_cannot_take_a_pool_or_lane_id():
 
 
 def test_applied_edit_leaves_the_diagram_revalidated():
-    """the result of an apply is a model that passes construction-time checks"""
+    """The result of an apply is a model that passes construction-time checks."""
     diagram = _diagram()
     updated, results = apply_edit_ops(
         [
@@ -174,7 +163,7 @@ def test_applied_edit_leaves_the_diagram_revalidated():
     )
 
     assert all(result.applied for result in results)
-    # adjacency was rebuilt by the revalidation, not left to the op to maintain
+    # adjacency comes from the revalidation, not from the op
     nodes = {node.id: node for node in updated.processes[0].flow_nodes}
     assert nodes["task_1"].outgoing == ["sf_2", "sf_3"]
     assert nodes["task_2"].incoming == ["sf_3"]
@@ -182,7 +171,7 @@ def test_applied_edit_leaves_the_diagram_revalidated():
 
 
 def test_replace_diagram_op_rejects_a_duplicate_id_payload():
-    """a replacement that collides internally must not become the new state"""
+    """A replacement that collides internally must not become the new state."""
     with pytest.raises(ValidationError):
         BpmnDiagram.model_validate(
             {
@@ -238,7 +227,7 @@ def test_new_flow_id_cannot_collide_with_an_existing_flow():
 
 
 def test_cascade_removal_retires_the_flows_it_takes_with_it():
-    """sf_1 and sf_2 are incident to task_1, so neither survives the cascade"""
+    """sf_1 and sf_2 are incident to task_1, so neither survives the cascade."""
     with pytest.raises(ValueError, match="sf_2"):
         _validate_atomic_op_ids(
             [
@@ -269,7 +258,7 @@ def test_cascade_removal_leaves_untouched_flows_addressable():
 
 
 def test_node_added_earlier_is_a_legal_endpoint_later():
-    """the forward walk must still grow, not only shrink"""
+    """The forward walk must grow the id set, not only shrink it."""
     _validate_atomic_op_ids(
         [
             {
@@ -380,7 +369,7 @@ def test_diagnostic_names_every_dropped_element():
 
 
 def test_the_supported_subset_still_imports_intact():
-    """the diagnostic reports a loss; it must not cause one"""
+    """The diagnostic reports a loss; it must not cause one."""
     diagram, _ = parse_bpmn_bytes_with_diagnostics(_XML_WITH_UNSUPPORTED)
     process = diagram.processes[0]
     assert [node.id for node in process.flow_nodes] == ["start_1", "task_1", "end_1"]

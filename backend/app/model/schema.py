@@ -1,8 +1,7 @@
 """Pydantic data models for the BPMN diagram domain.
 
-This is the canonical in-memory representation used by the default converter.
-Every piece of information needed to reconstruct valid BPMN XML must be present
-here — the round-trip property (XML -> model -> XML) must hold.
+Canonical in-memory representation. Everything needed to reconstruct valid BPMN
+XML must live here, so the round-trip property (XML -> model -> XML) holds.
 """
 
 from __future__ import annotations
@@ -35,8 +34,7 @@ class FlowNodeType(StrEnum):
     COMPLEX_GATEWAY = "complexGateway"
 
 
-# Custom type aliases. These remain strings at runtime; Pydantic enforces the
-# surrounding model shape rather than distinct ID wrapper classes.
+# plain strings at runtime, aliased only for readability
 FlowNodeId: TypeAlias = str
 SequenceFlowId: TypeAlias = str
 
@@ -61,11 +59,10 @@ class FlowNode(BaseModel):
     id: FlowNodeId
     type: FlowNodeType
     name: str | None = None
-    # outgoing/incoming are edge IDs — filled in by the converter
+    # sequence flow IDs, derived from the flows
     outgoing: list[SequenceFlowId] = Field(default_factory=list)
     incoming: list[SequenceFlowId] = Field(default_factory=list)
-    # where the author put this node. None means "never had a shape" (a node the
-    # LLM just added), which the serialiser fills in from the fallback layout
+    # None means the node never had a shape, so the serialiser lays it out
     bounds: Bounds | None = None
     label_bounds: Bounds | None = None
     # raw attributes preserved for round-trip
@@ -78,7 +75,7 @@ class SequenceFlow(BaseModel):
     target_ref: FlowNodeId
     name: str | None = None
     condition_expression: str | None = None
-    # the author's routing. an empty list means "no edge shape", not "straight"
+    # empty means no edge shape, not a straight line
     waypoints: list[Waypoint] = Field(default_factory=list)
     label_bounds: Bounds | None = None
 
@@ -115,13 +112,7 @@ class BpmnDiagram(BaseModel):
 
     @model_validator(mode="after")
     def _reject_duplicate_ids(self) -> Self:
-        """Enforce document-scoped ID uniqueness, as BPMN 2.0 types `id` as xsd:ID.
-
-        On the model rather than the XML parser, because every input path builds
-        a `BpmnDiagram` while a parser check only guarded uploaded files. Not
-        cosmetic: `_Graph` keys adjacency by node ID, so a duplicate shadows its
-        twin and the reachability rules read the wrong node's edges.
-        """
+        """Enforce document-scoped ID uniqueness — BPMN 2.0 types `id` as xsd:ID."""
         duplicates = [
             element_id
             for element_id, count in Counter(self.element_ids()).items()
@@ -140,13 +131,8 @@ class BpmnDiagram(BaseModel):
     def _rebuild_adjacency(self) -> Self:
         """Derive every node's `incoming`/`outgoing` from the sequence flows.
 
-        BPMN states each connection twice — on the flow's `sourceRef`/`targetRef`
-        and on the node's `incoming`/`outgoing` — and the two can disagree. The
-        XML parser resolves that by trusting the flow, but a direct JSON payload
-        skipped the parser, so a flow out of `Task_A` could coexist with an empty
-        `Task_A.outgoing`: `_Graph` traversed the edge while R003/R004 called the
-        same task disconnected. Rebuilding here gives every input path one graph,
-        and is a no-op on an already-consistent diagram.
+        BPMN states each connection twice and the two can disagree; the flow wins.
+        A no-op on an already-consistent diagram.
         """
         for proc in self.processes:
             node_index = {node.id: node for node in proc.flow_nodes}
@@ -164,11 +150,7 @@ class BpmnDiagram(BaseModel):
         return self
 
     def element_ids(self) -> list[str]:
-        """every ID the document declares, in the order BPMN scopes them
-
-        Public because edit operations mutate a diagram in place and need the
-        same notion of "taken" that `_reject_duplicate_ids` enforces.
-        """
+        """every ID the document declares, in the order BPMN scopes them"""
         ids: list[str] = []
         for proc in self.processes:
             ids.append(proc.id)

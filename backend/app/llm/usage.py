@@ -1,18 +1,11 @@
 """Token accounting for LLM calls.
 
-Usage is reported only in the response that carried it, so a dropped usage block
-is unmeasurable forever. Every adapter reads its own through this module.
+Providers disagree on what `input_tokens` includes, so `source` records the convention:
 
-Providers disagree on what `input_tokens` includes, and summing across them
-without knowing which convention applies is wrong:
+* Anthropic excludes cache reads/writes: billed prompt size is `input_tokens + cached_input_tokens`
+* OpenAI, Ollama and Gemini include them: `cached_input_tokens` is a subset, not an addend
 
-* **Anthropic** excludes cache reads/writes — billed prompt size is
-  `input_tokens + cached_input_tokens`.
-* **OpenAI**, **Ollama**, and **Gemini** include them — `cached_input_tokens` is
-  a subset, not an addend.
-
-Fields are stored as reported and `source` records the convention. A field the
-provider omitted stays `None`, never 0 — collapsing the two understates totals.
+Fields are stored as reported; one the provider omitted stays `None`, never 0.
 """
 
 from __future__ import annotations
@@ -28,11 +21,10 @@ class TokenUsage(BaseModel):
 
     input_tokens: int | None = None
     output_tokens: int | None = None
-    # separate because cached prompt tokens bill differently, and whether they
-    # are already inside `input_tokens` depends on `source`
+    # whether these are already inside `input_tokens` depends on `source`
     cached_input_tokens: int | None = None
     reasoning_tokens: int | None = None
-    #: which provider's reporting convention produced these fields
+    # which provider's reporting convention produced these fields
     source: str | None = None
 
     @computed_field  # type: ignore[prop-decorator]
@@ -45,11 +37,7 @@ class TokenUsage(BaseModel):
 
 
 class UsageTotals(BaseModel):
-    """summed usage across a set of calls
-
-    `calls_missing_usage` keeps a partial total from reading as a complete one —
-    otherwise a cost comparison silently becomes a sample-size comparison.
-    """
+    """summed usage across a set of calls; `calls_missing_usage` marks a partial total as partial"""
 
     calls: int = 0
     calls_missing_usage: int = 0
@@ -83,16 +71,13 @@ def total_usage(usages: Iterable[TokenUsage | None]) -> UsageTotals:
 
 
 # ---------------------------------------------------------------------------
-# per-provider extraction
-#
-# Read defensively: SDK fields move between releases, and a usage block that
-# moved should record nothing, not fail a repair the user is waiting on.
+# per-provider extraction. read defensively: SDK fields move between releases,
+# and a moved field should record nothing rather than fail the call
 # ---------------------------------------------------------------------------
 
 
 def _int(value: Any) -> int | None:
-    # bool is an int subclass; a `True` slipping into a token count would be
-    # silently summed as 1
+    # bool is an int subclass, so a stray `True` would be summed as 1
     if isinstance(value, bool) or not isinstance(value, int):
         return None
     return value
@@ -120,7 +105,7 @@ def from_anthropic(response: Any) -> TokenUsage | None:
 
 
 def from_openai(response: Any, source: str = "openai") -> TokenUsage | None:
-    # source is specified for other OpenAI-compatible endpoints
+    # source is overridden by other OpenAI-compatible endpoints
     usage = getattr(response, "usage", None)
     if usage is None:
         return None

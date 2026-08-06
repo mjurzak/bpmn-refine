@@ -15,20 +15,13 @@ BPMN_NAMESPACES = {
     "bpmndi": "http://www.omg.org/spec/BPMN/20100524/DI",
     "dc": "http://www.omg.org/spec/DD/20100524/DC",
     "di": "http://www.omg.org/spec/DD/20100524/DI",
-    # both fixtures carry a condition_expression, which the serialiser stamps with
-    # xsi:type — so the declaration is part of the floor they have to declare
+    # both fixtures carry a condition_expression, which the serialiser stamps with xsi:type
     "xsi": "http://www.w3.org/2001/XMLSchema-instance",
 }
 
 
 def canonical_full_diagram() -> BpmnDiagram:
-    """the fixture for the lossy candidate IRs (mermaid, compact-json, yaml)
-
-    Layout is stripped: those formats have no way to express geometry, so
-    carrying bounds here would assert a round-trip they cannot satisfy. The
-    XML converter is the only one that owns layout, and it is exercised by
-    canonical_xml_supported_diagram.
-    """
+    """Fixture for the lossy candidate IRs (mermaid, compact-json, yaml), layout stripped."""
     diagram = canonical_xml_supported_diagram()
     for node in diagram.processes[0].flow_nodes:
         node.bounds = None
@@ -53,10 +46,7 @@ def canonical_full_diagram() -> BpmnDiagram:
 
 
 def canonical_xml_supported_diagram() -> BpmnDiagram:
-    # geometry is part of what BPMN XML supports, so the round-trip fixture
-    # carries it. an IR *without* bounds cannot round-trip exactly — serialising
-    # has to invent a layout or bpmn-js has nothing to render; see
-    # test_layout_is_generated_only_when_absent
+    # BPMN XML supports geometry, so the round-trip fixture carries it
     start = FlowNode(
         id="start_1",
         type=FlowNodeType.START_EVENT,

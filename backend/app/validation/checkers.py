@@ -44,9 +44,7 @@ async def run_tier2_checkers(
         except Exception as exc:
             issues.append(_checker_runtime_issue(T2Tool.WOFLAN, exc))
 
-    # Tier provenance belongs to the orchestration layer, not individual
-    # adapters. Future formal checkers therefore inherit the same prompt and UI
-    # contract even if they do not stamp their own issues.
+    # tier provenance is stamped here, so an adapter never has to
     for issue in issues:
         issue.tier = ValidationTier.TIER2
     return _deduplicate(issues)
@@ -108,8 +106,7 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
     uncovered_refs = _resolve_petri_names(uncovered_names, index)
     counterexample_traces = _counterexample_traces(diagnostics, index)
 
-    # dead elements first — they are a direct verdict, the s-component places
-    # are a weaker localisation hint
+    # dead elements first; s-component places are a weaker localisation hint
     element_refs = dead_refs + [ref for ref in uncovered_refs if ref not in dead_refs]
     description = _soundness_description(
         dead_refs,
@@ -138,8 +135,7 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
                 "dead_tasks": dead_refs,
                 "uncovered_places_s_component": uncovered_refs,
                 "boundary_normalization": boundary_normalization,
-                # keep the untranslated pm4py names so a run stays reproducible
-                # against the tool's own output
+                # untranslated pm4py names, so a run stays checkable against the tool
                 "petri_net_names": {
                     "dead_tasks": dead_names,
                     "uncovered_places_s_component": uncovered_names,
@@ -156,11 +152,8 @@ def _normalise_workflow_net_boundaries(
 ) -> tuple[Any, Any, dict[str, Any]]:
     """give Woflan one synthetic source and sink when BPMN boundaries multiply
 
-    Woflan stops before soundness analysis unless the converted Petri net has a
-    unique structural source and sink. Disconnected BPMN boundary elements are
-    already reported by tier 1, so the adapter adds an exclusive synthetic entry
-    and exit around them. This leaves the BPMN IR untouched while allowing
-    Woflan to expose deeper split/join defects in the same validation run.
+    Woflan refuses to analyse a net without a unique structural source and sink.
+    Wrapping them here leaves the BPMN IR untouched.
     """
     from pm4py.objects.petri_net.obj import Marking, PetriNet
     from pm4py.objects.petri_net.utils import petri_utils
@@ -265,16 +258,12 @@ def _diagnostic_messages(diagnostics: dict[Any, Any]) -> list[str]:
     return values
 
 
-# pm4py's BPMN -> Petri net converter derives every place and transition name
-# from the BPMN element it came from: transitions are named after node ids,
-# sequence flows become places keyed by flow id, and a node contributes
-# `ent_<id>` / `exi_<id>` places plus `sfl_<id>` / `tfl_<id>` invisible
-# transitions. Everything outside that scheme belongs to the encoding, not to
-# the user's diagram.
+# pm4py names places and transitions after the BPMN element they came from, a
+# node contributing `ent_<id>` / `exi_<id>` places and `sfl_<id>` / `tfl_<id>`
+# invisible transitions. anything outside the scheme belongs to the encoding
 _PETRI_ID_PREFIXES = ("ent_", "exi_", "sfl_", "tfl_")
 
-# the workflow-net source/sink, and the transition Woflan itself adds to
-# short-circuit the net before checking soundness
+# the workflow-net source/sink, plus Woflan's own short-circuit transition
 _SYNTHETIC_PETRI_NAMES = frozenset({"source", "sink", "short_circuited_transition"})
 
 
@@ -304,11 +293,9 @@ def _element_index(diagram: BpmnDiagram) -> _ElementIndex:
 def _resolve_petri_name(name: str, index: _ElementIndex) -> str | None:
     """map one pm4py place/transition name back to the BPMN element it encodes
 
-    returns None for anything the encoding invented — source/sink, Woflan's
-    short-circuit transition, and the uuid4-named invisible transitions pm4py
-    emits for gateway splits and joins. Those have no counterpart on the canvas,
-    so reporting them would highlight a phantom and hand the repair prompt an
-    element that does not exist.
+    returns None for anything the encoding invented (source/sink, the
+    short-circuit transition, uuid4-named gateway split/join transitions) — those
+    have no counterpart on the canvas.
     """
     if name in _SYNTHETIC_PETRI_NAMES:
         return None
@@ -335,8 +322,8 @@ def _resolve_petri_names(names: list[str], index: _ElementIndex) -> list[str]:
 def _petri_names(entries: Any) -> list[str]:
     """read the `name` off pm4py Place/Transition objects
 
-    deliberately not `label` — for a task, pm4py puts the human-readable name
-    there and the BPMN id in `name`, and it is the id we need to map back.
+    not `label`: for a task pm4py puts the human-readable name there and the
+    BPMN id in `name`, and the id is what maps back.
     """
     if not entries:
         return []

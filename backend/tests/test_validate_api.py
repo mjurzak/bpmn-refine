@@ -85,7 +85,7 @@ def _minimal_valid_diagram() -> dict:
 
 
 def test_semantic_issues_are_stamped_as_llm(monkeypatch):
-    """an LLM finding must never render as a deterministic verdict"""
+    """An LLM finding must never render as a deterministic verdict."""
     from app.services import validation as validation_service
 
     async def fake_complete_structured(**kwargs):
@@ -117,5 +117,4 @@ def test_semantic_issues_are_stamped_as_llm(monkeypatch):
 
     assert response.status_code == 200
     semantic = response.json()["semantic_issues"]
-    # the model claimed "rules"; the service overrides it
     assert [issue["source"] for issue in semantic] == ["llm"]

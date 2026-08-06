@@ -1,8 +1,6 @@
 """Gemini provider (Google models via the google-genai SDK).
 
-Structured outputs use controlled generation: `response_mime_type` plus a
-`response_schema`.  Gemini does not resolve `$ref`, so the schema is inlined
-before being handed over.
+Structured outputs use controlled generation; Gemini does not resolve `$ref`, so schemas are inlined.
 """
 from __future__ import annotations
 
@@ -18,8 +16,6 @@ from app.llm.usage import from_gemini
 
 class GeminiProvider:
     supports_temperature = True
-    # GenerateContentConfig carries a seed, so the control reaches the API rather
-    # than being dropped at the adapter boundary
     supports_seed = True
 
     def __init__(self, api_key: str) -> None:

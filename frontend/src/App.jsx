@@ -59,9 +59,7 @@ const SEMANTIC_VALIDATE_CONFIG = {
   tiers_enabled: { t1: true, t2: false, t3: true },
 };
 
-// which tiers each button turns on. the repair loop re-validates with whatever
-// the last validation used, so a tier that found an issue is a tier that can
-// confirm the fix
+// repair re-validates with whatever tiers the last validation used
 const VALIDATION_MODE_CONFIG = {
   [VALIDATION_MODES.STRUCTURAL]: {},
   [VALIDATION_MODES.DEEP]: DEEP_VALIDATE_CONFIG,
@@ -167,7 +165,7 @@ function writeSessionBoolean(key, value) {
   try {
     window.sessionStorage.setItem(key, String(value));
   } catch {
-    // storage can be unavailable in private or locked-down browser sessions
+    // sessionStorage can be unavailable in private browsing
   }
 }
 
@@ -186,7 +184,7 @@ function writeSessionString(key, value) {
   try {
     window.sessionStorage.setItem(key, value);
   } catch {
-    // storage can be unavailable in private or locked-down browser sessions
+    // sessionStorage can be unavailable in private browsing
   }
 }
 
@@ -204,7 +202,7 @@ function writeSessionJson(key, value) {
   try {
     window.sessionStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // storage can be unavailable in private or locked-down browser sessions
+    // sessionStorage can be unavailable in private browsing
   }
 }
 
@@ -270,9 +268,7 @@ function mergeExperimentConfig(...configs) {
   );
 }
 
-// default the validation/history split so the history panel starts as the
-// shorter section — its top edge sits below the screen midpoint — and scales
-// with viewport height instead of a fixed pixel guess
+// size the validation/history split from viewport height, history the shorter half
 function verticalSplitConfig() {
   const fallback = { initial: 320, min: 60, max: 500 };
   if (typeof window === "undefined") return fallback;
@@ -283,11 +279,8 @@ function verticalSplitConfig() {
   return { initial, min: 60, max };
 }
 
-// the IR carries the author's BPMNDI now, so a diagram that arrived with a
-// layout keeps it — re-laying out would move every element and turn a one-flow
-// repair into a 100% visual diff. Only diagrams with no geometry at all (hand
-// written XML, some exports) get laid out, and new nodes are placed clear of the
-// existing shapes by the serialiser.
+// only lay out diagrams that carry no geometry; re-laying out an existing layout
+// moves every element and turns a one-flow repair into a full visual diff
 async function autoLayout(xmlString) {
   if (xmlString?.includes("<bpmndi:BPMNShape") || xmlString?.includes("BPMNShape")) {
     return xmlString;
@@ -663,8 +656,7 @@ export default function App() {
   const [validating, setValidating] = useState(false);
   const [repairing, setRepairing] = useState(false);
   const [validationMode, setValidationMode] = useState(null);
-  // survives the run, unlike validationMode — repair needs to know which tiers
-  // produced the issues it is about to fix
+  // outlives validationMode, so repair knows which tiers produced the issues
   const [lastValidationTiers, setLastValidationTiers] = useState(null);
   const [pendingProposal, setPendingProposal] = useState(null);
   const [darkMode, setDarkMode] = useState(() =>
@@ -700,8 +692,7 @@ export default function App() {
       Object.values(EDITOR_TABS),
     ),
   );
-  // set when an imported file cannot be parsed into the IR (e.g. duplicate ids);
-  // the diagram falls back to a code-only view with LLM repair as the way out
+  // set when an import cannot be parsed into the IR, which drops us to code-only mode
   const [parseError, setParseError] = useState(null);
   const [logEntries, setLogEntries] = useState([]);
   const [llmSettingsOpen, setLlmSettingsOpen] = useState(false);
@@ -846,9 +837,9 @@ export default function App() {
     if (!file) return;
     const startedAt = performance.now();
     dismissPreview();
-    // keep the raw text so the file is always viewable, even if it cannot parse
+    // keep the raw text so an unparseable file is still viewable
     const rawText = await file.text().catch(() => null);
-    // allow re-importing the same file after a fix by clearing the input value
+    // clearing the value allows re-importing the same file
     e.target.value = "";
     try {
       const res = await uploadDiagram(file);
@@ -871,8 +862,7 @@ export default function App() {
         details: { file: file.name, session_id: res.session_id },
       });
     } catch (err) {
-      // unparseable file (e.g. duplicate ids): fall back to a code-only view so
-      // the user can still inspect the source and run free-form LLM repair
+      // unparseable file: fall back to a code-only view
       if (rawText) {
         setDiagram(null);
         setValidationSourceDiagram(null);
@@ -1107,7 +1097,7 @@ export default function App() {
     setPendingProposal(null);
   }
 
-  // called when user clicks a history card — loads it on canvas without committing
+  // shows a revision on the canvas without committing it
   function handlePreview(rev) {
     setPreviewRev(rev);
   }
@@ -1115,7 +1105,6 @@ export default function App() {
   function dismissPreview() {
     if (!previewRev) return;
     setPreviewRev(null);
-    // restore the current XML on the canvas
     if (xml) editorRef.current?.importXml(xml);
   }
 
@@ -1137,8 +1126,7 @@ export default function App() {
     });
   }
 
-  // free-form repair for files that could not be parsed into the IR — the LLM
-  // rewrites the raw XML (e.g. to dedupe ids); on success we re-enter normal mode
+  // free-form LLM rewrite of raw XML, for files that never parsed into the IR
   async function handleXmlRepair() {
     if (!xml) return alert("Import a file first.");
     setRepairing(true);
@@ -1162,7 +1150,7 @@ export default function App() {
         setValidationResult(null);
         setEditorTab(EDITOR_TABS.DIAGRAM);
       } else {
-        // still broken — keep the corrected source in the code view for inspection
+        // still broken, so keep the rewritten source in the code view
         setXml(res.updated_xml);
         setParseError(
           res.parse_error ?? "Repaired XML still could not be parsed.",
@@ -1207,7 +1195,7 @@ export default function App() {
           interactionConfig(llmSettings.repair),
           lastValidationTiers ? { tiers_enabled: lastValidationTiers } : {},
         ),
-        // the closed loop only runs when the user has waived review up front
+        // single plan unless the user waived review, which enables the closed loop
         approvalMode !== APPROVAL_MODES.AUTO,
       );
       const proposedDiagram = res.updated_diagram;
@@ -1393,7 +1381,6 @@ export default function App() {
           </div>
         )}
 
-        {/* horizontal resize handle */}
         {leftPanelOpen && (
           <div
             className={`resize-handle-h${sidebar.isDragging ? " dragging" : ""}`}
@@ -1401,7 +1388,7 @@ export default function App() {
           />
         )}
 
-        {/* editor pane — canvas actions and BPMN modeler */}
+        {/* editor pane */}
         <div className="editor-pane">
           <div className="diagram-action-bar">
             <div className="diagram-action-group diagram-action-group--file">

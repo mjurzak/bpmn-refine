@@ -52,8 +52,7 @@ async def validate_diagram(req: ValidationRequest) -> ValidationResponse | JSONR
     include_t2 = req.config.tiers_enabled.t2
 
     def _run(traces: list[LlmTrace]) -> RunBlock:
-        # built from the traces, so a semantic pass that failed before reaching
-        # the provider is not recorded as a model that answered
+        # from the traces, so a pass that never reached the provider records no model
         return build_run_block(
             config=req.config,
             model_used=models_called(traces),

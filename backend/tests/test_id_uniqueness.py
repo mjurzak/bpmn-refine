@@ -1,9 +1,4 @@
-"""Diagram-scoped ID uniqueness and the LLM correction round it drives.
-
-BPMN 2.0 types `id` as xsd:ID, so IDs are unique per document. The invariant lives
-on `BpmnDiagram` rather than in the XML parser because every input path — the five
-IR formats, LLM-authored payloads, edit-op results — constructs one.
-"""
+"""Diagram-scoped id uniqueness and the LLM correction round it drives."""
 
 import json
 import re
@@ -149,7 +144,7 @@ def test_every_ir_format_rejects_duplicates(ir_format):
 
 
 def test_llm_payload_path_rejects_duplicates():
-    """The regen path parses through here, so this is the hole that mattered."""
+    """The regen path parses through here."""
     duplicate = dict(_TASK, name="Shadow")
     with pytest.raises(ValidationError, match="Duplicate element ID"):
         parse_diagram_payload(

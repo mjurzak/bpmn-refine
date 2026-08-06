@@ -64,13 +64,13 @@ def _bootstrap() -> None:
         logger.debug("registered openai provider")
 
     if settings.gemini_api_key:
-        # imported lazily so the google-genai dependency is only required when used
+        # lazy import so google-genai is only required when gemini is configured
         from app.llm.providers.gemini import GeminiProvider
 
         register("gemini", GeminiProvider(settings.gemini_api_key))
         logger.debug("registered gemini provider")
 
-    # Ollama runs locally — no key needed
+    # ollama runs locally, no key needed
     register("ollama", OllamaProvider(settings.ollama_base_url))
     logger.debug("registered ollama provider")
 

@@ -81,7 +81,7 @@ def _fix_missing_end(
     return ops
 
 
-# R003 and R004 deliberately have no quick fix; see the note on _REGISTRY.
+# R003 and R004 deliberately have no quick fix; see the note on _REGISTRY
 
 
 def _fix_dangling_flow(
@@ -117,8 +117,7 @@ def _best_entry_target(proc: BpmnProcess) -> FlowNode | None:
     """where a newly added start event should point
 
     A node with no incoming flow is the likely head of the process, so it wins;
-    otherwise any non-start node will do. Only R001 uses this, and R001 means the
-    process has no start event at all, so there is no risk of picking one.
+    otherwise any non-start node will do.
     """
     candidates = [
         node for node in proc.flow_nodes if node.type != FlowNodeType.START_EVENT
@@ -198,11 +197,9 @@ def _safe_id(value: str) -> str:
     return cleaned or "process"
 
 
-# A quick fix must be right whenever it fires — an issue it handles never reaches
-# the LLM. R003 and R004 are unregistered on purpose: wiring an orphan event in
-# versus deleting it is a judgement no local heuristic can make. On case 09 the
-# old heuristic joined an unconnected start straight to an unconnected end,
-# producing a process that escalated every statement without looking at it.
+# a quick fix must be right whenever it fires, since the issue it handles never
+# reaches the LLM. R003/R004 are unregistered on purpose: wiring an orphan event
+# in versus deleting it is a judgement no local heuristic can make
 _REGISTRY: dict[str, QuickFix] = {
     "R001": _fix_missing_start,            # no start event
     "R002": _fix_missing_end,              # no end event

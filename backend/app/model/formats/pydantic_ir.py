@@ -1,8 +1,6 @@
 """Default converter: BPMN XML <-> Pydantic BpmnDiagram model.
 
-Implements app.model.protocol.DiagramConverter.
-Keeps the round-trip property: XML -> BpmnDiagram -> XML should produce
-semantically equivalent BPMN (modulo whitespace and attribute ordering).
+Round-trip holds up to whitespace and attribute ordering.
 """
 
 from __future__ import annotations
@@ -40,9 +38,8 @@ _Y_CENTER = 200
 
 _FLOW_NODE_TAGS = {t.value for t in FlowNodeType}
 
-# definitions-level children the converter handles or deliberately ignores.
-# `process` is parsed; `BPMNDiagram` is consumed by _attach_di; the rest of the
-# document-level vocabulary is metadata that carries no control flow.
+# definitions-level children the converter handles, and metadata it may skip
+# because it carries no control flow
 _HANDLED_DEFINITIONS_TAGS = {"process", "BPMNDiagram"}
 _IGNORED_DEFINITIONS_TAGS = {"import", "extension", "relationship", "documentation"}
 
@@ -60,10 +57,8 @@ class PydanticConverter(BaseDiagramConverter):
     ) -> tuple[BpmnDiagram, list[UnsupportedElement]]:
         """Parse BPMN XML, also reporting the children the IR does not represent.
 
-        The IR covers process-level control flow. Collaborations, lane sets, data
-        objects, artifacts and extensions were read past in silence, so an upload
-        could lose half its content and still look like a clean import. Dropping
-        them is a scope boundary; dropping them quietly is a defect.
+        The IR covers process-level control flow, so collaborations, lane sets,
+        data objects, artifacts and extensions are dropped — but never silently.
         """
         root = etree.fromstring(payload)
         ns = _extract_namespaces(root)
@@ -76,8 +71,8 @@ class PydanticConverter(BaseDiagramConverter):
 
         _collect_unsupported_definitions_children(root, unsupported)
 
-        # the author's layout, keyed by the element it decorates. carried on the
-        # model so a repair does not force a full re-layout of an untouched diagram
+        # carry the author's layout on the model so a repair does not re-lay-out
+        # an untouched diagram
         _attach_di(root, processes)
 
         diagram = BpmnDiagram(
@@ -95,8 +90,8 @@ class PydanticConverter(BaseDiagramConverter):
         _ensure_namespace(nsmap, "bpmndi", BPMNDI_NS)
         _ensure_namespace(nsmap, "dc", DC_NS)
         _ensure_namespace(nsmap, "di", DI_NS)
-        # only declared when something will actually use it, so a diagram with no
-        # conditions round-trips without picking up a namespace it never needs
+        # only declare xsi when a condition will use it, so an unconditioned
+        # diagram does not pick up a namespace it never needs
         if _has_condition_expression(diagram):
             _ensure_namespace(nsmap, "xsi", XSI_NS)
 
@@ -160,10 +155,8 @@ def _resolve_bpmn_ns(root: etree._Element) -> str:
 def _attach_di(root: etree._Element, processes: list[BpmnProcess]) -> None:
     """copy BPMNDI geometry onto the flow nodes and flows it belongs to
 
-    BPMNDI lives in a separate subtree keyed by `bpmnElement`, so it is read once
-    here and hung off the model. Elements with no shape keep `bounds=None`, which
-    is how the serialiser tells "the author never placed this" from "the author
-    placed it at 0,0".
+    BPMNDI lives in a separate subtree keyed by `bpmnElement`. Elements with no
+    shape keep `bounds=None`, which the serialiser reads as "never placed".
     """
     shapes: dict[str, tuple[Bounds, Bounds | None]] = {}
     edges: dict[str, tuple[list[Waypoint], Bounds | None]] = {}
@@ -273,8 +266,7 @@ def _collect_unsupported_definitions_children(
 ) -> None:
     """report document-level children that carry meaning the IR drops
 
-    `collaboration` matters most: pools, participants and message flows live
-    there, so a file whose processes look thin usually has its structure here.
+    `collaboration` matters most — pools, participants and message flows live there.
     """
     root_id = root.get("id", "definitions")
     for child in root:
@@ -337,9 +329,8 @@ def _has_condition_expression(diagram: BpmnDiagram) -> bool:
 def _formal_expression_type(nsmap: dict[None | str, str]) -> str:
     """The `xsi:type` value to stamp on `conditionExpression`.
 
-    It is a QName, so it has to carry whatever prefix *this* document binds to the
-    BPMN namespace — `bpmn:tFormalExpression` where bpmn.io writes `xmlns:bpmn`,
-    bare `tFormalExpression` where the BPMN namespace is the default.
+    A QName, so it must carry whatever prefix this document binds to the BPMN
+    namespace, and no prefix when BPMN is the default namespace.
     """
     for prefix, uri in nsmap.items():
         if uri == BPMN_NS:
@@ -383,9 +374,8 @@ def _serialize_process(
             sf_attrib["name"] = sf.name
         sf_el = etree.SubElement(el, f"{{{bpmn_ns}}}sequenceFlow", attrib=sf_attrib)
         if sf.condition_expression:
-            # BPMN 2.0 types conditionExpression as tExpression; tools that read
-            # the expression need the xsi:type narrowing to tFormalExpression, and
-            # some silently ignore an untyped one
+            # BPMN 2.0 types conditionExpression as tExpression; some tools
+            # ignore one that is not narrowed to tFormalExpression via xsi:type
             cond_el = etree.SubElement(
                 sf_el,
                 f"{{{bpmn_ns}}}conditionExpression",
@@ -399,11 +389,8 @@ def _serialize_process(
 def _serialize_bpmndi(proc: BpmnProcess) -> etree._Element:
     """Emit BPMNDI, preferring the geometry the author gave us.
 
-    A node that arrived with `bounds` keeps them exactly. Only elements with no
-    stored geometry — nodes an edit op just created — are placed by the
-    left-to-right fallback below, which exists so bpmn-js has something to render
-    rather than as a layout engine. Keeping the two apart is what stops a
-    one-flow repair from re-drawing an entire diagram.
+    Stored `bounds` are kept exactly; only elements without any go through the
+    fallback layout, so a one-flow repair never re-draws the whole diagram.
     """
     diagram_el = etree.Element(
         f"{{{BPMNDI_NS}}}BPMNDiagram",
@@ -456,8 +443,7 @@ def _node_positions(proc: BpmnProcess) -> dict[str, Bounds]:
     if not unplaced:
         return positions
 
-    # start to the right of everything already placed so new nodes never land on
-    # top of the author's work
+    # start right of everything already placed so new nodes never overlap
     x = max((b.x + b.width for b in positions.values()), default=150 - _H_GAP) + _H_GAP
     order = {node_id: i for i, node_id in enumerate(_topo_order(proc))}
     for node in sorted(unplaced, key=lambda n: order.get(n.id, len(order))):
@@ -531,7 +517,6 @@ def _topo_order(proc: BpmnProcess) -> list[str]:
             adjacency[sf.source_ref].append(sf.target_ref)
             incoming_count[sf.target_ref] += 1
 
-    # start from nodes with no incoming edges
     queue = [nid for nid, c in incoming_count.items() if c == 0]
     ordered: list[str] = []
     while queue:

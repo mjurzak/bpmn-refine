@@ -17,15 +17,11 @@ logger = logging.getLogger(__name__)
 _JSON_FENCES = {IrFormat.PYDANTIC, IrFormat.PYDANTIC_JSON, IrFormat.COMPACT_JSON}
 _FENCED_BLOCK = re.compile(r"```(?P<label>[^\s`]*)[ \t]*\n[\s\S]*?```")
 
-# one initial attempt plus one correction round. a second correction almost never
-# succeeds where the first failed, and every round costs the user a full latency
-# budget, so the ceiling stays low
+# one initial attempt plus one correction round; a second correction rarely helps
 IR_CORRECTION_ATTEMPTS = 2
 
-# errors that mean "the model produced bad content" and are therefore worth handing
-# back to it. transport and provider failures are not — re-prompting a timeout with
-# "the diagram you returned was rejected" is nonsense. pydantic's ValidationError and
-# json.JSONDecodeError are both ValueError subclasses, so they are covered here.
+# bad-content errors worth handing back to the model; transport failures are not.
+# pydantic's ValidationError and json.JSONDecodeError are both ValueError subclasses
 _CORRECTABLE_ERRORS = (ValueError, KeyError, TypeError)
 
 T = TypeVar("T")
@@ -103,14 +99,8 @@ async def call_with_ir_correction(
 ) -> T:
     """Run an LLM call that yields a diagram, letting the model fix its own output.
 
-    A reply can be well-formed for its IR format and still violate a diagram
-    invariant (duplicate element IDs, the case that motivated this). Failing the
-    turn costs the user their request; accepting it corrupts the session. So the
-    rejection goes back as feedback and the model reissues.
-
-    `attempt` receives `None` first, correction text afterwards, and owns both
-    the call and the parse so its exception describes the real defect. Only
-    content errors retry (`_CORRECTABLE_ERRORS`); transport failures propagate.
+    `attempt` receives `None` first, correction text afterwards, and owns both the
+    call and the parse. Only `_CORRECTABLE_ERRORS` retry; transport errors propagate.
     """
     feedback: str | None = None
     for number in range(1, max_attempts + 1):

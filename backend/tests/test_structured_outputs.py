@@ -1,9 +1,4 @@
-"""Tests for the structured-outputs facade and per-provider request construction.
-
-These mock each SDK client so no network/API key is needed — they assert that
-the right native structured-output parameters are sent and that the constrained
-JSON is parsed back correctly.
-"""
+"""Structured-outputs facade and per-provider request construction, against mocked SDKs."""
 
 import json
 from types import SimpleNamespace
@@ -45,7 +40,7 @@ def test_strict_schema_marks_objects_closed_and_required():
     assert schema["required"] == ["ops"]
     add_node = schema["$defs"]["AddNodeOp"]
     assert add_node["additionalProperties"] is False
-    # every declared property is required, including the ones with defaults
+    # every property is required, including the ones with defaults
     assert set(add_node["required"]) == set(add_node["properties"].keys())
     add_flow = schema["$defs"]["AddFlowOp"]
     assert "process_id" in add_flow["required"]
@@ -119,8 +114,7 @@ async def test_anthropic_structured_sends_output_config_and_parses():
     assert kwargs["max_tokens"] == 1234
     assert kwargs["system"] == "s"
     assert json.loads(response.text) == {"name": "ok"}
-    # this stub carries no usage block, so the adapter must report none rather
-    # than fabricate a zero
+    # the stub carries no usage block on purpose
     assert response.usage is None
 
 
@@ -224,7 +218,7 @@ async def test_gemini_structured_inlines_schema():
     config = provider._client.aio.models.generate_content.call_args.kwargs["config"]
     assert config.response_mime_type == "application/json"
     assert config.thinking_config.thinking_level.value == "HIGH"
-    # Gemini cannot resolve refs — the schema must arrive flattened
+    # gemini cannot resolve refs, so the schema must arrive flattened
     assert "$ref" not in json.dumps(config.response_schema)
     assert json.loads(response.text) == {"name": "ok"}
 
@@ -327,8 +321,6 @@ async def test_atomic_repair_uses_structured_outputs(monkeypatch):
         config=config,
     )
 
-    # the strict EditOp schema is what gets sent, and the constrained reply
-    # validates straight into typed ops
     assert captured["schema"]["additionalProperties"] is False
     assert captured["schema"]["required"] == ["description", "result"]
     assert len(ops) == 1

@@ -1,8 +1,4 @@
-"""Model and provider routing.
-
-Call sites import TaskType and use resolve_model() / resolve_provider() rather
-than hard-coding names.  Both respect per-tier overrides from settings.
-"""
+"""Model and provider routing by task type, respecting per-tier overrides from settings."""
 from __future__ import annotations
 
 from enum import StrEnum
@@ -13,11 +9,11 @@ from app.experiments import ExperimentConfig, ModelTier
 
 
 class TaskType(StrEnum):
-    # reasoning-critical tasks — use strong tier
+    # reasoning-critical tasks, strong tier
     SEMANTIC_VALIDATION = "semantic_validation"
     REPAIR = "repair"
     REFINEMENT = "refinement"
-    # mechanical / structured tasks — use fast tier
+    # mechanical / structured tasks, fast tier
     IR_CONVERSION = "ir_conversion"
     SUMMARY = "summary"
     SIMPLE_QUERY = "simple_query"
@@ -31,13 +27,7 @@ _STRONG_TASKS = {
 
 
 def resolve_sampling(config: ExperimentConfig | None = None) -> dict[str, Any]:
-    """the sampling controls a call should ask its provider for
-
-    `ExperimentConfig` declared `temperature` and `seed` long before anything
-    read them, so runs used provider defaults while the record named a
-    temperature. Call sites spread this into the client, which then records
-    which controls the provider could actually forward.
-    """
+    """the sampling controls a call should ask its provider for, spread into the client by call sites"""
     if config is None:
         return {}
     controls: dict[str, Any] = {}
@@ -63,10 +53,7 @@ def resolve_model(task: TaskType, config: ExperimentConfig | None = None) -> str
 
 
 def resolve_provider(task: TaskType, config: ExperimentConfig | None = None) -> str:
-    """Return the provider name for the given task type.
-
-    Checks per-tier overrides first; falls back to the global llm_provider.
-    """
+    """Return the provider for the given task type, preferring per-tier overrides over llm_provider."""
     if config is not None:
         if config.provider_override:
             return config.provider_override

@@ -81,7 +81,7 @@ def test_checker_versions_reports_enabled_selected_woflan():
 
 
 class _FakePetriObject:
-    """stands in for a pm4py Place/Transition — id in `name`, label is cosmetic"""
+    """Stands in for a pm4py Place/Transition: id in `name`, label is cosmetic."""
 
     def __init__(self, name: str, label: str | None = None):
         self.name = name
@@ -94,7 +94,7 @@ def test_resolve_petri_name_maps_encoded_names_back_to_element_ids():
     # transitions carry the node id, sequence-flow places carry the flow id
     assert _resolve_petri_name("task_a", index) == "task_a"
     assert _resolve_petri_name("sf_4", index) == "sf_4"
-    # the per-node entry/exit places and the invisible flow transitions
+    # per-node entry/exit places and the invisible flow transitions
     assert _resolve_petri_name("ent_task_a", index) == "task_a"
     assert _resolve_petri_name("exi_xs", index) == "xs"
     assert _resolve_petri_name("sfl_sf_4", index) == "sf_4"
@@ -109,24 +109,18 @@ def test_resolve_petri_name_rejects_names_the_encoding_invented():
     assert _resolve_petri_name("sink", index) is None
     # pm4py names gateway split/join invisibles with a uuid4
     assert _resolve_petri_name("570f50fa-b555-42ef-9597-c5733b9d2a3f", index) is None
-    # a prefix alone is not enough — the remainder has to be a real element
+    # a prefix alone is not enough, the remainder has to be a real element
     assert _resolve_petri_name("exi_not_in_diagram", index) is None
 
 
 def test_petri_names_reads_id_not_human_label():
-    # pm4py puts the BPMN id in `name` and the task's display name in `label`;
-    # reading `label` would yield something that matches no element id
+    # pm4py puts the BPMN id in `name` and the display name in `label`
     assert _petri_names([_FakePetriObject("task_a", "Do A")]) == ["task_a"]
     assert _petri_names(None) == []
 
 
 def test_woflan_reports_real_element_ids_and_no_phantom_transition():
-    """regression: Woflan's short-circuit transition must not reach element_refs
-
-    the diagram deadlocks (XOR split feeding an AND join) and leaves `task_c`
-    dead behind the join, so Woflan returns both its own synthetic transition
-    and a genuine dead task in the same diagnostic list.
-    """
+    """Regression: Woflan's short-circuit transition must not reach element_refs."""
     issues = run_woflan(_deadlock_diagram())
 
     assert len(issues) == 1
@@ -139,7 +133,7 @@ def test_woflan_reports_real_element_ids_and_no_phantom_transition():
     assert set(issue.element_refs) <= known_ids
     assert "short_circuited_transition" not in issue.element_refs
 
-    # the dead task is found by id, not by its display name "Finalize"
+    # found by id, not by the display name "Finalize"
     assert "task_c" in issue.element_refs
     assert "Finalize" not in issue.element_refs
 
@@ -148,7 +142,7 @@ def test_woflan_reports_real_element_ids_and_no_phantom_transition():
         assert petri_name not in issue.message
         assert petri_name not in issue.formal_witness.description
 
-    # pm4py's own names survive in raw so a run stays reproducible
+    # pm4py's own names survive in raw
     assert "short_circuited_transition" in issue.raw["petri_net_names"]["dead_tasks"]
 
 
@@ -157,7 +151,7 @@ def test_woflan_returns_no_issues_for_a_sound_process():
 
 
 def _deadlock_diagram() -> BpmnDiagram:
-    """XOR split -> AND join, with a task stranded behind the join"""
+    """XOR split into an AND join, with a task stranded behind the join."""
     nodes = [
         FlowNode(id="start_1", type=FlowNodeType.START_EVENT, name="Start", outgoing=["sf_1"]),
         FlowNode(

@@ -159,7 +159,7 @@ def _git_commit() -> str:
 class RunBlock(BaseModel):
     # what was actually called, "none" when nothing was
     model_used: str
-    # what the configuration resolved to, called or not.
+    # what the configuration resolved to, called or not
     model_configured: str | None = None
     prompt_versions: dict[str, PromptVersion] = Field(default_factory=dict)
     converter: str

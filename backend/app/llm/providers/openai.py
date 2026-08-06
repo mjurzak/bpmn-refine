@@ -1,12 +1,7 @@
-"""OpenAI provider (GPT models).
+"""OpenAI provider (GPT models), also the base for other OpenAI-compatible servers.
 
-Also used by Ollama — pass base_url to point at a local server.  Ollama's
-OpenAI-compatible endpoint accepts the same `response_format` json_schema, which
-it serves via constrained decoding, so structured outputs work unchanged there.
-
-The provider-neutral `max_tokens` argument is translated to OpenAI's current
-`max_completion_tokens` field. OpenAI-compatible subclasses can override
-`_output_limit` when their server uses a different field name.
+The neutral `max_tokens` argument becomes `max_completion_tokens`; subclasses whose
+server uses a different field name override `_output_limit`.
 """
 from __future__ import annotations
 
@@ -21,13 +16,11 @@ from app.llm.usage import from_openai
 class OpenAIProvider:
     # subclasses (Ollama) flip this off if the local server rejects strict mode
     supports_strict: bool = True
-    #: which reporting convention the usage block follows; subclasses override so
-    #: a total can be traced back to the server that produced it
+    # which reporting convention the usage block follows; subclasses override it
     usage_source: str = "openai"
     supports_reasoning_effort: bool = True
     supports_temperature: bool = True
-    # chat completions accept a seed for best-effort determinism; the API calls it
-    # best-effort, so a matching seed narrows variation rather than removing it
+    # the API treats seed as best-effort: it narrows variation, it does not remove it
     supports_seed: bool = True
 
     def __init__(self, api_key: str, base_url: str | None = None) -> None:
@@ -79,7 +72,6 @@ class OpenAIProvider:
         temperature: float | None = None,
         seed: int | None = None,
     ) -> LlmResponse:
-        # OpenAI takes system as the first message in the list
         full_messages: list[dict] = []
         if system:
             full_messages.append({"role": "system", "content": system})

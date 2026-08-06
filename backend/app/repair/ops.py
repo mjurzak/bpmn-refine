@@ -39,7 +39,7 @@ GATEWAY_NODE_TYPES = {
     FlowNodeType.COMPLEX_GATEWAY,
 }
 
-# Field descriptions are for better LLM understanding of ambiguous fields
+# field descriptions guide the LLM on ambiguous fields
 
 
 class AddNodeOp(BaseModel):
@@ -338,9 +338,7 @@ def _require_unique_id(diagram: BpmnDiagram, element_id: str) -> None:
     """refuse an ID already taken anywhere in the document
 
     BPMN types `id` as `xsd:ID`, so the scope is the whole definitions element,
-    not the flow-node and sequence-flow lists this check used to walk. A new task
-    called `Process_1` cleared the old check and then collided with the process
-    it was being added to.
+    not just the flow-node and sequence-flow lists.
     """
     if element_id in set(diagram.element_ids()):
         raise EditOpError(f"element id '{element_id}' already exists")

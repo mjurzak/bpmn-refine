@@ -1,19 +1,11 @@
 """Converter protocol — the contract every representation format must satisfy.
 
-A DiagramConverter knows how to parse bytes in its external format into the
-canonical BPMN diagram model and serialise that model back to bytes.
+A new representation implements this protocol and registers via registry.register().
 
-Adding a new representation (flat JSON, NetworkX graph, ...) means implementing
-this protocol and registering it via registry.register().  No other code needs
-to change.
-
-Parsing has two entry points.  `parse` returns the model alone, keeping the
-round-trip property readable: parse(serialize(d)) == d.  `parse_with_diagnostics`
-also reports what the IR does not represent.  Diagnostics stay off `BpmnDiagram`
-so a re-parse of exported bytes still compares equal to its source model.
-
-Only a converter reading a richer vocabulary than the IR (BPMN XML) overrides
-the empty-diagnostics default in BaseDiagramConverter.
+`parse` returns the model alone, keeping parse(serialize(d)) == d readable.
+`parse_with_diagnostics` also reports what the IR does not represent; diagnostics
+stay off `BpmnDiagram` so a re-parse of exported bytes still compares equal to
+its source model.
 """
 from __future__ import annotations
 

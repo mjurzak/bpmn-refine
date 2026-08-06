@@ -11,8 +11,7 @@ from app.llm.usage import from_anthropic
 
 class AnthropicProvider:
     supports_temperature = True
-    # the Messages API exposes no sampling seed, so a configured seed is recorded
-    # as unsupported rather than passed and quietly dropped
+    # the Messages API exposes no sampling seed
     supports_seed = False
 
     def __init__(self, api_key: str) -> None:
@@ -88,8 +87,7 @@ class AnthropicProvider:
         temperature: float | None = None,
         seed: int | None = None,
     ) -> LlmResponse:
-        # output_config.format constrains the final response to the JSON schema;
-        # the first text block is then guaranteed-valid JSON
+        # output_config.format constrains the response, so the first text block is valid JSON
         kwargs: dict = {
             "model": model,
             "max_tokens": max_tokens,

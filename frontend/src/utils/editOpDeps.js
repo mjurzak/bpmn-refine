@@ -1,9 +1,5 @@
-// Dependency analysis over an atomic repair plan.
-//
-// Ops apply in order, so one can depend on another: an `add_flow` whose endpoint
-// comes from an earlier `add_node` cannot be applied alone. The review gate lets
-// a user deselect ops, and the consequence used to surface only as an error from
-// `/repair/apply` after they pressed Apply.
+// dependency analysis over a repair plan: ops apply in order, so an add_flow
+// whose endpoint comes from an earlier add_node cannot be selected on its own
 
 // which element IDs an operation introduces
 function producedIds(op) {
@@ -37,16 +33,8 @@ function requiredIds(op) {
   }
 }
 
-/**
- * Map each operation index to the indexes it depends on.
- *
- * An operation depends on an earlier one when that earlier operation creates an
- * ID it references. Only IDs the plan itself introduces count — an operation
- * addressing an element that already exists in the base diagram depends on
- * nothing.
- *
- * @returns {Map<number, number[]>} index -> indexes that must also be selected
- */
+// map each op index to the earlier indexes that create IDs it references, as
+// Map<number, number[]>. only IDs the plan itself introduces count
 export function operationDependencies(ops = []) {
   const dependencies = new Map();
   // id -> index of the operation that introduces it
@@ -68,11 +56,7 @@ export function operationDependencies(ops = []) {
   return dependencies;
 }
 
-/**
- * Find selected operations whose dependencies are not also selected.
- *
- * @returns {{index: number, missing: number[]}[]} one entry per broken operation
- */
+// selected ops whose dependencies are not, as [{ index, missing }]
 export function unmetDependencies(ops = [], selectedIndexes = []) {
   const dependencies = operationDependencies(ops);
   const selected = new Set(selectedIndexes);
@@ -88,12 +72,7 @@ export function unmetDependencies(ops = [], selectedIndexes = []) {
   return broken;
 }
 
-/**
- * Grow a selection until every dependency it relies on is included.
- *
- * Used when a user selects an operation that needs an earlier one: rather than
- * refusing the choice, the panel offers to pull in what it requires.
- */
+// grow a selection until every dependency it relies on is included
 export function withDependencies(ops = [], selectedIndexes = []) {
   const dependencies = operationDependencies(ops);
   const resolved = new Set(selectedIndexes);
@@ -112,7 +91,7 @@ export function withDependencies(ops = [], selectedIndexes = []) {
   return [...resolved].sort((a, b) => a - b);
 }
 
-/** Human-readable explanation of one broken dependency, for the review panel. */
+// wording the review panel shows for one broken dependency
 export function describeUnmetDependency({ index, missing }) {
   const listed = missing.map((item) => `#${item + 1}`).join(", ");
   return `Operation #${index + 1} needs ${listed} to be selected as well.`;

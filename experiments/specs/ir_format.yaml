@@ -1,9 +1,5 @@
-# Phase 3c — IR surface comparison.
-#
-# The five candidate serialisations under otherwise identical conditions. The
-# measurement that distinguishes this from a format preference is cost: each
-# trial records prompt characters and provider-reported input tokens, and
-# `input_bytes` carries the raw XML size the reduction is stated against.
+# Phase 3c. Five serialisations under identical conditions; each trial records
+# prompt chars, input tokens and `input_bytes` so cost is comparable, not just quality
 experiment_id: ir-format
 notes: >-
   Repair quality and token cost per IR surface. Tiers are pinned so the only
@@ -31,6 +27,5 @@ axes:
     - mermaid
     - compact_json
 
-# a model that is free to vary between formats confounds the comparison, so
-# each condition is run three times and compared on the distribution
+# compared on the distribution, since the model itself varies between runs
 repeats: 3

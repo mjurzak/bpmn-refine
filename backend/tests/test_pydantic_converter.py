@@ -26,12 +26,7 @@ def test_parse_rejects_duplicate_element_ids():
 
 
 def test_author_layout_survives_a_round_trip():
-    """a repair must not re-draw a diagram it did not touch
-
-    Before layout lived on the IR, parse threw BPMNDI away and serialize
-    regenerated it as a single left-to-right row, so every branch collapsed and
-    a one-flow repair produced a 100% visual diff.
-    """
+    """A repair must not re-draw a diagram it did not touch."""
     from pathlib import Path
 
     from lxml import etree
@@ -63,7 +58,7 @@ def test_author_layout_survives_a_round_trip():
 
 
 def test_layout_is_generated_only_when_absent():
-    """new nodes get placed clear of the author's work, which stays put"""
+    """New nodes get placed clear of the author's work, which stays put."""
     from pathlib import Path
 
     from app.model.schema import FlowNodeType
@@ -122,12 +117,7 @@ def _condition_types(payload: bytes) -> list[str | None]:
 
 
 def test_condition_expression_keeps_its_xsi_type():
-    """BPMN 2.0 specifies the narrowing; dropping it on export loses fidelity
-
-    Case 03 is authored with xsi:type. Until this was fixed, serialize(parse(x))
-    silently returned the expressions untyped, and tools that only read a
-    tFormalExpression ignored every branch condition in the exported file.
-    """
+    """BPMN 2.0 specifies the narrowing; dropping it on export loses fidelity."""
     source = Path("data/test_cases/03_expense_reimbursement.bpmn").read_bytes()
     converter = PydanticConverter()
 
@@ -139,7 +129,7 @@ def test_condition_expression_keeps_its_xsi_type():
 
 
 def test_untyped_condition_expression_is_still_accepted_and_then_typed():
-    """absence on read stays legal — plenty of real files omit it"""
+    """Absence on read stays legal, plenty of real files omit it."""
     converter = PydanticConverter()
 
     diagram = converter.parse(UNTYPED_CONDITION)

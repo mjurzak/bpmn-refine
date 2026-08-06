@@ -1,8 +1,5 @@
-# Phase 3c — repair mode and iteration budget.
-#
-# The full product: two repair modes against five budgets. The budget values
-# match the ones the convergence analysis is stated over, so the observed
-# iteration counts can be read against the Dantas et al. bound directly.
+# Phase 3c. Budget values match the convergence analysis, so iteration counts
+# can be read against the Dantas et al. bound directly
 experiment_id: repair-budget
 notes: >-
   Atomic edit operations versus whole-diagram regeneration, across iteration

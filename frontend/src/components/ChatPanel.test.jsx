@@ -1,7 +1,5 @@
-// Tests for the manual review gate — the human-in-the-loop guarantee the thesis
-// rests on. Until now the frontend had no test suite at all, so acceptance,
-// subset acceptance, rejection, and complete-diagram proposals were only
-// demonstrated in the case study.
+// tests for the manual review gate: acceptance, subset acceptance, rejection,
+// and complete-diagram proposals
 
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";

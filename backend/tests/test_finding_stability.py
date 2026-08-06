@@ -1,10 +1,4 @@
-"""Tests for stable findings and honest repair measurement.
-
-Between them these cover what an evaluation script needs before it can compare
-two runs: semantic findings that carry the same identifier for the same defect,
-a repair loop that stops when it stops making progress, and a result that does
-not present a half-applied plan as a clean one.
-"""
+"""Stable semantic finding ids, repair-loop stopping, and honest repair results."""
 
 from __future__ import annotations
 
@@ -104,7 +98,7 @@ def test_validation_findings_put_errors_first_and_keep_stable_order():
 
 
 def test_semantic_rule_ids_are_derived_from_the_category():
-    """the same defect must carry the same id on every run"""
+    """The same defect must carry the same id on every run."""
     issues = _normalise_semantic_findings([_finding()], _diagram(), [])
     assert issues[0].rule_id == "semantic:missing_step"
     assert issues[0].rule_id == semantic_rule_id(SemanticCategory.MISSING_STEP)
@@ -154,7 +148,7 @@ async def test_semantic_validation_uses_the_structured_call(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_a_malformed_semantic_reply_becomes_a_finding(monkeypatch):
-    """a reply that does not fit the schema is a defect in the reply"""
+    """A reply that does not fit the schema is a defect in the reply."""
 
     async def fake_complete_structured(**kwargs):
         return {
@@ -175,7 +169,7 @@ async def test_a_malformed_semantic_reply_becomes_a_finding(monkeypatch):
 async def test_a_provider_failure_is_raised_rather_than_attached_to_the_diagram(
     monkeypatch,
 ):
-    """an outage is a fact about the run, not about the process being validated"""
+    """An outage is a fact about the run, not about the process being validated."""
 
     async def failing_complete_structured(**kwargs):
         raise ConnectionError("401 authentication_error")
@@ -196,7 +190,7 @@ async def test_a_provider_failure_is_raised_rather_than_attached_to_the_diagram(
 
 
 def test_unknown_element_references_are_dropped():
-    """an invented ID would send the user, and the next repair prompt, nowhere"""
+    """An invented id would send the user, and the next repair prompt, nowhere."""
     issues = _normalise_semantic_findings(
         [_finding(element_refs=["task_1", "ghost_task"])], _diagram(), []
     )
@@ -212,8 +206,7 @@ def test_a_finding_with_only_unknown_references_becomes_process_wide():
 
 
 def test_info_severity_is_normalised_to_warning():
-    """the prompt defines `info` as "omit it"; a model that sends one anyway
-    must not produce a third severity the evaluation has to account for"""
+    """The prompt asks for `info` to be omitted, so a stray one must not add a third severity."""
     issues = _normalise_semantic_findings(
         [_finding(severity=Severity.INFO)], _diagram(), []
     )
@@ -233,7 +226,7 @@ def test_repeated_findings_in_one_response_are_collapsed():
 
 
 def test_a_structural_restatement_of_an_earlier_tier_is_dropped():
-    """tier 3 is asked not to restate tiers 1 and 2; this enforces it"""
+    """Tier 3 is asked not to restate tiers 1 and 2; this enforces it."""
     existing = [
         ValidationIssue(
             rule_id="R007",
@@ -250,11 +243,7 @@ def test_a_structural_restatement_of_an_earlier_tier_is_dropped():
 
 
 def test_a_genuine_semantic_finding_on_a_flagged_element_survives():
-    """only structural categories are treated as restatements
-
-    A missing approval step is a real semantic observation even when tier 1 has
-    separately noticed the same task is unreachable.
-    """
+    """Only structural categories count as restatements of an earlier tier."""
     existing = [
         ValidationIssue(
             rule_id="R007",
@@ -282,7 +271,7 @@ def test_semantic_findings_are_always_attributed_to_the_model():
 
 
 def _unfixable_diagram() -> BpmnDiagram:
-    """no start and no end event, so R001/R002 keep firing"""
+    """No start and no end event, so R001/R002 keep firing."""
     return BpmnDiagram(
         definitions_id="defs_1",
         processes=[
@@ -321,7 +310,7 @@ async def test_an_iteration_that_changes_nothing_stops_the_loop():
 
 @pytest.mark.asyncio
 async def test_a_repeated_state_stops_the_loop():
-    """an edit that undoes the previous one is a cycle, not progress"""
+    """An edit that undoes the previous one is a cycle, not progress."""
     states = []
 
     async def fake_repair(diagram, issues, **kwargs):
@@ -352,7 +341,7 @@ async def test_a_repeated_state_stops_the_loop():
 
 @pytest.mark.asyncio
 async def test_a_productive_loop_still_runs_to_its_budget():
-    """the detectors must not cut short a run that is genuinely changing"""
+    """The detectors must not cut short a run that is genuinely changing."""
     counter = {"n": 0}
 
     async def fake_repair(diagram, issues, **kwargs):
@@ -397,7 +386,7 @@ def test_checker_failures_are_not_treated_as_repairable():
 
 @pytest.mark.asyncio
 async def test_convergence_and_errors_resolved_are_reported_separately():
-    """a run can drain every error and still leave a warning standing"""
+    """A run can drain every error and still leave a warning standing."""
 
     async def fake_atomic_repair(diagram, issues, **kwargs):
         return []
@@ -416,19 +405,13 @@ async def test_convergence_and_errors_resolved_are_reported_separately():
         atomic_repair_fn=fake_atomic_repair,
     )
 
-    # the diagram is structurally clean, so tier 1 leaves nothing behind
     assert result.errors_resolved is True
     assert result.converged is True
 
 
 @pytest.mark.asyncio
 async def test_failed_operations_are_preserved_in_the_result():
-    """a plan that half applied must not read as a clean repair
-
-    `applied_ops` alone would show one successful edit and no sign that the model
-    also proposed an inapplicable one, which is exactly what a minimality metric
-    would then miscount.
-    """
+    """A plan that only half applied must not read as a clean repair."""
 
     async def fake_atomic_repair(diagram, issues, **kwargs):
         return [
@@ -455,6 +438,5 @@ async def test_failed_operations_are_preserved_in_the_result():
     assert result.failed_ops[0].op.op == "remove_node"
     assert result.failed_ops[0].applied is False
     assert "incident flows" in (result.failed_ops[0].error or "")
-    # both halves of the plan came from the same model call, applied or not
     assert result.applied_op_origins == [OpOrigin.MODEL_PLAN]
     assert result.failed_op_origins == [OpOrigin.MODEL_PLAN]

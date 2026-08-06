@@ -172,11 +172,10 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
 
 @router.post("/xml", response_model=RepairXmlResponse)
 async def repair_xml(req: RepairXmlRequest) -> RepairXmlResponse | JSONResponse:
-    """free-form repair for XML that cannot be parsed into the IR
+    """Free-form repair for XML that cannot be parsed into the IR.
 
-    the model rewrites the raw BPMN XML directly (e.g. to dedupe element IDs).
-    the result is re-parsed: on success the canonical diagram is returned so the
-    UI can re-enable the structured flows; otherwise only the corrected XML is.
+    The model rewrites the raw XML; the result is re-parsed, and the diagram is
+    returned only if that succeeds.
     """
     xml_prompt_files = {"repair_xml": xml_repair_prompt_path()}
     run = _build_repair_run(
@@ -253,12 +252,10 @@ def _build_repair_run(
     prompt_files: dict[str, Path] | None = None,
     traces: list[LlmTrace] | None = None,
 ) -> RunBlock:
-    """describe the repair run, including what its nested revalidation invoked
+    """Describe the repair run, including the prompts its nested revalidation used.
 
-    Each iteration revalidates, so tier 3 also runs the semantic prompt and tier
-    2 the formal checkers; recording only the repair prompt understated the run.
-    `model_used` comes from the traces, not the router, because an all-quick-fix
-    repair reaches no provider at all.
+    `model_used` comes from the traces, not the router: an all-quick-fix repair
+    reaches no provider at all.
     """
     resolved_prompts = prompt_files or {"repair": repair_prompt_path(config)}
     if prompt_files is None and config.tiers_enabled.t3:

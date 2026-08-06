@@ -7,7 +7,7 @@ from app.services.repair import _strip_code_fences
 
 client = TestClient(app)
 
-# a process with two elements colliding on id "task_main" — rejected by the parser
+# two elements colliding on id "task_main", rejected by the parser
 _DUPLICATE_ID_XML = """<?xml version='1.0' encoding='UTF-8'?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
              id="def_dup" targetNamespace="http://bpmn.io/schema/bpmn">
@@ -61,7 +61,7 @@ def test_repair_xml_returns_diagram_when_fix_parses(monkeypatch):
 
 def test_repair_xml_reports_still_unparseable(monkeypatch):
     async def fake_repair_raw_xml(xml, instruction=None, config=None):
-        # model failed to dedupe — result still has a duplicate id
+        # the model failed to dedupe, so the result still has a duplicate id
         return _DUPLICATE_ID_XML
 
     monkeypatch.setattr("app.api.routes.repair.repair_raw_xml", fake_repair_raw_xml)
@@ -106,11 +106,7 @@ async def test_raw_xml_repair_uses_envelope_and_corrects_invalid_xml(monkeypatch
 
 
 async def test_raw_xml_repair_unwraps_a_fenced_document(monkeypatch):
-    """the schema asks for a bare document; a fence must not cost the repair
-
-    A fenced `result.xml` used to burn both attempts and come back fenced, so a
-    correct fix surfaced as `parseable=false`.
-    """
+    """The schema asks for a bare document, but a fence must not cost an attempt."""
     calls = 0
 
     async def fake_complete_structured(**kwargs):

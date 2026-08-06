@@ -17,7 +17,6 @@ async def test_semantic_validation_prompt_uses_selected_ir_format(monkeypatch):
         captured.update(kwargs)
         return {"description": "No semantic issues.", "result": {"findings": []}}
 
-    # tier 3 is schema-constrained, so it goes through the structured call
     monkeypatch.setattr(
         "app.services.validation.llm_client.complete_structured",
         fake_complete_structured,

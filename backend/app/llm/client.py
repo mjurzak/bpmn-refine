@@ -1,9 +1,6 @@
 """Centralized LLM client facade.
 
-All LLM calls in the application MUST go through this module.
-The actual work is delegated to the provider selected by LLM_PROVIDER in settings.
-
-Call sites use the completion functions here and never import a provider directly.
+All LLM calls MUST go through this module; call sites never import a provider directly.
 """
 from __future__ import annotations
 
@@ -171,12 +168,6 @@ async def complete_structured(
 ) -> Any:
     """Schema-constrained completion, returning the parsed JSON object.
 
-    `schema` is a JSON schema for the required response.  The selected provider
-    maps it onto its native structured-output mechanism (Anthropic
-    `output_config.format`, OpenAI/Ollama `response_format`, Gemini
-    `responseSchema`); this facade decodes the returned JSON so call sites get a
-    dict/list rather than a string.
-
     provider: name registered in llm/registry.py; defaults to settings.llm_provider.
     model:    model ID for the chosen provider; defaults to settings.llm_fast_model.
     """
@@ -306,11 +297,7 @@ async def complete_structured_with_history(
 
 
 def _unpack(result: LlmResponse | str) -> tuple[str, TokenUsage | None]:
-    """accept either the response envelope or a bare string
-
-    Adapters return `LlmResponse`; a bare string keeps an older test double
-    working and simply reports no usage, counted as unknown cost, not free.
-    """
+    """accept either the response envelope or a bare string (test doubles), reporting no usage for the latter"""
     if isinstance(result, LlmResponse):
         return result.text, result.usage
     return result, None
@@ -321,12 +308,7 @@ def _resolve_sampling(
     temperature: float | None,
     seed: int | None,
 ) -> tuple[dict[str, Any], list[str]]:
-    """split the requested sampling controls into forwarded and dropped
-
-    Providers differ in what they accept — Anthropic has no sampling seed — so
-    asking up front lets the trace record which controls actually executed,
-    rather than implying a seeded run the API never saw.
-    """
+    """split the requested sampling controls into forwarded and dropped, so the trace can record which ones ran"""
     honored: dict[str, Any] = {}
     unsupported: list[str] = []
 

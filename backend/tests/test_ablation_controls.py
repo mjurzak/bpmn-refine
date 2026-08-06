@@ -1,10 +1,4 @@
-"""Contract tests for the ablation controls used by the evaluation.
-
-Each test pins the same property: flipping a control changes what the
-application *executes*, not only what its configuration hash says. A control
-that only reaches the run record is worse than an absent one, because the
-record would then describe an experiment that never ran.
-"""
+"""Ablation controls: flipping one must change what runs, not only the config hash."""
 
 from __future__ import annotations
 
@@ -34,7 +28,7 @@ from app.validation.rules import (
 
 
 def _broken_diagram() -> BpmnDiagram:
-    """no start event and no end event, so tier 1 has something to report"""
+    """No start event and no end event, so tier 1 has something to report."""
     return BpmnDiagram(
         definitions_id="defs_1",
         processes=[
@@ -77,7 +71,7 @@ def _woflan_issue() -> ValidationIssue:
 
 @pytest.mark.asyncio
 async def test_tier1_can_be_disabled():
-    """the control that used to be advertised but never read"""
+    """Regression: the t1 switch used to be advertised but never read."""
     config = ExperimentConfig(tiers_enabled=TiersEnabled(t1=False, t2=False, t3=False))
     result = await validate_diagram(_broken_diagram(), config=config)
     assert result.issues == []
@@ -113,7 +107,7 @@ async def test_explicit_argument_overrides_the_configured_tier1():
 async def test_every_non_empty_tier_subset_executes_exactly_its_tiers(
     monkeypatch, t1, t2, t3
 ):
-    """all seven subsets of {t1,t2,t3} must be reachable from the config alone"""
+    """All seven subsets of {t1,t2,t3} must be reachable from the config alone."""
     executed: set[str] = set()
 
     async def fake_tier2(diagram, config):
@@ -159,11 +153,7 @@ def test_formal_evidence_can_be_withheld():
 
 
 def test_withholding_evidence_keeps_the_verdict_and_the_localisation():
-    """the ablation removes the witness, not the finding it belongs to
-
-    If the off condition also dropped the verdict or the affected elements it
-    would be measuring whether tier 2 ran at all, which is a different question.
-    """
+    """The ablation removes the witness, not the finding it belongs to."""
     with_evidence = issue_to_dict(_woflan_issue())
     without = issue_to_dict(_woflan_issue(), include_formal_evidence=False)
 
@@ -176,7 +166,7 @@ def test_withholding_evidence_keeps_the_verdict_and_the_localisation():
 
 @pytest.mark.asyncio
 async def test_evidence_control_reaches_the_repair_prompt(monkeypatch):
-    """the off condition must change the bytes sent to the model"""
+    """The off condition must change the bytes sent to the model."""
     seen: list[str] = []
 
     async def fake_complete_structured(**kwargs):
@@ -196,7 +186,7 @@ async def test_evidence_control_reaches_the_repair_prompt(monkeypatch):
 
     assert "counterexample_traces" in seen[0]
     assert "counterexample_traces" not in seen[1]
-    # the checker verdict itself still travels in both conditions
+    # the verdict still travels in both conditions
     assert "not sound" in seen[0] and "not sound" in seen[1]
 
 
@@ -207,7 +197,7 @@ def test_evidence_control_changes_the_config_hash():
 
 
 # --------------------------------------------------------------------------
-# temperature and seed — forwarded, or recorded as unsupported
+# temperature and seed: forwarded, or recorded as unsupported
 # --------------------------------------------------------------------------
 
 

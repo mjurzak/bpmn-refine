@@ -6,11 +6,7 @@ from app.validation.rules import validate
 
 
 def test_a_batch_never_proposes_the_same_fix_twice():
-    """R005 and R006 fire together on a flow with two unknown endpoints
-
-    Both resolve to the same `remove_flow`; the duplicate used to fail on apply
-    and surface as a broken deterministic fix.
-    """
+    """R005 and R006 fire together on one flow and both resolve to the same remove_flow."""
     diagram = _diagram_with_doubly_dangling_flow()
     issues = validate(diagram).errors()
 
@@ -69,7 +65,7 @@ def test_quick_fix_removes_sequence_flow_with_unknown_target():
 
 
 def test_quick_fix_declines_to_feed_start_event():
-    """R003 is unregistered — wiring an orphan start event is the LLM's call"""
+    """R003 is unregistered: wiring an orphan start event is the LLM's call."""
     diagram = _diagram_with_orphan_start()
     issue = next(item for item in validate(diagram).errors() if item.rule_id == "R003")
 
@@ -79,7 +75,7 @@ def test_quick_fix_declines_to_feed_start_event():
 
 
 def test_quick_fix_declines_to_fork_start_to_orphan_end():
-    """R004 is unregistered — deleting vs connecting needs the whole diagram"""
+    """R004 is unregistered: deleting vs connecting needs the whole diagram."""
     diagram = _diagram_with_orphan_end()
     issue = next(item for item in validate(diagram).errors() if item.rule_id == "R004")
 
@@ -89,12 +85,7 @@ def test_quick_fix_declines_to_fork_start_to_orphan_end():
 
 
 def test_quick_fix_never_staples_two_orphans_together():
-    """the case 09 regression: R003 and R004 both used to return the same op
-
-    An orphan start and an orphan end event in one process is exactly the shape
-    the old heuristic got wrong — each rule's fix picked the other rule's element
-    as its endpoint, joining two defects into a plausible-looking flow.
-    """
+    """Regression: R003 and R004 fixes used to wire an orphan start to an orphan end."""
     from pathlib import Path
 
     from app.model.formats.pydantic_ir import PydanticConverter

@@ -24,8 +24,7 @@ const DEFAULT_DIAGRAM = `<?xml version="1.0" encoding="UTF-8"?>
 
 const DIFF_MARKERS = ["diff-added", "diff-modified", "diff-selected"];
 
-// wraps bpmn-js Modeler as a React component
-// exposes applyDiff / clearDiff via ref for hover-based diff highlighting
+// bpmn-js Modeler as a React component, with diff highlighting exposed via ref
 const BpmnEditor = forwardRef(function BpmnEditor({ xml, onXmlChange }, ref) {
   const containerRef = useRef(null);
   const modelerRef = useRef(null);
@@ -61,7 +60,6 @@ const BpmnEditor = forwardRef(function BpmnEditor({ xml, onXmlChange }, ref) {
     modelerRef.current.importXML(xml).catch(console.error);
   }, [xml]);
 
-  // expose diff marker controls and direct import to parent via ref
   useImperativeHandle(ref, () => ({
     async getXml() {
       if (!modelerRef.current) return null;
@@ -74,8 +72,7 @@ const BpmnEditor = forwardRef(function BpmnEditor({ xml, onXmlChange }, ref) {
       modelerRef.current.importXML(xml).catch(console.error);
     },
 
-    // recompute canvas size after the pane was hidden (display:none) — bpmn-js
-    // measures zero while the tab is inactive, so the diagram needs a nudge
+    // bpmn-js measures zero while the pane is display:none, so refit on return
     resize() {
       const modeler = modelerRef.current;
       if (!modeler) return;

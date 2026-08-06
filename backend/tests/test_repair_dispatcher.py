@@ -258,9 +258,8 @@ async def test_dispatch_repair_respects_max_iteration_cap():
 
     async def fake_repair(diagram, issues, **kwargs):
         calls.append(issues[0].rule_id)
-        # each round must leave a genuinely different diagram, otherwise the
-        # no-progress detector stops the loop before the cap is reached — which
-        # is its own test below, not this one
+        # each round must leave a different diagram, or the no-progress detector
+        # stops the loop before the cap
         updated = diagram.model_copy(deep=True)
         updated.processes[0].flow_nodes[0].name = f"renamed_{len(calls)}"
         return RepairResult(repaired_diagram=updated)
@@ -294,12 +293,7 @@ async def test_dispatch_repair_respects_max_iteration_cap():
 
 
 async def test_dispatch_repair_targets_a_warning_once_no_error_remains():
-    """warnings are drained after errors rather than left standing
-
-    The loop used to select errors only, so a run reported convergence having
-    never looked at a warning. Chapter 6 measures warning repair, which requires
-    the dispatcher to reach them.
-    """
+    """Regression: the loop used to select errors only and never reach warnings."""
     calls = []
 
     async def fake_atomic_repair(diagram, issues, **kwargs):
@@ -323,7 +317,7 @@ async def test_dispatch_repair_targets_a_warning_once_no_error_remains():
 
 
 async def test_dispatch_repair_does_not_iterate_when_nothing_is_repairable():
-    """a checker failure is a fact about the run, not a defect to repair"""
+    """A checker failure is a fact about the run, not a defect to repair."""
     calls = []
 
     async def fake_repair(diagram, issues, **kwargs):
@@ -420,9 +414,8 @@ async def test_repair_with_edit_ops_sends_diagram_specific_id_enums(monkeypatch)
         "start_1",
         "task_1",
     ]
-    # add_flow endpoints stay open strings: a node added earlier in the same ops
-    # list has to be a legal endpoint, and a frozen enum cannot express that.
-    # _validate_atomic_op_ids enforces the real constraint instead.
+    # add_flow endpoints stay open strings so a node added earlier in the same
+    # plan can be referenced; _validate_atomic_op_ids enforces the constraint
     source_ref = schema_defs["AddFlowOp"]["properties"]["source_ref"]
     assert schema_defs["AddFlowOp"]["properties"]["process_id"]["enum"] == ["proc_1"]
     assert "enum" not in source_ref
@@ -431,9 +424,7 @@ async def test_repair_with_edit_ops_sends_diagram_specific_id_enums(monkeypatch)
     payload = json.loads(captured["prompt"])
     assert payload["id_constraints"]["flow_ids"] == ["sf_1", "sf_2"]
     assert payload["id_constraints"]["gateway_ids"] == []
-    # The provider receives the full schema through response_format. Duplicating
-    # its 12k+ characters in the prose prompt previously buried operation-choice
-    # guidance and overemphasised add_node.
+    # the schema goes out via response_format, so it must not be duplicated in the prose prompt
     assert '"sf_1"' not in captured["system"]
     assert len(captured["system"]) < 7_000
     ops_schema = schema_defs["AtomicEditOpsResult"]["properties"]["ops"]
@@ -620,7 +611,7 @@ async def test_structural_issue_payload_uses_affected_elements(monkeypatch):
 
 
 async def test_dispatch_repair_re_validates_with_t2_between_iterations(monkeypatch):
-    """tier 2 findings from the re-validation step are included in remaining_issues"""
+    """Tier 2 findings from the re-validation step land in remaining_issues."""
     validate_calls = []
     original_validate = repair_service.validate_diagram
 
@@ -650,7 +641,6 @@ async def test_dispatch_repair_re_validates_with_t2_between_iterations(monkeypat
         atomic_repair_fn=fake_atomic_repair,
     )
 
-    # validate_diagram must have been called with a config that has t2 enabled
     assert len(validate_calls) >= 1
     called_config = validate_calls[0].get("config")
     assert called_config is not None
@@ -658,7 +648,7 @@ async def test_dispatch_repair_re_validates_with_t2_between_iterations(monkeypat
 
 
 async def test_dispatch_repair_re_validates_with_t3_when_enabled(monkeypatch):
-    """without this the loop cannot re-report a semantic issue and always converges"""
+    """Without this the loop cannot re-report a semantic issue and always converges."""
     seen: list[bool] = []
 
     async def fake_validate(diagram, **kwargs):
@@ -691,7 +681,7 @@ async def test_dispatch_repair_re_validates_with_t3_when_enabled(monkeypatch):
 
 
 async def test_dispatch_repair_passes_other_issues_as_context(monkeypatch):
-    """warnings are not repaired, but the repairer should still know about them"""
+    """Warnings are not repaired, but the repairer still gets told about them."""
     captured: dict[str, Any] = {}
 
     async def fake_validate(diagram, **kwargs):
@@ -763,12 +753,7 @@ def _diagram_without_start() -> BpmnDiagram:
 
 
 async def test_atomic_repair_can_connect_a_node_it_just_added(monkeypatch):
-    """the S001 case: inserting a gateway needs add_node then add_flow to it
-
-    Before the id sets were walked forward, add_flow endpoints were pinned to the
-    diagram as it arrived, so a newly added node could never be connected and the
-    whole insert-a-gateway repair class was unreachable.
-    """
+    """Inserting a gateway needs add_node followed by add_flow onto it."""
     async def fake_complete_structured(**kwargs):
         return _atomic_response(
             [
@@ -818,7 +803,7 @@ async def test_atomic_repair_can_connect_a_node_it_just_added(monkeypatch):
 
 
 async def test_atomic_repair_discards_disconnected_tasks_and_reprompts(monkeypatch):
-    """regression: rejected speculative tasks must not leak into the proposal"""
+    """Regression: rejected speculative tasks must not leak into the proposal."""
     responses = [
         {
             "ops": [
@@ -979,7 +964,7 @@ async def test_atomic_repair_caps_runaway_disconnected_node_diagnostics(monkeypa
 
 
 async def test_atomic_repair_still_rejects_an_id_that_is_never_created(monkeypatch):
-    """relaxing the enum must not reopen the hallucinated-id hole"""
+    """Relaxing the enum must not reopen the hallucinated-id hole."""
     async def fake_complete_structured(**kwargs):
         return _atomic_response(
             [
@@ -1012,7 +997,7 @@ async def test_atomic_repair_still_rejects_an_id_that_is_never_created(monkeypat
 
 
 async def test_atomic_repair_rejects_add_node_onto_an_existing_id(monkeypatch):
-    """seen live on R004: the model re-added the orphan instead of removing it"""
+    """Seen live on R004: the model re-added the orphan instead of removing it."""
     async def fake_complete_structured(**kwargs):
         return _atomic_response(
             [
@@ -1044,7 +1029,7 @@ async def test_atomic_repair_rejects_add_node_onto_an_existing_id(monkeypatch):
 
 
 async def test_atomic_repair_rejects_reference_to_a_node_removed_earlier(monkeypatch):
-    """the id set shrinks as well as grows"""
+    """The id set shrinks as well as grows."""
     async def fake_complete_structured(**kwargs):
         return _atomic_response(
             [

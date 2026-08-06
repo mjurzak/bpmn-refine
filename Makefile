@@ -8,7 +8,6 @@ backend:
 frontend:
 	cd $(ROOT)/frontend && npm run dev
 
-# both suites; `test-backend` / `test-frontend` run one at a time
 test: test-backend test-frontend
 
 test-backend:
@@ -17,13 +16,11 @@ test-backend:
 test-frontend:
 	cd $(ROOT)/frontend && npm test
 
-# exercises every ablation control against mocked providers and writes a
-# self-contained run record. Makes no paid API call.
+# every ablation control against mocked providers, no paid API call
 dry-run:
 	cd $(ROOT) && PYTHONPATH=backend .venv/bin/python -m app.cli dry-run --out $(OUT)
 
-# runs a sweep against real providers and persists one record per trial.
-# Resumable: re-running the same SPEC/OUT skips what is already on disk.
+# resumable: re-running the same SPEC/OUT skips what is already on disk
 experiment:
 	cd $(ROOT) && PYTHONPATH=backend .venv/bin/python -m app.cli run-experiment --spec $(SPEC) --out $(OUT)
 

@@ -28,8 +28,8 @@ export default function ValidationPanel({
   errorCount = 0,
   modelUsed = null,
 }) {
-  // issue.source is the only origin signal that survives a repair — after one,
-  // remaining_issues is a flat list and the array an issue came in says nothing
+  // after a repair, remaining_issues is flat, so issue.source is the only
+  // origin signal left
   const all = sortValidationFindings([...issues, ...semanticIssues]).map(
     (issue) => ({
       issue,
@@ -37,7 +37,6 @@ export default function ValidationPanel({
     }),
   );
 
-  // pick a badge variant for the header
   let badge = null;
   if (loading) {
     badge = <span className="spinner" />;

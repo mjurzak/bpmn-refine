@@ -6,7 +6,7 @@ from app.validation.rules import Severity, validate
 
 
 def _minimal_valid_diagram() -> BpmnDiagram:
-    """build the simplest valid process: start -> task -> end"""
+    """The simplest valid process: start -> task -> end."""
     start = FlowNode(id="start_1", type=FlowNodeType.START_EVENT, outgoing=["sf_1"])
     task = FlowNode(id="task_1", type=FlowNodeType.TASK, name="Do something", incoming=["sf_1"], outgoing=["sf_2"])
     end = FlowNode(id="end_1", type=FlowNodeType.END_EVENT, incoming=["sf_2"])
@@ -45,7 +45,7 @@ def test_missing_end_event():
 
 
 def test_multiple_start_events_not_flagged():
-    """multiple start events are sound and deliberately not checked"""
+    """Multiple start events are sound and deliberately not checked."""
     diagram = _minimal_valid_diagram()
     proc = diagram.processes[0]
     proc.flow_nodes.append(
@@ -61,7 +61,7 @@ def test_multiple_start_events_not_flagged():
 
 
 def test_unreachable_node_flags_r007():
-    """a connected node with no path from a start can never be activated"""
+    """A connected node with no path from a start can never be activated."""
     diagram = _minimal_valid_diagram()
     proc = diagram.processes[0]
     proc.flow_nodes.append(
@@ -76,10 +76,10 @@ def test_unreachable_node_flags_r007():
 
 
 def test_trap_node_flags_r008():
-    """a reachable node that cannot reach any end is a trap"""
+    """A reachable node that cannot reach any end is a trap."""
     diagram = _minimal_valid_diagram()
     proc = diagram.processes[0]
-    # task_1 -> dead (no outgoing); dead is reachable but cannot reach end_1
+    # dead is reachable from task_1 but cannot reach end_1
     proc.flow_nodes.append(FlowNode(id="dead", type=FlowNodeType.TASK, incoming=["sf_d"]))
     proc.sequence_flows.append(
         SequenceFlow(id="sf_d", source_ref="task_1", target_ref="dead")
@@ -90,12 +90,7 @@ def test_trap_node_flags_r008():
 
 
 def test_every_deterministic_issue_is_stamped_as_rules():
-    """the UI tells a rule verdict from an LLM opinion by issue.source alone
-
-    After a repair the frontend receives one flat `remaining_issues` list, so the
-    array an issue arrived in carries no information. Without this stamp, LLM
-    findings render as "rule engine".
-    """
+    """The UI tells a rule verdict from an LLM opinion by issue.source alone."""
     from pathlib import Path
 
     from app.model.formats.pydantic_ir import PydanticConverter

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-// escape the raw text once so injected highlight spans are the only markup
+// escape first, so the injected highlight spans are the only markup
 function escapeHtml(text) {
   return text
     .replace(/&/g, "&amp;")
@@ -8,9 +8,7 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;");
 }
 
-// lightweight XML highlighter — no external dependency. operates on already
-// html-escaped text and wraps tokens in spans the stylesheet themes. handles
-// comments, tags, attribute names/values, and the xml declaration
+// minimal XML highlighter, operating on already html-escaped text
 function highlightXml(escaped) {
   // comments first so their inner < > are not treated as tags
   const withComments = escaped.replace(
@@ -18,13 +16,11 @@ function highlightXml(escaped) {
     '<span class="xml-comment">$1</span>',
   );
 
-  // each tag region: &lt; optional / name ... &gt;
   return withComments.replace(
     /(&lt;\/?)([a-zA-Z_][\w.-]*(?::[a-zA-Z_][\w.-]*)?)([\s\S]*?)(\/?&gt;)/g,
     (match, open, name, attrs, close) => {
       if (match.includes('class="xml-comment"')) return match;
       const highlightedAttrs = attrs
-        // attr="value" or attr='value'
         .replace(
           /([a-zA-Z_][\w.-]*(?::[a-zA-Z_][\w.-]*)?)(=)(&quot;[\s\S]*?&quot;|&#39;[\s\S]*?&#39;|"[\s\S]*?"|'[\s\S]*?')/g,
           '<span class="xml-attr">$1</span>$2<span class="xml-string">$3</span>',

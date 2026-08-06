@@ -1,12 +1,8 @@
 """Sweep runner: turns a declarative spec into a persisted result set.
 
-Traces are request-scoped, so measurements had to be written down somewhere to
-outlive the call that produced them. Three properties follow: trials resume from
-`results.jsonl` via a deterministic `trial_id`, a trial that raised is recorded
-with its error instead of dropped, and validation/repair/revalidation each get
-their own trace context so tokens are attributable per phase.
-
-Run it with `make experiment SPEC=<path> OUT=<dir>`.
+Trials resume from `results.jsonl` via a deterministic `trial_id`, a trial that
+raised is recorded with its error, and each phase gets its own trace context so
+tokens are attributable per phase. Run it with `make experiment SPEC=<path> OUT=<dir>`.
 """
 
 from __future__ import annotations
@@ -73,14 +69,12 @@ class SweepSpec(BaseModel):
 
     experiment_id: str
     inputs: list[str] = Field(default_factory=list)
-    # applied after `inputs` expands. Curation belongs in the spec so the
-    # manifest records what was excluded
+    # applied after `inputs` expands, so the manifest records what was excluded
     exclude: list[str] = Field(default_factory=list)
     base: dict[str, Any] = Field(default_factory=dict)
     axes: dict[str, list[Any]] = Field(default_factory=dict)
     configs: list[dict[str, Any]] = Field(default_factory=list)
-    # identical trials repeated for variance; the repeat index is part of the
-    # trial id, so repeats resume individually
+    # identical trials repeated for variance; the repeat index is part of the trial id
     repeats: int = Field(default=1, ge=1)
     notes: str | None = None
 
@@ -164,9 +158,8 @@ def trial_id(
 ) -> str:
     """a stable identity for resumption
 
-    Derived from the trial's own inputs, not its position, so reordering the
-    spec does not invalidate results on disk. The app commit is deliberately
-    excluded — a rebuild should not silently re-run a completed sweep.
+    Derived from the trial's inputs, not its position, so reordering the spec keeps
+    results on disk valid. The app commit is excluded, so a rebuild does not re-run.
     """
     parts = "|".join(
         [
@@ -212,14 +205,12 @@ class CallRecord(BaseModel):
     provider: str | None = None
     model: str
     duration_ms: int
-    # what this `ir_format` put on the wire — the denominator of a
-    # token-reduction comparison against raw XML
+    # what this `ir_format` put on the wire, the baseline for token-reduction numbers
     prompt_chars: int
     usage: dict[str, Any] | None = None
     unsupported_controls: list[str] = Field(default_factory=list)
     error: str | None = None
-    # only with --keep-payloads; a full sweep of prompts is large and
-    # reproduces from the recorded config anyway
+    # only with --keep-payloads; prompts reproduce from the recorded config anyway
     prompt: str | None = None
     output: str | None = None
 
@@ -244,8 +235,7 @@ class RepairRecord(BaseModel):
     errors_resolved: bool
     stop_reason: str
     applied_ops: list[str] = Field(default_factory=list)
-    # aligned with `applied_ops`: quick_fix, model_plan, model_regen. Without it
-    # a cross-model comparison credits the deterministic registry to the model
+    # aligned with `applied_ops`: quick_fix, model_plan, model_regen
     applied_op_origins: list[str] = Field(default_factory=list)
     failed_ops: list[dict[str, Any]] = Field(default_factory=list)
     remaining_issue_ids: list[str] = Field(default_factory=list)
@@ -258,8 +248,7 @@ class TrialRecord(BaseModel):
     input_hash: str
     input_bytes: int
     repeat: int
-    # what the import read past. A pool-heavy diagram enters the IR truncated
-    # and then scores as clean, so curation needs this on the record
+    # what the import read past; a truncated diagram would otherwise score as clean
     unsupported_elements: list[dict[str, Any]] = Field(default_factory=list)
     unsupported_warning: str | None = None
     run: RunBlock
@@ -270,9 +259,8 @@ class TrialRecord(BaseModel):
     post_validation: ValidationRecord | None = None
     phases: dict[str, PhaseRecord] = Field(default_factory=dict)
     usage: UsageTotals = Field(default_factory=UsageTotals)
-    # so repair quality can be scored without re-running the sweep. Kept as IR,
-    # not XML: the exporter drops what the IR cannot hold, and a graph distance
-    # over the export would count those omissions as repair edits
+    # kept as IR, not XML: the exporter drops what the IR cannot hold, and a graph
+    # distance over the export would count those omissions as repair edits
     final_diagram: dict[str, Any] | None = None
     error: str | None = None
 
@@ -322,9 +310,8 @@ def _phase_record(
 def _issue_json(issue: ValidationIssue) -> dict[str, Any]:
     """the whole issue, evidence included
 
-    Not `issue_to_dict`: that is the prompt form, which withholds the formal
-    witness under the counterexample ablation. The results file keeps everything
-    the checker produced, regardless of what the model was shown.
+    Not `issue_to_dict`: that is the prompt form, which withholds the formal witness
+    under the counterexample ablation. Results keep everything the checker produced.
     """
     return json.loads(json.dumps(asdict(issue), default=str))
 
@@ -344,8 +331,7 @@ def _validation_record(
 async def run_trial(trial: Trial, keep_payloads: bool = False) -> TrialRecord:
     """execute one trial and return its record, error included
 
-    Never raises: a sweep that aborts on the first provider hiccup has to be
-    babysat, and the error belongs in the results either way.
+    Never raises, so one provider failure does not abort the whole sweep.
     """
     config = trial.config
     input_path = Path(trial.input_path)
@@ -365,8 +351,8 @@ async def run_trial(trial: Trial, keep_payloads: bool = False) -> TrialRecord:
     error: str | None = None
 
     try:
-        # inside the try: an input that moved since `resolve_inputs` is a
-        # recorded failure, not a reason to abort the trials already paid for
+        # inside the try, so an input that moved since `resolve_inputs` is a
+        # recorded failure rather than an aborted sweep
         raw = input_path.read_bytes()
         diagram, unsupported = parse_bpmn_bytes_with_diagnostics(raw)
         final_diagram = diagram
@@ -420,8 +406,7 @@ async def run_trial(trial: Trial, keep_payloads: bool = False) -> TrialRecord:
                 ),
             )
 
-            # the same tiers re-run as an oracle over the repaired diagram; this
-            # is what a soundness pass rate is measured from
+            # the same tiers re-run as an oracle, giving the soundness pass rate
             traces = []
             phase_started = time.perf_counter()
             async with _phase(traces):
@@ -433,7 +418,7 @@ async def run_trial(trial: Trial, keep_payloads: bool = False) -> TrialRecord:
             post_record = _validation_record(
                 post.issues + post.semantic_issues, post.is_valid
             )
-    except Exception as exc:  # noqa: BLE001 — the record is the deliverable
+    except Exception as exc:  # noqa: BLE001 - the record is the deliverable
         error = f"{type(exc).__name__}: {exc}"
 
     return TrialRecord(
@@ -496,8 +481,7 @@ def _model_for(config: ExperimentConfig) -> str:
 def completed_trial_ids(results_path: Path) -> set[str]:
     """trial ids already on disk, so a resumed sweep does not pay twice
 
-    A malformed trailing line is skipped, not fatal — that is what a run killed
-    mid-write leaves behind, and its trial should simply run again.
+    A malformed trailing line is skipped; a run killed mid-write leaves one behind.
     """
     if not results_path.exists():
         return set()
@@ -612,7 +596,7 @@ async def execute_sweep(
     totals: list[UsageTotals] = []
 
     async with _mocked_providers() if mock else nullcontext():
-        # append mode, flushed per line: a sweep killed at trial 40 keeps 40
+        # append mode, flushed per line, so a killed sweep keeps what it finished
         with results_path.open("a", encoding="utf-8") as handle:
             for index, trial in enumerate(pending, start=1):
                 record = await run_trial(trial, keep_payloads=keep_payloads)

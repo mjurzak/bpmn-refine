@@ -29,7 +29,7 @@ def test_experiment_config_defaults_match_current_runtime():
     assert data["t2_tools"] == ["bpmn_analyzer", "woflan", "bpmnspector"]
     assert data["repair_mode"] == "atomic"
     assert data["max_repair_iters"] == 5
-    # unset by default: the provider's own default applies and the record says so
+    # unset by default, so the provider's own default applies
     assert data["temperature"] is None
     assert data["seed"] is None
     assert data["include_formal_evidence"] is True
@@ -80,8 +80,7 @@ def test_canonical_config_json_drops_nulls_and_sorts_keys():
         '"t2_tools":["bpmn_analyzer","woflan","bpmnspector"],'
         '"tiers_enabled":{"t1":true,"t2":false,"t3":false}}'
     )
-    # an unset temperature is dropped like any other null: the run record states
-    # that the provider default applied, not a value the call never sent
+    # an unset temperature is dropped like any other null
     assert "temperature" not in canonical
     assert "model_override" not in canonical
     assert "notes" not in canonical

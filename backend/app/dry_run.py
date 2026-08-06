@@ -1,11 +1,7 @@
 """Deterministic ablation dry run against mocked providers.
 
-Exercises every ablation control end to end and writes a self-contained record,
-without a paid API call. Not an experiment — responses are canned, so nothing
-here measures repair quality. It establishes only that each control reaches the
-executed path rather than just the configuration hash.
-
-Run it with `make dry-run OUT=<path>`.
+Responses are canned, so this measures nothing about repair quality; it only shows
+that each control reaches the executed path. Run it with `make dry-run OUT=<path>`.
 """
 
 from __future__ import annotations
@@ -58,12 +54,9 @@ from app.validation.rules import RULES_VERSION, ValidationTier
 class MockProvider:
     """A provider that answers from fixed rules instead of a network call.
 
-    Responses depend only on the request, so two dry runs over the same input
-    produce byte-identical records. Seed support is declared absent on purpose,
-    so the record has to show a requested seed reported as unsupported.
-
-    Token counts are synthetic (chars / 4) and labelled `source="mock"`. They
-    prove only that usage survives the trip from adapter to run record.
+    Responses depend only on the request, so repeated dry runs are byte-identical.
+    Seed support is declared absent on purpose, to exercise the unsupported path.
+    Token counts are synthetic (chars / 4) and labelled `source="mock"`.
     """
 
     supports_temperature: bool = True
@@ -155,8 +148,7 @@ class MockProvider:
 def _mock_response(prompt: str, system: str | None, text: str) -> LlmResponse:
     """a response whose synthetic token counts scale with the payload
 
-    Derived from the payload, not pinned: a constant would hide an `ir_format`
-    control that had stopped changing the prompt at all.
+    Derived rather than pinned, so an `ir_format` that stopped changing the prompt shows.
     """
     prompt_chars = len(prompt) + len(system or "")
     return LlmResponse(
@@ -185,9 +177,8 @@ def _canned_semantic_finding(prompt: str) -> dict[str, Any]:
 def _canned_ops(prompt: str) -> list[dict[str, Any]]:
     """a rename, which always applies and always changes the diagram
 
-    The name carries a digest of the diagram it was chosen for. A constant name
-    is a no-op from the second iteration on, which stops the loop at
-    `repeated_state` and makes budgets 3, 5, and 10 indistinguishable.
+    The new name carries a diagram digest; a constant name would stall the loop at
+    `repeated_state` and make the iteration budgets indistinguishable.
     """
     payload = json.loads(prompt)
     node_ids = payload.get("id_constraints", {}).get("node_ids", [])
@@ -203,10 +194,7 @@ def _canned_ops(prompt: str) -> list[dict[str, Any]]:
 
 
 def _diagram_digest(payload: dict[str, Any]) -> str:
-    """a short, stable identity for the diagram this plan was asked about
-
-    From the payload, not an iteration counter: the mock is stateless by design.
-    """
+    """a short, stable identity for the diagram this plan was asked about"""
     diagram = payload.get("diagram")
     text = diagram if isinstance(diagram, str) else json.dumps(diagram, sort_keys=True)
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:8]
@@ -347,10 +335,9 @@ async def run_case(
             "tier3_ran": ValidationTier.TIER3.value in tiers_observed,
             "llm_calls": len(traces),
             "call_kinds": sorted({trace.kind for trace in traces}),
-            # synthetic counts, but they prove usage survives adapter -> trace
+            # synthetic counts, but they show usage survives adapter -> trace
             "usage": trace_usage(traces).model_dump(mode="json"),
-            # the size the selected `ir_format` actually put on the wire, which
-            # is what a token-reduction comparison is measured against
+            # what the selected `ir_format` put on the wire, for token-reduction comparisons
             "prompt_chars": sum(len(prompt) for prompt in prompts),
             "formal_evidence_in_prompt": any(
                 "formal_evidence" in prompt for prompt in prompts
@@ -396,9 +383,8 @@ async def run_case(
     }
 
 
-# Two fixtures, because one cannot reach every control. R001 has a quick fix and
-# never calls a model. The expense diagram is unsound and fires tiers 1 and 2
-# together, so only it produces the witness the evidence ablation switches on.
+# two fixtures, since one cannot reach every control: R001 takes the quick-fix path
+# and never calls a model, the expense diagram fires tiers 1 and 2 together
 DEFAULT_INPUTS = (
     Path("data/rule_cases/R001_no_start_event.broken.bpmn"),
     Path("data/test_cases/03_expense_reimbursement.bpmn"),
@@ -409,11 +395,9 @@ async def execute(input_paths: tuple[Path, ...] | list[Path]) -> dict[str, Any]:
     """run the whole matrix against each input and return the record"""
     provider = MockProvider()
     cases = []
-    # what each fixture lost on import — an assertion over a half-represented
-    # diagram is an assertion about the wrong diagram
+    # what each fixture lost on import
     diagnostics: dict[str, Any] = {}
-    # patched here rather than via `provider_override`, which only accepts real
-    # `ProviderName` values; a mock does not belong in that enum
+    # patched here rather than via `provider_override`, which only takes real ProviderNames
     original_get_provider = llm_client.get_provider
     llm_client.get_provider = lambda name=None: provider
     try:

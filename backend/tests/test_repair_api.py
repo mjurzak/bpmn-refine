@@ -64,8 +64,7 @@ def test_repair_response_includes_run_and_proposed_xml(monkeypatch):
     expected_config = ExperimentConfig.model_validate(config)
     assert captured["config"] == expected_config
     assert captured["snapshot"] is False
-    # the repair function is stubbed out, so nothing reached a provider: the
-    # configured model is recorded, `model_used` says no call was made
+    # repair is stubbed out, so no call reached a provider
     assert run["model_configured"] == "custom-repair-model"
     assert run["model_used"] == "none"
     assert run["prompt_versions"]["repair"]["name"] == "repair.txt"

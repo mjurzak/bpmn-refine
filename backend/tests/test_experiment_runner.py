@@ -1,11 +1,4 @@
-"""Tests for the sweep runner.
-
-A sweep is the one part of the system whose defects cost money to discover: a
-runner that silently drops trials, double-charges on resume, or writes records
-an analysis script cannot read is found out only after the API bill. These
-tests run the whole path against the mocked provider so the guarantees are
-checked for free.
-"""
+"""Sweep runner: spec expansion, trial identity, execution and resume."""
 
 from __future__ import annotations
 
@@ -88,7 +81,7 @@ def test_a_spec_without_axes_yields_the_base_alone():
 
 
 def test_an_invalid_axis_value_fails_at_expansion(monkeypatch):
-    """better a spec error before the sweep than a provider error during it"""
+    """Better a spec error before the sweep than a provider error during it."""
     spec = _spec(axes={"max_repair_iters": [0]})
     with pytest.raises(ValueError):
         expand_configs(spec)
@@ -123,7 +116,7 @@ def test_a_missing_literal_input_is_an_error():
 
 
 def test_excluding_everything_is_an_error():
-    """a sweep over nothing is a spec mistake, not an empty result"""
+    """A sweep over nothing is a spec mistake, not an empty result."""
     spec = _spec(exclude=[str(QUICK_FIX_INPUT)])
     with pytest.raises(ValueError):
         resolve_inputs(spec, Path("."))
@@ -173,7 +166,6 @@ async def test_a_trial_records_phases_validation_and_the_final_diagram():
     assert "R001" in record.pre_validation.issue_ids
     assert record.repair is not None
     assert record.post_validation is not None
-    # the repaired IR has to survive, or repair quality cannot be scored later
     assert record.final_diagram is not None
     assert set(record.phases) == {"validate", "repair", "revalidate"}
 
@@ -187,17 +179,11 @@ async def test_the_run_block_names_the_config_and_the_commit():
     assert record.run.config_hash
     assert record.run.app_commit
     assert record.run.config is not None
-    # the request id is the trial id, so a record joins back to its trial
     assert record.run.request_id == trial.trial_id
 
 
 async def test_a_quick_fix_trial_records_that_no_model_answered():
-    """R001 is repaired by the registry, so the record must not name a model
-
-    `model_used` taken from the router named the configured model whether or not
-    anything was sent to it, which is how a repair no LLM performed ends up
-    credited to one in a cross-model comparison.
-    """
+    """R001 is repaired by the registry, so the record must not name a model."""
     spec = _spec()
     trial = build_trials(spec, [QUICK_FIX_INPUT], expand_configs(spec))[0]
 
@@ -211,11 +197,7 @@ async def test_a_quick_fix_trial_records_that_no_model_answered():
 
 
 async def test_a_trial_records_what_the_import_left_behind(tmp_path):
-    """a pool-heavy diagram enters the IR truncated and then scores as clean
-
-    The interactive import warns about this; the sweep runner used to parse
-    without diagnostics, so a curation pass over SAP-SAM had nothing to filter on.
-    """
+    """Unsupported elements dropped at parse time must show up in the record."""
     input_path = tmp_path / "with_lanes.bpmn"
     input_path.write_bytes(_XML_WITH_UNSUPPORTED)
     spec = _spec(inputs=[str(input_path)])
@@ -249,7 +231,7 @@ _XML_WITH_UNSUPPORTED = b"""<?xml version="1.0" encoding="UTF-8"?>
 
 
 async def test_a_failing_trial_is_recorded_rather_than_raised():
-    """a sweep that aborts on one bad input has to be restarted by hand"""
+    """A sweep that aborts on one bad input has to be restarted by hand."""
     spec = _spec(inputs=[str(UNPARSEABLE_INPUT)])
     trial = build_trials(spec, [UNPARSEABLE_INPUT], expand_configs(spec))[0]
 
@@ -261,11 +243,7 @@ async def test_a_failing_trial_is_recorded_rather_than_raised():
 
 
 async def test_an_input_that_disappeared_mid_sweep_is_recorded_not_raised(tmp_path):
-    """the same contract, one step earlier than the parser
-
-    `resolve_inputs` runs once, hours before some trials; reading outside the
-    try let a moved input abort everything still pending.
-    """
+    """Inputs are resolved once, so one that moves later must not abort the sweep."""
     missing = tmp_path / "gone.bpmn"
     missing.write_bytes(b"<x/>")
     spec = _spec(inputs=[str(missing)])
@@ -290,7 +268,7 @@ async def test_payloads_are_withheld_unless_asked_for():
     lean_calls = [call for phase in lean.phases.values() for call in phase.calls]
     full_calls = [call for phase in full.phases.values() for call in phase.calls]
     assert all(call.prompt is None for call in lean_calls)
-    # the size is kept either way — it is the token-reduction denominator
+    # size is kept either way, it is the token-reduction denominator
     assert all(call.prompt_chars > 0 for call in lean_calls)
     assert full_calls and all(call.prompt for call in full_calls)
 
@@ -311,7 +289,6 @@ async def test_a_sweep_writes_one_line_per_trial_and_a_manifest(tmp_path):
     assert manifest["experiment_id"] == "unit"
     assert manifest["trial_count"] == 2
     assert manifest["app_commit"]
-    # the inputs are hashed, so a later dataset edit is detectable
     assert manifest["input_hashes"]
 
 
@@ -324,7 +301,6 @@ async def test_resuming_skips_what_is_already_on_disk(tmp_path):
     assert first.executed == 2
     assert second.executed == 0
     assert second.skipped == 2
-    # and nothing was appended a second time
     lines = (tmp_path / RESULTS_FILENAME).read_text().strip().splitlines()
     assert len(lines) == 2
 
@@ -370,7 +346,7 @@ async def test_a_failed_trial_is_counted_and_still_written(tmp_path):
 
 
 async def test_a_failed_trial_is_not_retried_on_resume(tmp_path):
-    """the failure is a result; re-running it would just spend the same money"""
+    """The failure is a result; re-running it would just spend the same money."""
     spec = _spec(inputs=[str(UNPARSEABLE_INPUT)])
 
     await execute_sweep(spec, out_dir=tmp_path, mock=True)
@@ -380,7 +356,7 @@ async def test_a_failed_trial_is_not_retried_on_resume(tmp_path):
 
 
 def test_a_truncated_final_line_does_not_hide_the_earlier_trials(tmp_path):
-    """what a run killed mid-write leaves behind"""
+    """What a run killed mid-write leaves behind."""
     results = tmp_path / RESULTS_FILENAME
     results.write_text('{"trial_id": "aaa"}\n{"trial_id": "bbb"}\n{"trial_i')
 
@@ -395,7 +371,7 @@ def test_completed_ids_are_empty_when_nothing_has_run(tmp_path):
 
 
 def test_the_shipped_specs_load_and_expand():
-    """a spec that only fails when the sweep starts wastes the setup"""
+    """A spec that only fails when the sweep starts wastes the setup."""
     for path in sorted(Path("experiments/specs").glob("*.yaml")):
         spec = load_spec(path)
         assert spec.experiment_id

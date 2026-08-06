@@ -1,10 +1,4 @@
-"""Tests for token accounting.
-
-Usage is reported once, in the response that carried it. Every gap here is a
-measurement that cannot be recovered after an experiment has run, so the cases
-below cover both directions: that a reported count reaches the trace, and that
-an unreported one is recorded as missing rather than as zero.
-"""
+"""Token accounting: extraction per provider, and missing counts recorded as missing."""
 
 from __future__ import annotations
 
@@ -46,7 +40,7 @@ def traces():
 
 
 def test_total_is_none_when_the_provider_reported_nothing():
-    """a missing count must not read as a free call"""
+    """A missing count must not read as a free call."""
     assert TokenUsage().total_tokens is None
 
 
@@ -55,7 +49,7 @@ def test_total_treats_a_single_missing_side_as_zero():
 
 
 def test_total_tokens_is_serialised():
-    """evaluation scripts read the dumped record, not the live object"""
+    """Evaluation scripts read the dumped record, not the live object."""
     dumped = TokenUsage(input_tokens=3, output_tokens=4).model_dump()
     assert dumped["total_tokens"] == 7
 
@@ -80,7 +74,7 @@ def test_totals_are_complete_when_every_call_reported():
 
 
 def test_anthropic_usage_keeps_cache_tokens_separate():
-    """Anthropic excludes cache tokens from `input_tokens`, so they cannot merge"""
+    """Anthropic excludes cache tokens from `input_tokens`, so they cannot merge."""
     response = SimpleNamespace(
         usage=SimpleNamespace(
             input_tokens=100,
@@ -128,7 +122,7 @@ def test_gemini_usage_reads_its_own_field_names():
 
 @pytest.mark.parametrize("extract", [from_anthropic, from_openai, from_gemini])
 def test_a_response_without_usage_yields_none(extract):
-    """SDKs move fields between releases; that must not raise mid-repair"""
+    """SDKs move fields between releases; that must not raise mid-repair."""
     assert extract(SimpleNamespace()) is None
 
 
@@ -141,7 +135,7 @@ def test_a_partial_usage_block_reports_only_what_was_present():
 
 
 def test_a_bool_is_not_accepted_as_a_token_count():
-    """bool subclasses int, and `True` would otherwise be summed as 1"""
+    """bool subclasses int, and `True` would otherwise be summed as 1."""
     usage = from_openai(
         SimpleNamespace(usage=SimpleNamespace(prompt_tokens=True, completion_tokens=4))
     )
@@ -188,7 +182,7 @@ async def test_openai_adapter_returns_usage_with_the_text():
 
 
 async def test_ollama_labels_its_usage_as_its_own():
-    """a local tokenizer's counts are not comparable to a hosted provider's"""
+    """A local tokenizer's counts are not comparable to a hosted provider's."""
     provider = OllamaProvider(base_url="http://localhost:11434")
     provider._client.chat.completions.create = AsyncMock(
         return_value=SimpleNamespace(
@@ -242,7 +236,7 @@ async def test_the_facade_records_usage_on_the_trace(monkeypatch, traces):
 
 
 async def test_the_facade_still_accepts_a_bare_string(monkeypatch, traces):
-    """an out-of-tree provider on the older contract keeps working"""
+    """An out-of-tree provider on the older contract keeps working."""
     fake = SimpleNamespace(complete=AsyncMock(return_value="out"))
     monkeypatch.setattr("app.llm.client.get_provider", lambda provider=None: fake)
 
@@ -270,7 +264,7 @@ async def test_structured_calls_record_usage(monkeypatch, traces):
 
 
 async def test_a_failed_call_is_traced_without_usage(monkeypatch, traces):
-    """the provider raised, so there is no usage block to read"""
+    """The provider raised, so there is no usage block to read."""
     fake = SimpleNamespace(complete=AsyncMock(side_effect=RuntimeError("boom")))
     monkeypatch.setattr("app.llm.client.get_provider", lambda provider=None: fake)
 
@@ -284,7 +278,7 @@ async def test_a_failed_call_is_traced_without_usage(monkeypatch, traces):
 
 
 async def test_trace_usage_sums_a_multi_call_request(monkeypatch, traces):
-    """a repair loop makes several calls; the run record needs their total"""
+    """A repair loop makes several calls; the run record needs their total."""
     fake = SimpleNamespace(
         complete=AsyncMock(
             side_effect=[

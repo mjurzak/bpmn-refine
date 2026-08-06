@@ -63,7 +63,6 @@ class SemanticFindings(BaseModel):
     findings: list[SemanticFinding] = Field(default_factory=list)
 
 
-# computed once — no open dicts in the model, so it is fully strict-expressible
 SemanticResponse = LlmResponseEnvelope[SemanticFindings]
 _SEMANTIC_SCHEMA = strict_json_schema(SemanticResponse)
 
@@ -77,10 +76,7 @@ async def validate_diagram(
 ) -> ValidationResult:
     """run deterministic validation and optionally an LLM semantic pass
 
-    All three tier switches follow one rule: an explicit argument wins, else the
-    config decides. Both used to break it — tier 3 ignored the config, so the
-    repair loop skipped the semantic re-check; tier 1 ran unconditionally, so
-    `tiers_enabled.t1=false` changed nothing.
+    Every tier switch follows one rule: an explicit argument wins, else the config decides.
     """
     active_config = config or ExperimentConfig()
     rule_issues: list[ValidationIssue] = []
@@ -104,9 +100,7 @@ async def validate_diagram(
         checker_issues = await run_tier2_checkers(diagram, active_config)
 
     if should_run_t3:
-        # tier 3 runs last on purpose: it is handed everything tiers 1 and 2 already
-        # found, so it can skip re-reporting them and spend its budget on what only
-        # a reader can see
+        # runs last so it receives tier 1 and 2 findings and can skip re-reporting them
         semantic_issues = await _semantic_validate(
             diagram,
             rule_issues + checker_issues,
@@ -198,8 +192,7 @@ def _normalise_semantic_findings(
     issues: list[ValidationIssue] = []
 
     for finding in findings:
-        # a reference the diagram does not contain points the user, and any
-        # follow-up repair prompt, at an element that is not there
+        # drop refs to elements the diagram does not contain
         refs = [ref for ref in finding.element_refs if ref in known_ids]
         rule_id = semantic_rule_id(finding.category)
 
@@ -208,14 +201,13 @@ def _normalise_semantic_findings(
             Severity.ERROR if finding.severity == Severity.ERROR else Severity.WARNING
         )
 
-        # the same category on the same elements twice in one response
+        # drop the same category on the same elements twice in one response
         key = (rule_id, tuple(sorted(refs)))
         if key in seen:
             continue
         seen.add(key)
 
-        # a structural verdict on an element tier 1 or 2 already named is a
-        # restatement of theirs, however differently it is worded
+        # a structural verdict on an element tier 1 or 2 already named is a restatement
         if finding.category in _STRUCTURAL_CATEGORIES and any(
             ref in already_flagged for ref in refs
         ):
@@ -237,9 +229,7 @@ def _normalise_semantic_findings(
     return issues
 
 
-# categories that overlap what tiers 1 and 2 already decide structurally. A
-# semantic finding of this kind on an element an earlier tier already flagged is
-# a restatement, however differently it is worded.
+# categories that overlap what tiers 1 and 2 already decide structurally
 _STRUCTURAL_CATEGORIES = frozenset(
     {
         SemanticCategory.UNREACHABLE_BRANCH,

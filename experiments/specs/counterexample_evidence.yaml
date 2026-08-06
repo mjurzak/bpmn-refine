@@ -1,9 +1,5 @@
-# Phase 3c — the neuro-symbolic hinge.
-#
-# Tier 2 runs in both conditions and its verdict travels in both; only the
-# mapped counterexample traces, dead elements, and uncovered places are withheld
-# from the prompt. Turning the checker off instead would confound "does formal
-# evidence help the model" with "does formal checking help at all".
+# Phase 3c. Tier 2 runs in both conditions — only the counterexample traces are
+# withheld, otherwise this would confound "evidence helps" with "checking helps"
 experiment_id: counterexample-evidence
 notes: >-
   Does handing the model a formal counterexample improve repair, holding the
@@ -14,9 +10,7 @@ inputs:
   - data/rule_cases/*.broken.bpmn
 
 exclude:
-  # duplicate xsd:IDs are rejected by the canonical model at parse time, so this
-  # fixture never reaches a validation tier — it exercises the import guard, not
-  # a rule, and would only ever contribute recorded parse errors to a sweep
+  # duplicate xsd:IDs are rejected at parse time, so this never reaches a tier
   - data/test_cases/02_duplicate_ids.bpmn
 
 base:

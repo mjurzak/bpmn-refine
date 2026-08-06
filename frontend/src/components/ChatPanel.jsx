@@ -134,7 +134,7 @@ export default function ChatPanel({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedOpIndexes, setSelectedOpIndexes] = useState([]);
-  // diff for the currently selected subset, recomputed by actually applying it
+  // diff for the selected subset, recomputed by actually applying it
   const [subsetDiff, setSubsetDiff] = useState(null);
   const [subsetError, setSubsetError] = useState(null);
   const bottomRef = useRef(null);
@@ -158,11 +158,8 @@ export default function ChatPanel({
     [proposalOps, selectedOpIndexes],
   );
 
-  // Recompute the preview whenever the selection is a strict subset. The
-  // proposal's own diff describes the whole plan, so leaving it on screen while
-  // the user deselects operations shows a change they are no longer approving.
-  // The preview comes from `/repair/apply`, which is the same pure function the
-  // Apply button calls — a locally reimplemented apply could disagree with it.
+  // the proposal diff covers the whole plan, so a strict subset needs its own
+  // preview. it goes through /repair/apply, the same call the Apply button makes
   useEffect(() => {
     if (!pendingProposal || proposalOps.length === 0) return;
     if (isFullSelection) {

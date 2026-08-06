@@ -31,8 +31,7 @@ def get_converter(name: str | None = None) -> DiagramConverter:
     return _registry[name]
 
 
-# auto-register the built-in pydantic converter so importing this module is
-# enough to make get_converter() work out of the box
+# importing this module is enough to make get_converter() work
 def _bootstrap() -> None:
     from app.model.formats.compact_json import CompactJsonConverter
     from app.model.formats.mermaid import MermaidConverter

@@ -1,10 +1,7 @@
-// Presentation helpers over an atomic repair plan.
-//
-// One copy for the chat proposal list and the canvas review panel — two copies
-// is how one of them came to handle `rename_element`, which the backend has
-// never emitted. Authoritative list: `EditOpType` in backend/app/repair/ops.py.
+// presentation helpers for a repair plan, shared by the chat proposal list and
+// the canvas review panel. op names come from EditOpType in backend/app/repair/ops.py
 
-/** One-line human description of an operation, for a review list. */
+// one-line description of an operation, for a review list
 export function opLabel(op) {
   switch (op?.op) {
     case "add_node":
@@ -34,12 +31,8 @@ export function opLabel(op) {
   }
 }
 
-/**
- * The diagram elements an operation touches, for highlighting on the canvas.
- *
- * `replace_diagram` returns nothing on purpose — highlighting everything says
- * as little as highlighting nothing.
- */
+// elements an operation touches, for canvas highlighting. replace_diagram
+// returns nothing on purpose: highlighting everything says nothing
 export function opElementIds(op) {
   switch (op?.op) {
     case "add_node":

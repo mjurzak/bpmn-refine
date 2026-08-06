@@ -57,10 +57,7 @@ _CHAT_SCHEMA = strict_json_schema(ChatResponseEnvelope)
 
 
 def _best_effort_description(parsed: object) -> str:
-    """the model's prose, before the envelope has been validated
-
-    A rejected envelope still usually carries something a human can read.
-    """
+    """the model's prose, before the envelope has been validated"""
     if not isinstance(parsed, dict):
         return ""
     description = parsed.get("description")
@@ -128,9 +125,7 @@ async def chat_diagram(
             else None,
             **resolve_sampling(config),
         )
-        # captured before validation: the fallback below promises the user the
-        # model's text even when the envelope is rejected, and assigning only
-        # after model_validate would leave that promise unfulfilled
+        # captured before validation so a rejected envelope still yields text
         last_reply = _best_effort_description(parsed) or last_reply
         response = ChatResponseEnvelope.model_validate(parsed)
         last_reply = response.description
@@ -144,8 +139,7 @@ async def chat_diagram(
     try:
         reply, updated_diagram = await call_with_ir_correction(attempt)
     except Exception as exc:
-        # corrections exhausted. a chat turn must not hard-fail over a bad diagram —
-        # the user still gets the model's text, just without an applicable change
+        # corrections exhausted: still return the model's text, without a diagram change
         logger.warning("failed to parse diagram from reply: %s", exc)
         reply, updated_diagram = last_reply, None
     rev_id: str | None = None

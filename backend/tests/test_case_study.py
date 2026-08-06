@@ -1,10 +1,4 @@
-"""Pin the §6.1 case study diagram to the findings the thesis text describes.
-
-The case study prose quotes specific rule ids against specific elements. If a
-rule changes and this diagram stops producing them, the chapter is wrong and
-nothing else in the suite would notice. The other two fixtures in
-data/test_cases are pinned in test_fixture_cases.py.
-"""
+"""Pin the §6.1 case study diagram to the findings the thesis text quotes."""
 from pathlib import Path
 
 from app.experiments import ExperimentConfig
@@ -18,7 +12,7 @@ from app.validation.rules import validate
 
 CASE_STUDY = Path("data/test_cases/03_expense_reimbursement.bpmn")
 
-# planted faults F1 and F2. see the diagram's own header comment for the stories
+# planted faults F1 and F2, described in the diagram's own header comment
 EXPECTED_TIER1 = {
     ("R003", "start_card_feed"),
     ("R004", "end_escalated"),
@@ -42,7 +36,7 @@ def test_case_study_fires_the_expected_tier1_rules():
 
 
 def test_case_study_is_unsound():
-    """F3: the parallel join at gw_close can never fire"""
+    """F3: the parallel join at gw_close can never fire."""
     issues = run_woflan(_diagram())
     assert [i.rule_id for i in issues] == ["woflan:soundness"]
     assert issues[0].severity == "error"
@@ -166,6 +160,6 @@ async def test_case_study_repairs_all_current_errors_in_one_llm_plan(monkeypatch
 
 
 def test_implicit_merge_is_not_flagged():
-    """negative control: task_check's two incoming flows are legal, not a defect"""
+    """Negative control: task_check's two incoming flows are legal."""
     issues = validate(_diagram()).issues
     assert not any(issue.element_id == "task_check" for issue in issues)

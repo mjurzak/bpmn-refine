@@ -3,7 +3,7 @@ filter the SAP-SAM dataset to keep only BPMN rows
 
 reads all CSV files from the input directory, filters by namespace,
 and writes the filtered rows to the output directory (one file per input).
-uses chunked reading so even 10+ GB CSV files stay in memory.
+chunked reading keeps 10+ GB CSV files within memory.
 
 usage:
     python scripts/filter_bpmn.py \
@@ -24,7 +24,7 @@ import pandas as pd
 BPMN2_MARKERS = ["bpmn2.0#", "bpmn2.0/"]
 BPMN_ALL_MARKERS = BPMN2_MARKERS + ["bpmn1.0", "bpmn2.0choreography", "bpmn2.0conversation"]
 
-CHUNK_SIZE = 5_000  # rows per chunk — keeps RAM low for large CSVs
+CHUNK_SIZE = 5_000  # rows per chunk, keeps RAM low for large CSVs
 
 
 def _is_bpmn(namespace: pd.Series, markers: list[str]) -> pd.Series:

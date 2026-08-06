@@ -1,31 +1,18 @@
 """Deterministic rule-based BPMN validation (tier 1).
 
-These rules run before any LLM call and without external dependencies. Each rule
-falls into one of two justification classes (see `docs/validation-rules.md`):
+Runs before any LLM call, with no external dependencies. Two justification
+classes (see `docs/validation-rules.md`):
 
-* **A — integrity / translation preconditions** (R001-R006). Tier 1 is what makes tier 2 runnable.
-* **B — live under-approximations of soundness** (R007-R008). Linear-time,
-  element-local reachability checks where *firing implies the model is
-  necessarily unsound*. Tier 2 would catch them too, but only via a global
-  state-space walk that cannot run on every edit.
+* A — integrity / translation preconditions (R001-R006), what makes tier 2 runnable.
+* B — linear-time under-approximations of soundness (R007-R008), where firing
+  means the model is necessarily unsound.
 
-Every tier-1 rule is an `error`: firing guarantees a real defect. Heuristic,
-"might be a problem" checks (disconnected fragments, gateway split/join
-mismatches, ambiguous or no-op gateways) are deliberately left to the formal
-checker (tier 2) and the LLM review (tier 3) rather than producing deterministic
-warnings here.
-
-Implicit splits are the exception: they fall to tier 3 *alone*. Tier 2 cannot
-take that delegation, structurally — pm4py encodes a node with several outgoing
-flows as a **free choice** in the Petri net (one exit place feeding several
-transitions) where BPMN 2.0 specifies **parallel**, so Woflan reports SOUND on a
-model that ends in contradictory states. Verified 2026-07-21; recorded as a named
-tier-2 limitation in TODO.md under 2f. Promoting the check to tier 1 is not the
-fix either: an uncontrolled split is legal BPMN, so the rule could not guarantee
-a defect, and that invariant is worth more than the heuristic.
-
-Multiple start events are deliberately not checked: BPMN 2.0 permits them and a
-sound model can have many, so flagging them only produced noise.
+Every tier-1 rule is an `error`, so firing always means a real defect. Heuristic
+checks (disconnected fragments, gateway split/join mismatches) are left to tier 2
+and tier 3. Implicit splits go to tier 3 alone: pm4py encodes a node with several
+outgoing flows as a free choice where BPMN specifies parallel, so Woflan reports
+SOUND on a model that ends in contradictory states (TODO.md 2f). Multiple start
+events are legal BPMN and not checked.
 """
 
 from __future__ import annotations
@@ -121,8 +108,7 @@ class ValidationReport:
         return [i for i in self.issues if i.severity == Severity.WARNING]
 
 
-# issue.source values that are not a tier-2 tool name. tier 2 stamps its own tool
-# (e.g. "woflan"), which is deterministic like the rules and more informative
+# issue.source values that are not a tier-2 tool name; tier 2 stamps its own
 SOURCE_RULES = "rules"
 SOURCE_LLM = "llm"
 
@@ -132,10 +118,8 @@ def issue_to_dict(
 ) -> dict[str, Any]:
     """convert an issue to the compact, BPMN-level form used in LLM prompts
 
-    `include_formal_evidence` is the counterexample ablation switch. Off, the
-    issue still reaches the model with the same verdict and affected elements,
-    but without the traces and markings that localise it — which isolates the
-    evidence's contribution from the check's.
+    `include_formal_evidence` is the counterexample ablation switch: off, the
+    verdict still reaches the model but the traces and markings do not.
     """
     affected_elements: list[str] = []
     if issue.element_id:
@@ -192,7 +176,7 @@ class _Graph:
             n.id: [] for n in proc.flow_nodes
         }
         for sf in proc.sequence_flows:
-            # only wire edges whose endpoints both exist; dangling refs are R005/R006
+            # dangling refs are R005/R006, not edges
             if sf.source_ref in self.nodes and sf.target_ref in self.nodes:
                 self.succ[sf.source_ref].append(sf.target_ref)
                 self.pred[sf.target_ref].append(sf.source_ref)
@@ -234,9 +218,8 @@ def validate(diagram: BpmnDiagram) -> ValidationReport:
         _check_sequence_flow_refs(proc, report)  # R005, R006
         # class B — live under-approximations of soundness
         _check_reachability(proc, graph, report)  # R007, R008
-    # stamped centrally rather than at each construction site: consumers need to
-    # tell a deterministic verdict from an LLM opinion, and after a repair every
-    # issue arrives in one flat list with no other way to tell them apart
+    # stamped centrally so consumers can tell a deterministic verdict from an
+    # LLM opinion once the issues arrive in one flat list
     for issue in report.issues:
         if issue.source is None:
             issue.source = SOURCE_RULES
@@ -341,16 +324,10 @@ def _check_reachability(
 ) -> None:
     """R007 / R008 — exact, linear-time under-approximation of soundness.
 
-    A *connected* node that cannot be reached from any start event can never be
-    activated (a dead node); a connected node that cannot reach any end event is
-    a trap from which the process can never properly complete. Either condition
-    guarantees the model is unsound — so firing is never a false alarm. Fully
-    disconnected nodes are skipped: in isolation they are not a soundness defect
-    a deterministic rule should hard-fail on, so they are left to tier 2 / tier 3.
-
-    Reachability is only meaningful once the process has an entry and an exit, so
-    each direction is suppressed when its anchor is missing — otherwise the
-    derived errors would just echo R001 / R002 across every node.
+    A connected node unreachable from any start event is dead; one that reaches
+    no end event is a trap. Either guarantees unsoundness. Fully disconnected
+    nodes are left to tier 2 / tier 3. Each direction is suppressed when its
+    anchor is missing, otherwise the errors would just echo R001 / R002.
     """
     has_start = any(n.type in _START_EVENT_TYPES for n in proc.flow_nodes)
     has_end = any(n.type in _END_EVENT_TYPES for n in proc.flow_nodes)

@@ -1,9 +1,4 @@
-"""Tests for the ablation dry run.
-
-The dry run is the gate's exit condition, so it needs its own guard: a sweep
-that quietly stopped exercising a control would still produce a full-looking
-record and would still pass every other test in the suite.
-"""
+"""The ablation dry run: every control must actually be exercised."""
 
 from __future__ import annotations
 
@@ -93,7 +88,7 @@ async def test_mock_provider_implements_every_structured_contract():
 
 
 def test_the_record_names_the_implementation_it_ran_against(record):
-    """a configuration without a revision cannot be reproduced"""
+    """A configuration without a revision cannot be reproduced."""
     assert record["app_commit"]
     assert record["provider"].startswith("mocked")
 
@@ -131,10 +126,9 @@ def test_the_evidence_ablation_changes_the_prompt_but_not_the_checker(record):
     on, off = _cases(record, "formal_evidence:")
     assert on["case"].endswith("on") and off["case"].endswith("off")
 
-    # the checker runs in both conditions — that is the point of the ablation
+    # the checker runs in both conditions, only the witness in the prompt differs
     assert on["executed"]["tier2_ran"] is True
     assert off["executed"]["tier2_ran"] is True
-    # ...and only the witness in the prompt differs
     assert on["executed"]["formal_evidence_in_prompt"] is True
     assert off["executed"]["formal_evidence_in_prompt"] is False
     assert on["result"]["issue_ids"] == off["result"]["issue_ids"]
@@ -155,11 +149,7 @@ def test_the_iteration_budget_is_honored(record):
 
 
 def test_each_iteration_budget_setting_produces_a_different_run(record):
-    """the control has to separate its settings, not just its config hash
-
-    A constant rename is a no-op from the second iteration on, so 3, 5, and 10
-    all stopped at `repeated_state` after two — three settings, one observation.
-    """
+    """The control has to separate its settings, not just its config hash."""
     by_budget = {
         int(case["case"].split(":")[1]): case["result"]
         for case in _cases(record, "max_repair_iters:")
@@ -182,7 +172,7 @@ def test_an_unsupported_sampling_control_is_recorded_as_such(record):
         case for case in _cases(record, "sampling:") if "temperature" in case["case"]
     )
     executed = requested["executed"]
-    # the mock provider declares no seed support, so the record must say so
+    # the mock provider declares no seed support on purpose
     assert executed["sampling_unsupported"] == ["seed"]
     assert 0.2 in executed["sampling_honored"]["temperature"]
 
@@ -194,14 +184,14 @@ def test_the_quick_fix_path_makes_no_model_call(record):
         for case in record["cases"]
         if case["case"] == "repair_mode:atomic" and case["input"] == quick_fix_input
     )
-    # R001 has a registered quick fix, so the repair never reaches a provider
+    # R001 has a registered quick fix
     assert case["executed"]["llm_calls"] == 0
     assert case["result"]["applied_ops"]
 
 
 @pytest.mark.asyncio
 async def test_the_dry_run_is_deterministic():
-    """two runs over the same inputs must agree on everything but the clock"""
+    """Two runs over the same inputs must agree on everything but the clock."""
     first = await execute([UNSOUND_INPUT])
     second = await execute([UNSOUND_INPUT])
 
