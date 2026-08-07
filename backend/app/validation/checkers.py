@@ -389,10 +389,10 @@ def _checker_runtime_issue(tool: T2Tool, exc: Exception) -> ValidationIssue:
     return ValidationIssue(
         rule_id=f"{tool.value}:runtime_error",
         severity=Severity.WARNING,
-        message=f"{tool.value} checker failed: {exc}",
+        message=f"{tool.value} checker failed: {type(exc).__name__}: {exc}".rstrip(": "),
         tier=ValidationTier.TIER2,
         source=tool.value,
-        raw={"error": str(exc)},
+        raw={"error": str(exc), "error_type": type(exc).__name__},
     )
 
 
