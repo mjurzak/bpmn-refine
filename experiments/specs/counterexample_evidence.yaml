@@ -1,6 +1,8 @@
 # Phase 3c. Tier 2 runs in both conditions — only the counterexample traces are
 # withheld, otherwise this would confound "evidence helps" with "checking helps"
 experiment_id: counterexample-evidence
+# dev fixtures, not the benchmark — no thesis number comes from this input set
+dataset_version: dev-fixtures
 notes: >-
   Does handing the model a formal counterexample improve repair, holding the
   checker and its verdict fixed.

@@ -1,6 +1,8 @@
 # Phase 3c. All seven non-empty subsets of {t1,t2,t3}, listed rather than
 # generated because a product over three booleans would include the empty set
 experiment_id: tier-contribution
+# dev fixtures, not the benchmark — no thesis number comes from this input set
+dataset_version: dev-fixtures
 notes: >-
   Which validation tier contributes which findings, and what each costs.
   Repair is left at its default so the tiers vary alone.

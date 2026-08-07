@@ -68,6 +68,7 @@ class SweepSpec(BaseModel):
     """
 
     experiment_id: str
+    dataset_version: str | None = None
     inputs: list[str] = Field(default_factory=list)
     # applied after `inputs` expands, so the manifest records what was excluded
     exclude: list[str] = Field(default_factory=list)
@@ -511,6 +512,7 @@ def write_manifest(
 ) -> Path:
     manifest = {
         "experiment_id": spec.experiment_id,
+        "dataset_version": spec.dataset_version,
         "app_commit": app_commit(),
         "started_at": started_at.isoformat(),
         "finished_at": datetime.now(UTC).isoformat(),

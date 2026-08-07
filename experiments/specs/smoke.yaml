@@ -1,0 +1,21 @@
+# Not an ablation. The cheapest spec that resolves, so `make experiment-rehearse`
+# and the spec-loading test always have something to expand
+experiment_id: smoke
+dataset_version: dev-fixtures
+notes: >-
+  Runner rehearsal over two fixtures and two configs. Produces no evidence.
+
+inputs:
+  - data/test_cases/01_gateway_issues.bpmn
+  - data/rule_cases/R001_no_start_event.broken.bpmn
+
+base:
+  model_tier: strong
+  repair_mode: atomic
+  max_repair_iters: 2
+  tiers_enabled: { t1: true, t2: true, t3: false }
+
+axes:
+  ir_format: [pydantic, mermaid]
+
+repeats: 1

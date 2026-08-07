@@ -277,7 +277,9 @@ async def test_payloads_are_withheld_unless_asked_for():
 
 
 async def test_a_sweep_writes_one_line_per_trial_and_a_manifest(tmp_path):
-    spec = _spec(axes={"ir_format": ["yaml", "mermaid"]})
+    spec = _spec(
+        dataset_version="dev-fixtures", axes={"ir_format": ["yaml", "mermaid"]}
+    )
 
     summary = await execute_sweep(spec, out_dir=tmp_path, mock=True)
 
@@ -290,6 +292,7 @@ async def test_a_sweep_writes_one_line_per_trial_and_a_manifest(tmp_path):
     assert manifest["trial_count"] == 2
     assert manifest["app_commit"]
     assert manifest["input_hashes"]
+    assert manifest["dataset_version"] == "dev-fixtures"
 
 
 async def test_resuming_skips_what_is_already_on_disk(tmp_path):
@@ -377,6 +380,8 @@ def test_the_shipped_specs_load_and_expand():
         assert spec.experiment_id
         assert expand_configs(spec)
         assert resolve_inputs(spec, Path("."))
+        # without it the manifest cannot say which corpus the numbers came from
+        assert spec.dataset_version
 
 
 def test_load_spec_reads_json(tmp_path):

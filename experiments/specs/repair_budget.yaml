@@ -1,6 +1,8 @@
 # Phase 3c. Budget values match the convergence analysis, so iteration counts
 # can be read against the Dantas et al. bound directly
 experiment_id: repair-budget
+# dev fixtures, not the benchmark — no thesis number comes from this input set
+dataset_version: dev-fixtures
 notes: >-
   Atomic edit operations versus whole-diagram regeneration, across iteration
   budgets 1, 2, 3, 5, 10.
