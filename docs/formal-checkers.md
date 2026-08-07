@@ -1,12 +1,12 @@
 # formal checkers — tier 2
 
-Tier 2 is the formal-verification layer. It runs **on demand** (explicit formal-validate action), not on every edit, because it is heavier than tier 1 and its findings are the input that makes LLM-guided repair non-trivial.
+Tier 2 is the formal-verification layer. It runs on demand, from an explicit formal-validate action, rather than on every edit — it is heavier than tier 1, and its findings are what give LLM-guided repair something to work from.
 
 **Status (2026-07-20):** one checker is wired — **PM4Py Woflan**, in-process. The BPMN Analyzer 2.0 and BPMNspector adapters described below, and the parallel fan-out across them, are planned. The wired Woflan slice returns a soundness verdict, diagnostic messages, and dead transitions, but no firing trace and no BPMN-element-level mapping yet (see the Woflan subsection). Sections that describe the full three-tool stack are the target design, not the current state.
 
-Tier 1 catches local, structural mistakes. Tier 2 catches behavioural problems that require exploring the diagram's **state space**: deadlocks, livelocks, unreachable termination, token-count mismatches, safeness and standards-conformance violations.
+Tier 1 catches local, structural mistakes. Tier 2 catches behavioural problems that need the diagram's state space explored: deadlocks, livelocks, unreachable termination, token-count mismatches, safeness and standards-conformance violations.
 
-This doc covers **why** the system uses a stack of open-source tools rather than one, which tools are in the stack, what each contributes, the unified issue shape they produce, and how the repair loop consumes their counterexamples.
+This doc covers why the system uses a stack of open-source tools rather than one, which tools are in it, what each contributes, the unified issue shape they produce, and how the repair loop consumes their counterexamples.
 
 ---
 
@@ -18,9 +18,9 @@ No single open-source BPMN formal checker covers the full BPMN 2.0 specification
 - **PM4Py Woflan** — classical Petri-net soundness that can in principle cover anything expressible as a Petri net, but the richness of its report depends on the BPMN -> PN mapping.
 - **BPMNspector** — 611 BPMN 2.0 standards constraints, but structural/conformance only — no behavioural verification.
 
-Stacking them under a **uniform** issue shape gives the repair layer one thing to consume and the user one panel to read.
+Stacking them under a uniform issue shape gives the repair layer one thing to consume and the user one panel to read.
 
-And: formal BPMN verification is a 20-year-old research area. The thesis contribution is the **neuro-symbolic integration** — how checker output is used to drive LLM repair — not a from-scratch verifier. Wrapping the best open-source tools is the cost-effective path to that contribution.
+There is a second reason, and it is about scope. Formal BPMN verification is a twenty-year-old research area with mature tools in it. What this thesis contributes is the neuro-symbolic integration — how checker output is turned into LLM-guided repair — not another verifier. Wrapping existing tools is what leaves room for that.
 
 ---
 
@@ -55,7 +55,7 @@ And: formal BPMN verification is a 20-year-old research area. The thesis contrib
 
 ### tier 0 — bpmnlint (optional, browser-side)
 
-Not part of the backend stack, but worth naming: `bpmnlint` (bpmn-io) runs **in the browser**, inside bpmn-js, and can surface live-lint markers with zero backend round-trip. Useful for UX polish — highlighting missing labels or obviously missing events before the user even triggers live tier 1 validation.
+Not part of the backend stack, but worth naming: `bpmnlint` (bpmn-io) runs in the browser, inside bpmn-js, and can surface live-lint markers with no backend round-trip at all. It is a UX nicety — flagging missing labels or obviously missing events before the user triggers even live tier 1 validation.
 
 If adopted, it sits *before* tier 1, not competing with it: bpmnlint catches stylistic issues that never reach the backend, while tier 1+ operates on canonicalised IR the backend owns.
 
@@ -100,9 +100,9 @@ The schema is what the repair dispatcher and the repair prompt consume — see [
 
 The default orchestration when tier 2 is enabled:
 
-1. **BPMNspector** runs first, over the canonical IR serialised back to BPMN XML. Cheap, parallel-safe, catches standards violations that make later checks nonsensical.
-2. **BPMN Analyzer 2.0** runs next, on the same XML. Produces the richest behavioural diagnostics when it can analyse the diagram.
-3. **PM4Py Woflan** runs when BPMN Analyzer 2.0 explicitly declines (elements it ignores are present and load-bearing) or as a second opinion configurable via `ExperimentConfig`.
+1. **BPMNspector** runs first, over the canonical IR serialised back to BPMN XML. It is cheap and parallel-safe, and it catches the standards violations that would make the later checks meaningless.
+2. **BPMN Analyzer 2.0** runs next, on the same XML. Where it can analyse the diagram at all, it gives the richest behavioural diagnostics.
+3. **PM4Py Woflan** runs when Analyzer 2.0 declines — the elements it ignores are present and carry control flow — or as a second opinion, configurable via `ExperimentConfig`.
 
 All three run in parallel where possible. Results are merged into a single `Issue[]`; duplicates (same canonical root cause from two tools) are de-duplicated on `(element_refs, kind)`.
 
@@ -146,7 +146,7 @@ Combining the stack covers the union of:
 - BPMN 2.0 schema and constraint compliance (BPMNspector)
 - data-flow soundness where the mapping supports it (Woflan)
 
-What tier 2 **does not** catch:
+What tier 2 does not catch:
 
 - labelling quality and process-intent issues — tier 3's job.
 - resource allocation / organisational semantics — out of scope for this system.
@@ -164,7 +164,7 @@ All three tools are containerised alongside the backend in `docker-compose.yml`:
 - `bpmnspector` — JVM, invoked as a subprocess from the backend (process lifetime is short; pooling optional).
 - `woflan` — Python, runs in-process.
 
-The `/validate` route fans out to the enabled tools and normalises their output into `Issue[]` before returning. Total latency target under default configuration: **under 5 s for diagrams of typical thesis-size**.
+The `/validate` route fans out to the enabled tools and normalises their output into `Issue[]` before returning. Latency target under the default configuration is under 5 s for diagrams of the size this thesis works with.
 
 ---
 

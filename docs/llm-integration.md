@@ -153,12 +153,9 @@ Every provider-backed task uses a strict outer contract:
 }
 ```
 
-`description` is required and application validation rejects blank or
-whitespace-only values. `result` has a separate model for each task:
-semantic findings, atomic edit operations, regenerated IR plus unresolved
-issues, an optional chat diagram, or corrected XML. Complete diagrams and XML
-stay serialized as strings inside the strict envelope; the normal IR and BPMN
-parsers validate their contents after generation.
+`description` is required, and blank or whitespace-only values are rejected in application validation. `result` has its own model per task: semantic findings, atomic edit operations, regenerated IR plus unresolved issues, an optional chat diagram, or corrected XML.
+
+Complete diagrams and XML stay serialized as strings inside the strict envelope. The usual IR and BPMN parsers check their contents afterwards.
 
 ### schema preparation — `backend/app/llm/schema.py`
 
@@ -169,12 +166,7 @@ Pydantic's raw `model_json_schema()` is not what the strict APIs want, so `stric
 
 `inline_defs(schema)` additionally flattens `$ref`/`$defs` for Gemini, which does not resolve references. Both helpers require **non-recursive** schemas — fine for the current IR, since subprocess nesting is out of scope.
 
-The full `BpmnDiagram` is deliberately not used as a provider schema because
-`namespaces` and `FlowNode.extra` are open dictionaries needed for round-trip
-fidelity. A schema around the serialized string standardizes the response
-shape; it does not claim to validate the YAML, Mermaid, compact JSON, canonical
-JSON, or XML encoded inside it. That validation remains a separate parser step
-with at most one correction round.
+The full `BpmnDiagram` is deliberately not used as a provider schema: `namespaces` and `FlowNode.extra` are open dictionaries, and round-trip fidelity needs them open. Wrapping the serialized string in a schema standardizes the response shape and nothing more — it does not validate the YAML, Mermaid, compact JSON, canonical JSON, or XML inside. That stays a separate parser step, with at most one correction round.
 
 ---
 
@@ -196,7 +188,7 @@ IR inside the common envelope.
 
 ## counterexample prompting
 
-When tier 2 produces a witness, it is injected into the repair prompt in **structured form** (a `tier2_findings` section built by `_extract_tier2_findings`) — not pasted as raw tool output. This is wired. The gap is the witness content: Woflan supplies a diagnosis but no firing trace, so the `trace`/`marking` fields below are empty in practice today. The prompts already tell the model these may be empty.
+When tier 2 produces a witness, it enters the repair prompt as a structured `tier2_findings` section built by `_extract_tier2_findings`, rather than as pasted raw tool output. That much is wired. What is missing is the witness content: Woflan supplies a diagnosis but no firing trace, so the `trace` and `marking` fields below are empty in practice. The prompts already warn the model that they may be.
 
 Target structure:
 
@@ -214,7 +206,7 @@ Marking at deadlock: { node_id: token_count, ... }
 {compact canonical IR in the active candidate format}
 ```
 
-The LLM reasons about *why* the trace deadlocks and emits an `EditOp` plan that addresses the root cause — not just the symptom. This is the neuro-symbolic hinge point the thesis is built around (see `research/reports/Initial-Research.md` §3).
+The point of the structure is that the model can work from *why* the trace deadlocks rather than from the symptom alone, and emit an `EditOp` plan against the cause. See `research/reports/Initial-Research.md` §3 for the background, and [`repair-loop.md`](repair-loop.md) for what the dispatcher does with the plan.
 
 ---
 

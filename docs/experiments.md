@@ -2,7 +2,7 @@
 
 Phase 3 of the thesis evaluates the system on held-out BPMN corpora.
 
-> **Status.** The **runner, the reproducibility contract, and the efficiency capture are delivered** — see [running a sweep](#running-a-sweep). The **metric catalogue, corpora, and ablation results are still planned**: what exists is the machinery that records the data the metrics are computed from, not the analysis scripts. Sections below are marked where they differ.
+> **Status.** Delivered: the runner, the reproducibility contract, and the efficiency capture — see [running a sweep](#running-a-sweep). Still planned: the metric catalogue, the corpora, and the ablation results. What exists is the machinery that records the data the metrics are computed from, not the analysis scripts. Sections below say which side they fall on.
 
 This doc owns:
 
@@ -34,7 +34,7 @@ ExperimentConfig {
   // validation
   tiers_enabled:      { t1: bool, t2: bool, t3: bool }
   t2_tools?:          ["bpmn_analyzer", "woflan", "bpmnspector"]  // default: all enabled
-  include_formal_evidence: bool           // default true — the neuro-symbolic hinge
+  include_formal_evidence: bool           // default true; false withholds counterexamples
 
   // repair
   repair_mode:        "atomic" | "regen"
@@ -56,7 +56,7 @@ ExperimentConfig {
 - `model_tier` + `model_override` are resolved by [`llm-integration.md`](llm-integration.md) routing. `custom` requires `model_override`.
 - `provider_override` lets a single experiment force e.g. Claude vs GPT without touching `.env`.
 - `t2_tools` is the ablation lever for [`formal-checkers.md`](formal-checkers.md). **As delivered, tier 2 is Woflan alone**, so this field currently has no subset to vary — see the ablation plan below.
-- `include_formal_evidence` withholds the counterexample traces, dead elements, and uncovered places from every prompt **while the checker still runs and its verdict still travels**. That isolates the contribution of the *evidence* from the contribution of the *check*; turning the checker off instead would confound the two.
+- `include_formal_evidence` withholds the counterexample traces, dead elements, and uncovered places from every prompt, while the checker still runs and its verdict still travels. That separates what the *evidence* contributes from what the *check* contributes. Turning the checker off instead would confound the two.
 - `temperature` defaults to **`null`**, meaning "whatever the model defaults to". A fixed `0.0` was the earlier default and was wrong: several current reasoning models reject an explicitly set temperature, including `0.0`, so the configuration declared a value the run never used. Set it to request one; a model that refuses now fails the call rather than silently substituting its own.
 - `seed` is best-effort — not all providers honour it. Anthropic's Messages API has no sampling seed at all. A requested control the selected provider cannot forward is recorded in `LlmTrace.unsupported_controls` rather than reported as if it had applied, so a record never implies a seeded run that never happened.
 
@@ -81,7 +81,7 @@ All metrics are computed post-hoc from `run` data plus endpoint outputs — the 
 | **F1** | harmonic mean | derived |
 | **tier attribution** | fraction of correct findings unique to each tier | isolate per-tier runs (`tiers_enabled` toggled) |
 
-The tier-attribution metric is the one that answers *"is the formal-checker stack worth its cost?"* — if tier 2 adds few uniquely-detected issues over tier 1 + tier 3, the neuro-symbolic claim weakens.
+Tier attribution is the metric that answers whether the formal-checker stack is worth its cost. If tier 2 adds few uniquely-detected issues over tier 1 and tier 3 together, that is evidence against the design, and it should be reported as such.
 
 ### repair quality
 
@@ -106,9 +106,9 @@ GED / RGED implementations follow the metric definitions in the PMo Benchmark an
 | **tokens in / tokens out** | per LLM call, summed per repair |
 | **token reduction vs BPMN XML** | `1 - tokens(ir_format) / tokens(bpmn_xml)` for the same diagram |
 
-**Capture is delivered.** Every trial record carries `duration_ms` per phase and per call, provider-reported `usage` per call, `prompt_chars` per call, and `input_bytes` — the raw BPMN XML size that the reduction is stated against. The aggregation script is still to write.
+Capture is delivered. Every trial record carries `duration_ms` per phase and per call, provider-reported `usage` per call, `prompt_chars` per call, and `input_bytes` — the raw BPMN XML size the reduction is stated against. The aggregation script is still to write.
 
-Token counts are what the provider reported, not an estimate, and the reporting conventions differ in a way that matters when summing: **Anthropic excludes cache reads and writes from `input_tokens`** (so the billed prompt is `input_tokens + cached_input_tokens`), while **OpenAI and Gemini include them** (so `cached_input_tokens` is a subset, not an addend). Each row records which convention produced it in `usage.source`. A call whose response carried no usage block is counted in `calls_missing_usage` rather than as zero — otherwise a total reads as complete when it is a lower bound.
+Token counts are what the provider reported, not an estimate. The reporting conventions differ in a way that matters when summing: Anthropic excludes cache reads and writes from `input_tokens`, so the billed prompt is `input_tokens + cached_input_tokens`, while OpenAI and Gemini include them, so `cached_input_tokens` is a subset rather than an addend. Each row records its convention in `usage.source`. A call whose response carried no usage block goes into `calls_missing_usage` rather than counting as zero — otherwise a total that is really a lower bound reads as complete.
 
 An Ollama token count is not comparable to a hosted one: the tokenizer is the local model's. Those rows are tagged `source: "ollama"` for that reason.
 
@@ -157,8 +157,8 @@ Ablations are `ExperimentConfig` sweeps. Each row below corresponds to a plot or
 | **repair mode** | `repair_mode` (atomic vs regen) | quantify atomic's advantage under this system (not just BPMN Assistant's) |
 | **max iterations** | `max_repair_iters` (1, 2, 3, 5, 10) | does convergence actually need multiple rounds, and how many |
 | **model tier** | `model_tier` + `model_override` | strong vs fast; cross-provider (Claude vs GPT vs local Llama via Ollama) |
-| ~~**checker stack**~~ | ~~`t2_tools` (each subset)~~ | **dropped** — tier 2 ships one checker (Woflan), so there is no subset to vary. Building the Analyzer 2.0 adapter for this ablation alone is the most expensive remaining item, and the counterexample ablation below already carries the neuro-symbolic claim. Recorded as a scope decision. |
-| **counterexample prompting** | `include_formal_evidence` | direct test of the neuro-symbolic hinge |
+| ~~**checker stack**~~ | ~~`t2_tools` (each subset)~~ | **dropped** — tier 2 ships one checker (Woflan), so there is no subset to vary. Building the Analyzer 2.0 adapter for this ablation alone is the most expensive remaining item, and the counterexample ablation below already tests the same claim. Recorded as a scope decision. |
+| **counterexample prompting** | `include_formal_evidence` | does giving the model the checker's evidence improve repair over giving it the verdict alone |
 
 Each ablation is run with **fixed** other fields and sufficient trials to get a confidence interval (N=10 default; higher where provider non-determinism is material).
 
@@ -225,10 +225,10 @@ Trial count is `inputs × configs × repeats`. Each trial gets a deterministic `
 }
 ```
 
-Three properties are load-bearing:
+Three properties of this record matter for the analysis:
 
-- **Failed trials are written, not dropped.** A missing trial is indistinguishable from one that was never scheduled, which is how a sweep silently reports a mean over a sample it selected for success. `error` carries the exception.
-- **Tokens are attributed per phase.** A single total cannot answer whether the counterexample evidence made prompts more expensive, which is one of the questions the ablation exists to ask.
+- **Failed trials are written, not dropped.** A missing trial looks exactly like one that was never scheduled, and that is how a sweep ends up reporting a mean over a sample it selected for success. `error` carries the exception.
+- **Tokens are attributed per phase.** A single total cannot say whether the counterexample evidence made prompts more expensive, which is one of the questions the ablation exists to ask.
 - **`final_diagram` is IR, not XML.** The exporter drops constructs the IR cannot hold, so a graph edit distance measured over the export would count those omissions as repair edits. Compute GED on the IR.
 
 Full prompts and responses are withheld unless `--keep-payloads` is passed; `prompt_chars` is recorded either way, since it is the token-reduction denominator.

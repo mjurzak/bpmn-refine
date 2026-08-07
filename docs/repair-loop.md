@@ -2,13 +2,11 @@
 
 Repair is one of the three top-level operations (see [`architecture.md`](architecture.md)). It takes **issues** (found by tier 1, tier 2, and/or tier 3) and a diagram, and produces **proposed changes** — never silent mutations. The user decides whether to apply them.
 
-The repair endpoint has two orchestration modes. Manual approval uses one
-**single plan**: dispatcher -> apply to an isolated candidate -> re-validate ->
-return for review. Newly discovered findings are reported but are not repaired
-inside the same request. Explicit auto-approval may use the **closed loop**:
-dispatcher -> apply -> re-validate -> stop-or-iterate. The closed loop remains
-available for unattended runs and Phase 3 evaluation without moving the human
-review gate behind several model-generated plans.
+The endpoint has two orchestration modes.
+
+**Single plan** (`single_plan=true`, the default) backs manual approval: dispatcher -> apply to an isolated candidate -> re-validate -> return for review. Findings discovered on the way are reported, not repaired inside the same request.
+
+**Closed loop** (`single_plan=false`) backs unattended runs and Phase 3 evaluation: dispatcher -> apply -> re-validate -> stop or iterate. Keeping it opt-in is what stops the human review gate from ending up behind several model-generated plans.
 
 **Status (2026-07-20):** the loop, both repair modes, the quick-fix registry (R001–R006), the `/repair`, `/repair/xml`, and `/repair/apply` endpoints, and the `tier2_findings` prompt section are all wired. The one gap is the *content* of the counterexample: the witness structure below is populated only with a diagnosis, not a firing trace, because the wired tier-2 checker (Woflan) does not emit one. The trace fields in the examples that follow are the target shape, not current output.
 
@@ -135,23 +133,18 @@ SetCondition {
 
 ### structured-output constraints
 
-Atomic LLM repair uses provider-level structured outputs with the common
-`{"description": "...", "result": {"ops": [...]}}` envelope. The schema is
-generated per repair request from the current diagram so existing-reference
-fields are narrowed to the correct ID set:
-node-targeting operations accept only current `node_ids`, flow-targeting
-operations accept only current `flow_ids`, `add_flow.source_ref` /
-`add_flow.target_ref` accept current node IDs, and `add_node.process_id` plus
-`add_flow.process_id` accept current process IDs. New IDs (`add_node.id`,
-`add_flow.id`) remain free strings
-because they must not already exist; duplicate prevention is enforced by the
-server when applying ops.
+Atomic LLM repair uses provider-level structured outputs with the common `{"description": "...", "result": {"ops": [...]}}` envelope. The schema is regenerated per request from the current diagram, so every field that references an existing element is narrowed to the IDs that actually exist:
 
-The same `id_constraints` object is included in the LLM payload for readability,
-and the backend validates returned ops against the current diagram before
-Pydantic conversion. This turns common schema-valid but domain-invalid plans
-such as `remove_flow(id=<node id>)` into explicit repair-generation errors
-instead of silent no-op proposals.
+| Field | Restricted to |
+|---|---|
+| node-targeting op `id` | current `node_ids` |
+| flow-targeting op `id` | current `flow_ids` |
+| `add_flow.source_ref`, `add_flow.target_ref` | current node IDs |
+| `add_node.process_id`, `add_flow.process_id` | current process IDs |
+
+New IDs (`add_node.id`, `add_flow.id`) stay free strings, since the whole point is that they do not exist yet; the server rejects duplicates when it applies the ops.
+
+The same `id_constraints` object goes into the LLM payload as readable text, and the backend re-checks returned ops against the diagram before Pydantic conversion. A plan like `remove_flow(id=<node id>)` is schema-valid but nonsense, and this is what turns it into an explicit repair-generation error rather than a silent no-op.
 
 ### why ops, not a full IR by default
 
@@ -255,7 +248,7 @@ Emit an EditOp[] that fixes the deadlock at task_B_join without
 altering branches unrelated to gateway_G.
 ```
 
-The LLM reasons about *why* the trace deadlocks (the classic exclusive-split / parallel-join mismatch) and emits a targeted fix (e.g. `change_gateway_type` on `G`). This is the neuro-symbolic step the thesis rests on — structured counterexample -> localised repair, not regenerate-everything-and-hope.
+Given the trace, the model can identify the cause — here the classic exclusive-split / parallel-join mismatch — and emit a targeted fix such as `change_gateway_type` on `G`. Structured counterexample in, localised repair out. Whether that beats regenerating the whole diagram is what the `include_formal_evidence` ablation measures ([`experiments.md`](experiments.md)).
 
 ---
 

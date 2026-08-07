@@ -1,6 +1,6 @@
 # converter format
 
-This doc covers the IR layer: the **canonical** internal representation, the **candidate** formats used for LLM I/O and comparison experiments, and the protocol they share.
+This doc covers the IR layer: the canonical internal representation, the candidate formats used for LLM I/O and comparison experiments, and the protocol they share.
 
 ---
 
@@ -9,9 +9,9 @@ This doc covers the IR layer: the **canonical** internal representation, the **c
 The IR layer plays two roles:
 
 1. **User I/O** — converting uploaded BPMN XML into an internal form the backend can validate, repair, and version, and back again on export.
-2. **LLM I/O** — serialising that internal form into a compact textual representation for LLM prompts, and parsing the LLM's response back into the same internal form.
+2. **LLM I/O** — serialising that internal form into compact text for prompts, and parsing the model's response back into the same internal form.
 
-Both roles use the same **canonical IR** (the Pydantic-typed `BpmnDiagram`). The only thing that changes between roles is the converter that reads/writes the bytes on either side.
+Both roles use the same canonical IR, the Pydantic-typed `BpmnDiagram`. Only the converter reading and writing the bytes changes between them.
 
 ```
 BPMN XML  ──[ PydanticConverter ]──▶   canonical IR  ──[ YamlConverter ]──▶ YAML
@@ -100,15 +100,13 @@ Legend: ✅ full · ◐ partial (schema or attributes preserved via `extra`, but
 
 ## IR–validation decoupling
 
-Validation, repair, and history all operate on `BpmnDiagram` — *not* on whichever format was loaded. This is the architectural commitment behind the canonical-IR pattern.
+Validation, repair, and history all operate on `BpmnDiagram`, never on whichever format was loaded. That is the commitment the canonical-IR pattern makes, and it has three consequences:
 
-Consequences:
+- Adding a candidate IR such as YAML does not fragment the validation code. The same R001–R008 rules, the same repair dispatcher, and the same history service work regardless of which converter ingested the bytes.
+- A candidate IR that cannot round-trip some element through the canonical IR is a format with reduced coverage, not a reason to branch validation.
+- `FlowNode.extra` is the escape hatch: unknown XML attributes survive a round-trip even through converters that do not understand them.
 
-- Adding a candidate IR (e.g. YAML) **does not** fragment the validation code. The same R001–R008 rules, the same repair dispatcher, and the same history service work regardless of which converter ingested the bytes.
-- A candidate IR that cannot round-trip through the canonical IR for some element is simply a format with reduced coverage — not a reason to branch validation.
-- `FlowNode.extra` is the escape hatch: unknown XML attributes survive a round-trip even through converters that don't semantically understand them.
-
-This is the trade we explicitly accept: less flexibility **inside** the model layer in exchange for more flexibility **outside** it.
+The trade is deliberate — less flexibility inside the model layer, more outside it.
 
 ---
 

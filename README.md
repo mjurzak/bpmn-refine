@@ -6,19 +6,21 @@ Part of a master's thesis: *Design and Implementation of an Interactive System S
 
 ## What it does
 
-- **Validates** BPMN diagrams using deterministic structural rules (R001–R011) and optional LLM-based semantic analysis
+- **Validates** BPMN diagrams with deterministic structural rules (R001–R008), Petri-net soundness checking, and LLM semantic review
 - **Repairs** diagrams by proposing targeted fixes for detected issues
-- **Refines** diagrams through a conversational interface — users describe intent, the system suggests changes
+- **Refines** diagrams through chat: the user describes intent, the system suggests changes
+
+Nothing is applied automatically. Every repair and refinement is a proposal until the user accepts it.
 
 ## Architecture
 
 ```
 frontend/          React + bpmn-js — diagram editor, validation panel, chat
 backend/app/
-  model/           BPMN diagram model + swappable converter abstraction
-  validation/      deterministic rule engine (no LLM dependency)
-  llm/             centralized Anthropic client, model routing, versioned prompts
-  api/             FastAPI endpoints: /diagrams, /validate, /chat
+  model/           canonical BPMN IR + swappable converters (XML, JSON, YAML, Mermaid)
+  validation/      tier 1 deterministic rules, tier 2 Woflan adapter (no LLM dependency)
+  llm/             provider-agnostic client, model routing, versioned prompts
+  api/             FastAPI endpoints: /diagrams, /validate, /repair, /chat, /history
 ```
 
 See [`docs/architecture.md`](docs/architecture.md) for a detailed walkthrough.
@@ -30,7 +32,7 @@ See [`docs/architecture.md`](docs/architecture.md) for a detailed walkthrough.
 ```bash
 # backend
 uv venv .venv && source .venv/bin/activate
-uv pip install fastapi "uvicorn[standard]" pydantic pydantic-settings anthropic lxml python-multipart httpx
+uv pip install -e ".[dev]"
 PYTHONPATH=backend uvicorn app.main:app --reload   # -> http://localhost:8000
 
 # frontend (separate terminal)
@@ -78,6 +80,10 @@ bpmn-ai-validator batch-validate data/pmo-dataset/bpmn --recursive --format json
 | Document | Description |
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | System design, module responsibilities, data flow |
-| [`docs/validation-rules.md`](docs/validation-rules.md) | All deterministic validation rules (R001–R011) |
+| [`docs/validation-rules.md`](docs/validation-rules.md) | Tier 1 deterministic rules (R001–R008) |
+| [`docs/formal-checkers.md`](docs/formal-checkers.md) | Tier 2 formal checkers and the shared issue shape |
 | [`docs/llm-integration.md`](docs/llm-integration.md) | LLM client layer, model routing, prompt versioning |
-| [`docs/converter-format.md`](docs/converter-format.md) | Diagram model, converter Protocol, adding new formats |
+| [`docs/converter-format.md`](docs/converter-format.md) | Diagram model, converter protocol, adding new formats |
+| [`docs/repair-loop.md`](docs/repair-loop.md) | Repair modes, dispatcher, edit ops |
+| [`docs/experiments.md`](docs/experiments.md) | `ExperimentConfig`, metrics, running a sweep |
+| [`docs/run.md`](docs/run.md) | The `run` reproducibility envelope |

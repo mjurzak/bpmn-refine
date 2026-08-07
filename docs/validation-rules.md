@@ -28,6 +28,7 @@ So every tier-1 rule must fall into exactly one justification **class**. If it f
 
 The keep/cut criterion for class B is the sharp one: **does firing the rule imply a real defect?** Equivalently, is the rule a sound under-approximation of some real property? "No start event" => no token source => unsound. "Multiple start events" => *still sound* => not a defect => **cut**. A join gateway is *sound* => a "fewer than 2 outgoing" rule would be wrong => **cut**.
 
+## severity
 
 | Level | Meaning | Used in tier 1 |
 |---|---|---|

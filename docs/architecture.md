@@ -2,14 +2,14 @@
 
 ## overview
 
-The system is a full-stack web application for **interactive validation, repair, and refinement of BPMN 2.0 diagrams using large language models**. A React frontend with bpmn-js gives the user a live modelling surface; a FastAPI backend runs three independent validator tiers behind a common repair loop. All LLM calls route through a provider-agnostic client. Every backend response carries a `run` block stamping exactly which model, prompts, rules, and converter produced it, so every experiment is reproducible.
+A web application for validating, repairing, and refining BPMN 2.0 diagrams with large language models. A React frontend with bpmn-js gives the user a live modelling surface; a FastAPI backend runs three independent validator tiers behind a common repair loop. All LLM calls route through a provider-agnostic client. Every backend response carries a `run` block recording which model, prompts, rules, and converter produced it, so experiments can be replayed.
 
-The architecture is organised around four ideas:
+Four ideas shape the architecture:
 
-- **Three validation tiers** — cheap deterministic rules first, formal model checking second, LLM semantic review third.
-- **Repair as a toggleable loop** — atomic edit operations by default, full IR regeneration as a fallback; the LLM reasons about formal-checker counterexamples rather than a bare error message.
-- **Multiple IRs as a first-class comparison surface** — one canonical IR drives internal logic; candidate IRs (YAML, Mermaid, compact-JSON) are swappable I/O formats used for comparison experiments.
-- **Live + on-demand validation triggers** — tier 1 runs continuously on every edit; tier 2 and tier 3 run on explicit user action.
+- Three validation tiers: cheap deterministic rules first, formal model checking second, LLM semantic review third.
+- Repair runs as a toggleable loop. Atomic edit operations by default, full IR regeneration as a fallback; the LLM is given formal-checker counterexamples rather than a bare error message.
+- One canonical IR drives internal logic. Candidate IRs (YAML, Mermaid, compact-JSON) are swappable I/O formats used for comparison experiments.
+- Two validation triggers: tier 1 runs on every edit, tier 2 and tier 3 on explicit user action.
 
 Items marked `(planned)` in this document are committed in the thesis architecture but not yet wired in code. As of 2026-07-20 the validation pipeline (all three tiers, with tier 2 backed by PM4Py Woflan), the repair loop and its endpoints, the five IR converters, and the `run` envelope are all wired; what remains planned is the BPMN Analyzer 2.0 / BPMNspector adapters and the counterexample *trace* they would supply. See `TODO.md` at the workspace root for per-item status.
 
@@ -27,12 +27,13 @@ The system performs three distinct operations over a diagram:
 
 Shared constraints:
 
-- **Nothing applies automatically.** Every repair or refinement result is a **suggestion** until the user accepts it. Validation never modifies the diagram at all.
-- **Repair and refinement share the `EditOp` schema.** They differ in what triggers them and what context they carry, not in what they emit.
-- **Repair requires issues.** `/repair` is meaningless without an issue list — it operates over known problems. A frontend "Validate & Repair" button is a UI chain (`/validate` -> `/repair`), not a backend automation.
+- **Nothing applies automatically.** Every repair or refinement result is a suggestion until the user accepts it. Validation never modifies the diagram at all.
+- **Repair requires issues.** `/repair` operates over known problems, so it does nothing without an issue list. A frontend "Validate & Repair" button is a UI chain (`/validate` -> `/repair`), not a backend automation.
 - **Refinement cannot be auto-triggered.** The system cannot infer intent; chat is always user-initiated.
 
-Tier 3 findings that look like refinement suggestions (*"this task has a vague name"*) are still **issues**, not chat turns — the user can Repair them like any other issue. The rule of thumb: anything the system *finds* is an issue; anything the user *wants* goes through chat.
+Repair and refinement emit the same `EditOp` schema. They differ in what triggers them and what context they carry.
+
+Tier 3 findings that read like refinement suggestions (*"this task has a vague name"*) are still issues, not chat turns — the user can repair them like any other. Anything the system *finds* is an issue; anything the user *wants* goes through chat.
 
 ---
 
@@ -170,7 +171,9 @@ Mode is selected per request via `ExperimentConfig.repair_mode`.
 
 ### counterexample context
 
-When tier 2 produces a witness, the repair prompt includes it in a structured `tier2_findings` section (`_extract_tier2_findings`), so the LLM reasons about *why* the diagram is broken, not just *that* it is. This is the neuro-symbolic hinge point of the system. The plumbing is wired, but the witness carries no firing trace yet: Woflan does not emit one, so the LLM currently reasons over the diagnosis rather than the failing run. A trace-producing adapter (BPMN Analyzer 2.0, or deeper extraction of Woflan's coverability graph) is what closes this.
+When tier 2 produces a witness, the repair prompt includes it in a structured `tier2_findings` section (`_extract_tier2_findings`), so the LLM is told *why* the diagram is broken and not only *that* it is. This is where the checker output meets the model, and the comparison the thesis is built on.
+
+The plumbing is wired, but the witness carries no firing trace yet: Woflan does not emit one, so the model works from the diagnosis rather than the failing run. Closing that gap needs a trace-producing adapter — BPMN Analyzer 2.0, or deeper extraction of Woflan's coverability graph.
 
 See [`repair-loop.md`](repair-loop.md).
 
@@ -203,20 +206,20 @@ One internal representation — the Pydantic-typed `BpmnDiagram` — is what eve
 
 ### candidate IRs
 
-Additional formats are **I/O surfaces**, not replacement internal types: they parse into the canonical IR on ingest and serialize from it on output. This decouples IR experimentation from the validation code, which would otherwise fragment across schema types.
+Additional formats are I/O surfaces, not replacement internal types: they parse into the canonical IR on ingest and serialize from it on output. Without that, IR experimentation would fragment the validation code across schema types.
 
 Candidate IRs (all wired, selected via `ExperimentConfig.ir_format`):
 
 - **Pydantic-JSON** — canonical, also usable as an I/O format.
-- **YAML** — novel thesis contribution; no prior BPMN-LLM YAML study exists.
-- **Mermaid** — reference point for strong token reduction against raw BPMN XML.
-- **compact-JSON** — minimal-key JSON for ablation.
+- **YAML** — the novel candidate; no prior BPMN-LLM YAML study exists.
+- **Mermaid** — the strong baseline for token reduction against raw BPMN XML.
+- **compact-JSON** — minimal-key JSON, for ablation.
 
 Comparison runs (token reduction, generation quality, edit success) vary `ExperimentConfig.ir_format`.
 
 ### diagram-level invariants
 
-Document-scoped identifier uniqueness is enforced by a validator on the canonical `BpmnDiagram` itself, not in any one converter. Because every input path — all five IR formats, LLM-authored payloads, edit-op results — constructs a `BpmnDiagram`, the check holds everywhere at once. This matters beyond spec compliance: the tier-1 reachability rules key their adjacency index by node id, so a duplicate would silently shadow its twin and misdirect the analysis.
+Document-scoped identifier uniqueness is enforced by a validator on the canonical `BpmnDiagram` itself, not in any one converter. Every input path — all five IR formats, LLM-authored payloads, edit-op results — constructs a `BpmnDiagram`, so one check covers them all. It buys more than spec compliance: the tier-1 reachability rules key their adjacency index by node id, so a duplicate would silently shadow its twin and misdirect the analysis.
 
 ### round-trip invariant
 
@@ -330,11 +333,11 @@ user types in chat
 
 ## design principles
 
-- **Deterministic before probabilistic.** Tier 1 runs before tier 2; tier 2 before tier 3. Cheap, testable checks narrow what the LLM is asked to reason about.
-- **No silent diagram mutations.** Validation never modifies a diagram. Repairs are always suggestions until the user accepts them.
-- **Swappable everywhere that matters.** Provider, prompt file, IR format, and tier-2 tool set are all swappable via `ExperimentConfig` or a registry. No hard-coded model or format choices outside configuration.
-- **Every response is reproducible.** The `run` block on every response is a hard contract — no endpoint omits it.
-- **Round-trip fidelity is non-negotiable.** Every converter must satisfy `serialize(parse(xml))` semantically equivalent to the input.
+- **Deterministic before probabilistic.** Tier 1 runs before tier 2, tier 2 before tier 3. Cheap, testable checks narrow what the LLM is asked to reason about.
+- **No silent diagram mutations.** Validation never modifies a diagram. Repairs stay suggestions until the user accepts them.
+- **Configuration, not code, picks the variant.** Provider, prompt file, IR format, and tier-2 tool set are all selected through `ExperimentConfig` or a registry. Nothing outside configuration hard-codes a model or a format.
+- **Every response is reproducible.** The `run` block is a hard contract; no endpoint omits it.
+- **Round-trip fidelity holds.** Every converter must satisfy `serialize(parse(xml))` semantically equivalent to the input, enforced as a test gate.
 
 ---
 

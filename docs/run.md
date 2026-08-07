@@ -73,7 +73,7 @@ Per-tool version strings. Formal checker findings depend on the tool binary; pin
 
 ### `timestamp` and `request_id`
 
-Boring but load-bearing. `timestamp` is UTC ISO-8601. `request_id` is a UUID generated in the route handler and propagated into LLM calls for correlation with provider-side logs.
+`timestamp` is UTC ISO-8601. `request_id` is a UUID generated in the route handler and propagated into LLM calls, so a response can be correlated with provider-side logs.
 
 ### `iterations` and `converged`
 
@@ -109,7 +109,7 @@ Inputs:
 - partial responses (e.g. a non-converged repair),
 - cached responses (the `run` from the original computation is replayed, not re-generated).
 
-Rationale: if `run` is optional, some code path will drop it, and the result will not be reproducible. The Phase 3 harness treats a missing `run` as a hard failure — there is no salvage path for an unstamped result.
+The reason for the strictness: if `run` is optional, some code path will drop it, and that result is then unreproducible with nothing to salvage. The Phase 3 harness treats a missing `run` as a hard failure.
 
 Endpoints that do not own a canonical run context — `/history/*`, `/diagrams/export` for round-trip-only transforms — do not emit `run`. The contract is per-endpoint and documented on the route.
 
@@ -117,6 +117,6 @@ Endpoints that do not own a canonical run context — `/history/*`, `/diagrams/e
 
 ## retrofit history
 
-`run` is **cheap to emit and expensive to add retroactively**. Any experiment run before `run` was wired is effectively dark — the model id is unknown, the prompt content is unknown, the rule set is unknown. Landing `run` before Phase 3 is therefore a precondition for Phase 3, not a cleanup task.
+`run` is cheap to emit and expensive to add retroactively. Any experiment run before it was wired is dark: unknown model id, unknown prompt content, unknown rule set. That makes landing `run` a precondition for Phase 3 rather than a cleanup task after it.
 
 See `TODO.md` Phase 2 for the build order.
