@@ -8,9 +8,10 @@ This doc owns:
 
 - the authoritative `ExperimentConfig` request schema,
 - the metric catalogue (what is measured and why),
-- the corpora the evaluation runs against,
 - the reproducibility contract,
 - the ablation plan.
+
+It does **not** own the inputs. How the benchmark is built — operator catalogue, grounding, ground-truth derivation — is [`evaluation/METHODOLOGY.md`](../evaluation/METHODOLOGY.md); the on-disk layout is [`data/eval/README.md`](../data/eval/README.md); the runs themselves are [`experiments/README.md`](../experiments/README.md). [`evaluation/README.md`](../evaluation/README.md) is the map.
 
 The system is designed so the **same backend** serves interactive sessions and batch ablation runs. An experiment is not a separate code path — it is a sweep over `ExperimentConfig` that hits the live endpoints and records every `run` block. See [`run.md`](run.md).
 
@@ -121,23 +122,13 @@ A separate strong-tier LLM call rates repaired diagrams on a small rubric (label
 
 ## corpora
 
-### PMo Benchmark (primary)
+**Owned by [`evaluation/METHODOLOGY.md`](../evaluation/METHODOLOGY.md), not by this file.** Where the two disagree about what the inputs are, the methodology wins; this section carries only what the runner needs to know.
 
-- Paper: *A benchmark suite for LLM process modeling* (PET-7 extension, 2024).
-- Content: seeded BPMN diagrams with known faults and ground-truth repairs.
-- Role: primary test set for precision / recall / convergence / GED.
+One corpus: the **PMo Dataset** (Brissard et al., 2025), 55 human-authored or expert-validated process models with English descriptions, vendored from Zenodo into `data/pmo-dataset/` and gitignored. It already subsumes the two sets an earlier version of this doc listed separately — PMo Benchmark is pairs 01–20 and PET-7 is pairs 49–54 — so they are not independent corpora and counting them as three overstates the coverage.
 
-### PET-7 (process-modelling prompts)
+~~SAP-SAM subset~~ — **dropped.** It was listed for observational metrics over a large unlabelled set. It was never fetched, no metric in the catalogue above needs an unlabelled corpus, and the token-reduction curve is measured per input against `input_bytes` on the labelled set anyway. Recorded as a scope decision.
 
-- Source: natural-language process descriptions + expected BPMN structure.
-- Role: evaluates the chat / refinement surface — does conversational generation reach the intended process?
-
-### SAP-SAM subset
-
-- Source: SAP-SAM public BPMN collection.
-- Role: large, realistic, **unlabelled** set used for observational metrics (conformance rate under tier 1 / tier 2, token-reduction curves) where ground-truth repairs are not available.
-
-Per-dataset preprocessing (PII scrub, invalid-XML filter) is run once and versioned as a script in `research/` — not re-run per experiment. The dataset snapshot id is recorded in the experiment manifest.
+The benchmark the sweeps actually read is *derived* from PMo by defect injection, not by preprocessing: `evaluation/generator/` emits `data/eval/<version>/`, and the layout contract it has to keep is [`data/eval/README.md`](../data/eval/README.md). The dataset version is declared in the spec and recorded in the manifest.
 
 ---
 
@@ -149,7 +140,7 @@ A result is reproducible iff:
 2. `run.prompt_versions` are present — recovers the exact prompt file content via the repo's prompt registry.
 3. `run.model_used` and `run.converter` pin the provider-side and IR-side surfaces.
 4. `run.rules_version` pins tier 1 (and tier 2's tool set + versions when wired).
-5. The dataset snapshot id (outside `run`, in the experiment manifest) pins the input.
+5. The dataset snapshot pins the input. Two fields carry it, both in the experiment manifest and neither inside `run`: `input_hashes` pins the bytes of every resolved file, and `dataset_version` — declared by the spec — names the corpus they were drawn from. The hashes alone are not enough, because a sweep over development fixtures and a sweep over the benchmark produce structurally identical manifests.
 
 Given these five anchors, rerunning the same endpoint against the same input should reproduce the output modulo provider non-determinism (temperature, seed honouring). Rerunning is how regressions are caught — the CI harness replays a small fixture suite on every prompt or rules change and fails if metrics drop.
 
@@ -171,7 +162,7 @@ Ablations are `ExperimentConfig` sweeps. Each row below corresponds to a plot or
 
 Each ablation is run with **fixed** other fields and sufficient trials to get a confidence interval (N=10 default; higher where provider non-determinism is material).
 
-Specs for tier contribution, IR format, counterexample evidence, and repair budget live in [`experiments/specs/`](../experiments/specs/).
+Specs for tier contribution, IR format, counterexample evidence, and repair budget live in [`experiments/specs/`](../experiments/specs/). **They currently resolve to development fixtures, not to the benchmark** — dataset `v1.0.0` is not generated yet, and each spec declares `dataset_version: dev-fixtures` so a manifest cannot hide that. [`experiments/README.md`](../experiments/README.md) records the two-line migration.
 
 ---
 
@@ -179,10 +170,10 @@ Specs for tier contribution, IR format, counterexample evidence, and repair budg
 
 ```bash
 # rehearse first: canned responses, no API call, proves the spec resolves
-make experiment-rehearse SPEC=experiments/specs/ir_format.yaml OUT=/tmp/rehearsal
+make experiment-rehearse SPEC=experiments/specs/smoke.yaml OUT=/tmp/rehearsal
 
 # then for real; --out is where results.jsonl and manifest.json land
-make experiment SPEC=experiments/specs/ir_format.yaml OUT=../research/experiments/ir-format
+make experiment SPEC=experiments/specs/ir_format.yaml OUT=experiments/results/ir-format
 ```
 
 Re-running the same `SPEC`/`OUT` pair **resumes**: trials already on disk are skipped. A sweep killed by a rate limit at trial 40 keeps its 40 results and picks up at 41.
@@ -191,10 +182,11 @@ Re-running the same `SPEC`/`OUT` pair **resumes**: trials already on disk are sk
 
 ```yaml
 experiment_id: ir-format
+dataset_version: v1.0.0       # names the corpus; recorded in the manifest
 inputs:                       # literal paths or globs, resolved against --root
-  - data/test_cases/*.bpmn
+  - data/eval/v1.0.0/variants/*.bpmn
 exclude:                      # curation criteria belong in the spec, where the
-  - data/test_cases/02_duplicate_ids.bpmn   # manifest records them
+  - data/eval/v1.0.0/variants/07_S03_f1.bpmn   # manifest records them
 base:                         # ExperimentConfig fields shared by every trial
   model_tier: strong
 axes:                         # expanded as a full cartesian product over `base`

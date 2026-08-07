@@ -18,6 +18,9 @@ dependencies = [
     "python-multipart>=0.0.12",
     "httpx>=0.28.0",
     "pm4py>=2.7.22.3",
+    # Woflan's place-invariant LP falls back to scipy without it, which pm4py
+    # itself calls unstable — tier 2 decides dataset membership, so it must be exact
+    "pulp>=2.9.0",
 ]
 
 [project.optional-dependencies]
@@ -41,4 +44,6 @@ packages = ["backend/app"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["backend/tests"]
+testpaths = ["backend/tests", "evaluation/tests"]
+# the generator lives outside backend/ and imports app.*, so both roots are needed
+pythonpath = ["backend", "."]

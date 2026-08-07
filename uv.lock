@@ -72,6 +72,7 @@ dependencies = [
     { name = "lxml" },
     { name = "openai" },
     { name = "pm4py" },
+    { name = "pulp" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-multipart" },
@@ -99,6 +100,7 @@ requires-dist = [
     { name = "lxml-stubs", marker = "extra == 'dev'", specifier = ">=0.5.1" },
     { name = "openai", specifier = ">=1.54.0" },
     { name = "pm4py", specifier = ">=2.7.22.3" },
+    { name = "pulp", specifier = ">=2.9.0" },
     { name = "pydantic", specifier = ">=2.9.0" },
     { name = "pydantic-settings", specifier = ">=2.6.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.0" },
@@ -1205,6 +1207,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/41/34/7d2f30b72342902908838de891401b32701b1eafbda45b31f5ed782f2ce1/pm4py-2.7.22.3.tar.gz", hash = "sha256:4580380850e6eeea2d3e510cd02c59f7bfc3bc1ce8600ef62f845fae470313b6", size = 1075702, upload-time = "2026-05-18T07:32:26.672Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/15/81/ad54644d8e4cdc4af92b746865f58a1792e2f3dcf02ac0c9f5a42b229e2b/pm4py-2.7.22.3-py3-none-any.whl", hash = "sha256:8a976279dc703b73ea81358b298cc095c5d9245c8c749693d4d2596d606ebbb0", size = 2484132, upload-time = "2026-05-18T07:32:22.191Z" },
+]
+
+[[package]]
+name = "pulp"
+version = "3.3.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4e/70/69be07a67621ad804d6cf347965eb4e0d7786a97330d99c31d735aaa6c5a/pulp-3.3.2.tar.gz", hash = "sha256:d0904700c207ac11e25e3b1213b70eae1d6fb25faa719d75f3f15054901258c0", size = 16305346, upload-time = "2026-05-25T09:41:26.207Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dd/6e/d674f1dde91c71e2ac19e5e5cf1ee6d5845e3aefecd9c39ed9c4b0c9a696/pulp-3.3.2-py3-none-any.whl", hash = "sha256:631b166f72086971a9597f7a0233ababa99bb8d50a01cd543f7758be5a9f86c0", size = 16391742, upload-time = "2026-05-25T09:41:22.2Z" },
 ]
 
 [[package]]
