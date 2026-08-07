@@ -2,7 +2,9 @@
 
 The specification for `data/eval/v1.0.0/`, whose on-disk layout is [`data/eval/README.md`](../data/eval/README.md).
 
-Scope: dataset `v1.0.0`, built from the PMo Dataset only, English descriptions. The eligibility probe (`evaluation/generator/probe.py`) admits 45 of the 55 PMo models as seeds; the 10 exclusions and their reasons are in [`data/eval/v1.0.0/EXCLUSIONS.md`](../data/eval/v1.0.0/EXCLUSIONS.md), regenerated with the probe rather than maintained by hand. Every seed carries an English description, so no operator class is unavailable on part of the corpus.
+Scope: dataset `v1.0.0`, built from the PMo Dataset only, English descriptions. The eligibility probe (`evaluation/generator/probe.py`) admits 48 of the 55 PMo models as seeds; the 7 exclusions and their reasons are in [`data/eval/v1.0.0/EXCLUSIONS.md`](../data/eval/v1.0.0/EXCLUSIONS.md), regenerated with the probe rather than maintained by hand. Every seed carries an English description, so no operator class is unavailable on part of the corpus.
+
+Seeds inside a pool are ordinary seeds: the IR represents collaborations, participants, lanes and message flows, so no operator has to avoid one. What the IR does not cover — sub-process bodies, data objects, artifacts, and the trigger detail inside an event definition — is still reported at import and still disqualifies a model.
 
 Vocabulary: a *seed* is a clean source model, a *defect operator* is a rule for introducing one fault, and a *variant* is a seed with one or more injected defects.
 
@@ -29,6 +31,8 @@ Determinism of the checker does not remove the need for this. Even where Woflan 
 Seeds must be clean before injection: no tier-1 findings, and SOUND under tier 2. Two further conditions come before those, because a model that fails them cannot be injected into at all: the importer must keep every child of the source file, and the IR must survive its own export unchanged apart from layout the source never carried. Models failing any of the four move to `wild/` with the failing stage recorded, and are never used as seeds.
 
 A fifth outcome is neither pass nor fail: tier 2 can return no verdict, by timing out or by crashing inside the checker. That leaves soundness unknown rather than false, so those models are excluded under their own reason and not counted as unsound.
+
+A sixth outcome is a verdict about the wrong object. When several participants carry control flow, tier 2 converts them into one Petri net with several entry points and folds those into a choice, having no message-flow semantics to synchronise them with. Woflan then decides whether one participant run alone is sound, and can return SOUND for a collaboration whose participants deadlock against each other. These models are excluded under `multi_process` rather than admitted on that verdict — a statement about tier 2's coverage, which lifts as soon as a checker that reads message flows is wired in.
 
 ## 3. Operator catalogue
 
