@@ -1,0 +1,39 @@
+{
+  "variant_id": "17_F02_ParallelGateway_2__ParallelGateway_3",
+  "seed": "17",
+  "operators": [
+    "F02"
+  ],
+  "class": "SOUND",
+  "expected_finding": "lack_of_synchronisation",
+  "expected_elements": [
+    "ParallelGateway_2",
+    "ParallelGateway_3"
+  ],
+  "injection_site": [
+    "ParallelGateway_2",
+    "ParallelGateway_3"
+  ],
+  "injection": [
+    {
+      "op": "change_gateway_type",
+      "id": "ParallelGateway_3",
+      "new_type": "exclusiveGateway"
+    }
+  ],
+  "repair": [
+    {
+      "op": "change_gateway_type",
+      "id": "ParallelGateway_3",
+      "new_type": "parallelGateway"
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

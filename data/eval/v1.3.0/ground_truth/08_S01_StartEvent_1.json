@@ -1,0 +1,48 @@
+{
+  "variant_id": "08_S01_StartEvent_1",
+  "seed": "08",
+  "operators": [
+    "S01"
+  ],
+  "class": "STRUCT",
+  "expected_finding": "R001",
+  "expected_elements": [
+    "Process_1"
+  ],
+  "injection_site": [
+    "StartEvent_1"
+  ],
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "StartEvent_1",
+      "cascade": true
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_node",
+      "id": "StartEvent_1",
+      "node_type": "startEvent",
+      "process_id": "Process_1",
+      "name": "start"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_4",
+      "source_ref": "StartEvent_1",
+      "target_ref": "Task_6",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R001"
+    ],
+    "woflan": []
+  },
+  "anchor": null
+}

@@ -1,0 +1,45 @@
+{
+  "variant_id": "33_F04_SequenceFlow_16__ExclusiveGateway_6__UserTask_6",
+  "seed": "33",
+  "operators": [
+    "F04"
+  ],
+  "class": "SOUND",
+  "expected_finding": "R007",
+  "expected_elements": [
+    "UserTask_6"
+  ],
+  "injection_site": [
+    "SequenceFlow_16",
+    "ExclusiveGateway_6",
+    "UserTask_6"
+  ],
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_16"
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_16",
+      "source_ref": "ExclusiveGateway_6",
+      "target_ref": "UserTask_6",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R007",
+      "R008"
+    ],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

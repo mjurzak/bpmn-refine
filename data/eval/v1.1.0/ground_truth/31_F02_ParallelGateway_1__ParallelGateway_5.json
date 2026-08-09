@@ -1,0 +1,33 @@
+{
+  "variant_id": "31_F02_ParallelGateway_1__ParallelGateway_5",
+  "seed": "31",
+  "operators": [
+    "F02"
+  ],
+  "class": "SOUND",
+  "expected_finding": "lack_of_synchronisation",
+  "expected_elements": [
+    "ParallelGateway_1",
+    "ParallelGateway_5"
+  ],
+  "injection_site": [
+    "ParallelGateway_1",
+    "ParallelGateway_5"
+  ],
+  "injection": [
+    {
+      "op": "change_gateway_type",
+      "id": "ParallelGateway_5",
+      "new_type": "exclusiveGateway"
+    }
+  ],
+  "repair": [
+    {
+      "op": "change_gateway_type",
+      "id": "ParallelGateway_5",
+      "new_type": "parallelGateway"
+    }
+  ],
+  "detected_by_construction": true,
+  "anchor": null
+}

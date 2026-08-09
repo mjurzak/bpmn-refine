@@ -1,0 +1,43 @@
+{
+  "variant_id": "25_F04_SequenceFlow_24__UserTask_1__ExclusiveGateway_9",
+  "seed": "25",
+  "operators": [
+    "F04"
+  ],
+  "class": "SOUND",
+  "expected_finding": "R007",
+  "expected_elements": [
+    "ExclusiveGateway_9"
+  ],
+  "injection_site": [
+    "SequenceFlow_24",
+    "UserTask_1",
+    "ExclusiveGateway_9"
+  ],
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_24"
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_24",
+      "source_ref": "UserTask_1",
+      "target_ref": "ExclusiveGateway_9",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R007",
+      "R008"
+    ],
+    "woflan": []
+  },
+  "anchor": null
+}

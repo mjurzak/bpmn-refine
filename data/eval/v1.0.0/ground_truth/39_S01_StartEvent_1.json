@@ -1,0 +1,35 @@
+{
+  "variant_id": "39_S01_StartEvent_1",
+  "seed": "39",
+  "operators": [
+    "S01"
+  ],
+  "class": "STRUCT",
+  "expected_finding": "R001",
+  "expected_elements": [
+    "Process_1"
+  ],
+  "injection_site": [
+    "StartEvent_1"
+  ],
+  "repair": [
+    {
+      "op": "add_node",
+      "id": "StartEvent_1",
+      "node_type": "startEvent",
+      "process_id": "Process_1",
+      "name": "Hardware issue detected"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_33",
+      "source_ref": "StartEvent_1",
+      "target_ref": "ExclusiveGateway_9",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "anchor": null
+}

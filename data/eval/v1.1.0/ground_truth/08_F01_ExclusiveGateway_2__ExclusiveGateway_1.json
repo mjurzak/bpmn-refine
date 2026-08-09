@@ -1,0 +1,33 @@
+{
+  "variant_id": "08_F01_ExclusiveGateway_2__ExclusiveGateway_1",
+  "seed": "08",
+  "operators": [
+    "F01"
+  ],
+  "class": "SOUND",
+  "expected_finding": "deadlock",
+  "expected_elements": [
+    "ExclusiveGateway_2",
+    "ExclusiveGateway_1"
+  ],
+  "injection_site": [
+    "ExclusiveGateway_2",
+    "ExclusiveGateway_1"
+  ],
+  "injection": [
+    {
+      "op": "change_gateway_type",
+      "id": "ExclusiveGateway_1",
+      "new_type": "parallelGateway"
+    }
+  ],
+  "repair": [
+    {
+      "op": "change_gateway_type",
+      "id": "ExclusiveGateway_1",
+      "new_type": "exclusiveGateway"
+    }
+  ],
+  "detected_by_construction": true,
+  "anchor": null
+}

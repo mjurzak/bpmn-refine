@@ -1,0 +1,42 @@
+{
+  "variant_id": "52_S01_StartEvent_1",
+  "seed": "52",
+  "operators": [
+    "S01"
+  ],
+  "class": "STRUCT",
+  "expected_finding": "R001",
+  "expected_elements": [
+    "Process_1"
+  ],
+  "injection_site": [
+    "StartEvent_1"
+  ],
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "StartEvent_1",
+      "cascade": true
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_node",
+      "id": "StartEvent_1",
+      "node_type": "startEvent",
+      "process_id": "Process_1",
+      "name": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_1",
+      "source_ref": "StartEvent_1",
+      "target_ref": "Task_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "anchor": null
+}

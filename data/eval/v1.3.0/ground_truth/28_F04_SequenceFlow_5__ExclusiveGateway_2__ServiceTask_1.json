@@ -1,0 +1,45 @@
+{
+  "variant_id": "28_F04_SequenceFlow_5__ExclusiveGateway_2__ServiceTask_1",
+  "seed": "28",
+  "operators": [
+    "F04"
+  ],
+  "class": "SOUND",
+  "expected_finding": "R007",
+  "expected_elements": [
+    "ServiceTask_1"
+  ],
+  "injection_site": [
+    "SequenceFlow_5",
+    "ExclusiveGateway_2",
+    "ServiceTask_1"
+  ],
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_5"
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_5",
+      "source_ref": "ExclusiveGateway_2",
+      "target_ref": "ServiceTask_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R007",
+      "R008"
+    ],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

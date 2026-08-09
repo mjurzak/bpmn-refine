@@ -1,0 +1,43 @@
+{
+  "variant_id": "05_F04_SequenceFlow_16__Task_11__Task_3",
+  "seed": "05",
+  "operators": [
+    "F04"
+  ],
+  "class": "SOUND",
+  "expected_finding": "R007",
+  "expected_elements": [
+    "Task_3"
+  ],
+  "injection_site": [
+    "SequenceFlow_16",
+    "Task_11",
+    "Task_3"
+  ],
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_16"
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_16",
+      "source_ref": "Task_11",
+      "target_ref": "Task_3",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R007",
+      "R008"
+    ],
+    "woflan": []
+  },
+  "anchor": null
+}

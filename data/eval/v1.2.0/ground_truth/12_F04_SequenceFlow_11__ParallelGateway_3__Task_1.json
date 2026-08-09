@@ -1,0 +1,43 @@
+{
+  "variant_id": "12_F04_SequenceFlow_11__ParallelGateway_3__Task_1",
+  "seed": "12",
+  "operators": [
+    "F04"
+  ],
+  "class": "SOUND",
+  "expected_finding": "R007",
+  "expected_elements": [
+    "Task_1"
+  ],
+  "injection_site": [
+    "SequenceFlow_11",
+    "ParallelGateway_3",
+    "Task_1"
+  ],
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_11"
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_11",
+      "source_ref": "ParallelGateway_3",
+      "target_ref": "Task_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R007",
+      "R008"
+    ],
+    "woflan": []
+  },
+  "anchor": null
+}

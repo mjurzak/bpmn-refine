@@ -1,0 +1,118 @@
+{
+  "variant_id": "02_F03_ParallelGateway_1__ParallelGateway_2__EndEvent_1",
+  "seed": "02",
+  "operators": [
+    "F03"
+  ],
+  "class": "SOUND",
+  "expected_finding": "improper_completion",
+  "expected_elements": [
+    "ParallelGateway_1",
+    "ParallelGateway_2",
+    "EndEvent_1"
+  ],
+  "injection_site": [
+    "ParallelGateway_1",
+    "ParallelGateway_2",
+    "EndEvent_1"
+  ],
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "ParallelGateway_2",
+      "cascade": true
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_21",
+      "source_ref": "Task_9",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_24",
+      "source_ref": "Task_10",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_9",
+      "source_ref": "Task_1",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_21"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_24"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_9"
+    },
+    {
+      "op": "add_node",
+      "id": "ParallelGateway_2",
+      "node_type": "parallelGateway",
+      "process_id": "Process_1",
+      "name": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_21",
+      "source_ref": "Task_9",
+      "target_ref": "ParallelGateway_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_24",
+      "source_ref": "Task_10",
+      "target_ref": "ParallelGateway_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_9",
+      "source_ref": "Task_1",
+      "target_ref": "ParallelGateway_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_13",
+      "source_ref": "ParallelGateway_2",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}
