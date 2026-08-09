@@ -67,6 +67,16 @@ WITH_COLLABORATION = _definitions(
     extra='<collaboration id="Collab_1"><participant id="Part_1" processRef="Process_1" /></collaboration>',
 )
 
+WITH_INTERMEDIATE_EVENT = _definitions(
+    """    <startEvent id="Start_1" />
+    <task id="Task_1" name="Wait" />
+    <intermediateCatchEvent id="Catch_1" />
+    <endEvent id="End_1" />
+    <sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Task_1" />
+    <sequenceFlow id="Flow_2" sourceRef="Task_1" targetRef="Catch_1" />
+    <sequenceFlow id="Flow_3" sourceRef="Catch_1" targetRef="End_1" />"""
+)
+
 
 async def test_a_clean_sound_model_is_a_seed(tmp_path: Path):
     record = await probe_model(_write(tmp_path, "ok", SOUND))
@@ -92,6 +102,18 @@ async def test_an_unsound_model_is_excluded_by_tier2(tmp_path: Path):
     assert record.verdict is Verdict.TIER2_UNSOUND
     assert record.tier1_findings == []
     assert "woflan:soundness" in record.tier2_findings
+
+
+async def test_an_unrepresented_tier2_node_type_is_excluded_explicitly(
+    tmp_path: Path,
+):
+    record = await probe_model(
+        _write(tmp_path, "unsupported", WITH_INTERMEDIATE_EVENT)
+    )
+
+    assert record.verdict is Verdict.TIER2_UNSUPPORTED
+    assert record.tier1_findings == []
+    assert record.tier2_findings == ["woflan:unsupported"]
 
 
 async def test_dropped_children_disqualify_and_are_named(tmp_path: Path):

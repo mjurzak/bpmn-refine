@@ -150,6 +150,51 @@ def test_woflan_returns_no_issues_for_a_sound_process():
     assert run_woflan(_minimal_valid_diagram()) == []
 
 
+def test_woflan_keeps_internal_petri_net_boundaries_visible():
+    diagram = BpmnDiagram(
+        definitions_id="def_bridge",
+        processes=[
+            BpmnProcess(
+                id="proc_bridge",
+                flow_nodes=[
+                    FlowNode(id="start", type=FlowNodeType.START_EVENT),
+                    FlowNode(id="before", type=FlowNodeType.TASK),
+                    FlowNode(id="after", type=FlowNodeType.TASK),
+                    FlowNode(id="end", type=FlowNodeType.END_EVENT),
+                ],
+                sequence_flows=[
+                    SequenceFlow(id="in", source_ref="start", target_ref="before"),
+                    SequenceFlow(id="out", source_ref="after", target_ref="end"),
+                ],
+            )
+        ],
+    )
+
+    issues = run_woflan(diagram)
+
+    assert [issue.rule_id for issue in issues] == ["woflan:soundness"]
+    assert "There is more than one source place." in issues[0].raw[
+        "diagnostic_messages"
+    ]
+
+
+def test_woflan_reports_an_unrepresented_node_type_without_converting():
+    diagram = _minimal_valid_diagram()
+    process = diagram.processes[0]
+    process.flow_nodes[1].type = FlowNodeType.INTERMEDIATE_CATCH_EVENT
+    diagram = BpmnDiagram.model_validate(diagram.model_dump())
+
+    issues = run_woflan(diagram)
+
+    assert len(issues) == 1
+    assert issues[0].rule_id == "woflan:unsupported"
+    assert issues[0].severity == Severity.WARNING
+    assert issues[0].element_refs == ["task_1"]
+    assert issues[0].raw == {
+        "unsupported_node_types": ["intermediateCatchEvent"]
+    }
+
+
 def _deadlock_diagram() -> BpmnDiagram:
     """XOR split into an AND join, with a task stranded behind the join."""
     nodes = [

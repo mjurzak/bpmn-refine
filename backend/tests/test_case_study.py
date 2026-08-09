@@ -35,17 +35,16 @@ def test_case_study_fires_the_expected_tier1_rules():
     assert {(i.rule_id, i.element_id) for i in issues} == EXPECTED_TIER1
 
 
-def test_case_study_is_unsound():
-    """F3: the parallel join at gw_close can never fire."""
+def test_case_study_fails_woflan_workflow_net_precondition():
+    """The planted connectivity faults create extra Petri-net boundaries."""
     issues = run_woflan(_diagram())
     assert [i.rule_id for i in issues] == ["woflan:soundness"]
     assert issues[0].severity == "error"
     assert issues[0].tier == "tier2"
-    assert issues[0].element_refs
-    assert "not covered by an S-component" in issues[0].message
-    assert issues[0].raw["boundary_normalization"]["applied"] is True
+    assert issues[0].element_refs == []
+    assert "more than one source place" in issues[0].message
     traces = issues[0].formal_witness.counterexample_traces
-    assert len(traces) == 2
+    assert traces == []
     known_ids = {
         element.id
         for process in _diagram().processes
@@ -79,8 +78,8 @@ async def test_deep_validation_reports_formal_detail_after_connectivity_repairs(
     initial_formal = next(
         issue for issue in initial.issues if issue.source == "woflan"
     )
-    assert initial_formal.element_refs
-    assert "not covered by an S-component" in initial_formal.message
+    assert initial_formal.element_refs == []
+    assert "more than one source place" in initial_formal.message
 
     connected, op_results = apply_edit_ops(
         [

@@ -26,6 +26,10 @@ _REASONS: dict[Verdict, str] = {
 		"The model is already unsound, so a SOUND operator has no clean baseline "
 		"to violate."
 	),
+	Verdict.TIER2_UNSUPPORTED: (
+		"The tier-2 conversion does not represent a BPMN node type used by the "
+		"model, so its soundness verdict would concern a different Petri net."
+	),
 	Verdict.TIER2_ERROR: (
 		"The tier-2 checker failed to return a verdict, which leaves soundness "
 		"unknown rather than false."

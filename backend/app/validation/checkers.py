@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any
@@ -12,7 +13,7 @@ import yaml
 
 from app.experiments import ExperimentConfig, T2Tool
 from app.model.formats.pydantic_ir import PydanticConverter
-from app.model.schema import BpmnDiagram
+from app.model.schema import BpmnDiagram, FlowNodeType
 from app.validation.rules import (
     FormalWitness,
     Severity,
@@ -35,6 +36,10 @@ async def run_tier2_checkers(
     if _is_selected(T2Tool.WOFLAN, config) and _is_enabled(T2Tool.WOFLAN, checker_config):
         timeout_ms = _timeout_ms(T2Tool.WOFLAN, checker_config)
         try:
+            # Loading PM4Py can build Matplotlib's cache and must happen on the
+            # main thread. That one-time setup cost is machine state, not model
+            # analysis time, so keep it outside the per-model timeout.
+            _load_woflan_modules()
             issues.extend(
                 await asyncio.wait_for(
                     asyncio.to_thread(run_woflan, diagram),
@@ -70,9 +75,29 @@ def load_checker_config(path: Path = CHECKERS_CONFIG_PATH) -> dict[str, dict[str
 
 def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
     """run PM4Py Woflan against the canonical diagram serialized as BPMN XML"""
-    import pm4py
-    from pm4py.algo.analysis.woflan import algorithm as woflan
-    from pm4py.objects.conversion.bpmn import converter as bpmn_converter
+    unsupported = [
+        node
+        for process in diagram.processes
+        for node in process.flow_nodes
+        if node.type not in _WOFLAN_SUPPORTED_NODE_TYPES
+    ]
+    if unsupported:
+        types = sorted({node.type.value for node in unsupported})
+        return [
+            ValidationIssue(
+                rule_id="woflan:unsupported",
+                severity=Severity.WARNING,
+                message=(
+                    "Woflan conversion does not represent BPMN node type(s): "
+                    + ", ".join(types)
+                ),
+                tier=ValidationTier.TIER2,
+                element_refs=[node.id for node in unsupported],
+                source=T2Tool.WOFLAN.value,
+                raw={"unsupported_node_types": types},
+            )
+        ]
+    pm4py, woflan, bpmn_converter = _load_woflan_modules()
 
     xml = PydanticConverter().serialize(diagram)
     with NamedTemporaryFile(suffix=".bpmn") as handle:
@@ -81,9 +106,6 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
         bpmn_graph = pm4py.read_bpmn(handle.name)
 
     net, initial_marking, final_marking = bpmn_converter.apply(bpmn_graph)
-    initial_marking, final_marking, boundary_normalization = (
-        _normalise_workflow_net_boundaries(net, initial_marking, final_marking)
-    )
     result = woflan.apply(
         net,
         initial_marking,
@@ -134,7 +156,6 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
                 "diagnostic_messages": messages,
                 "dead_tasks": dead_refs,
                 "uncovered_places_s_component": uncovered_refs,
-                "boundary_normalization": boundary_normalization,
                 # untranslated pm4py names, so a run stays checkable against the tool
                 "petri_net_names": {
                     "dead_tasks": dead_names,
@@ -145,62 +166,30 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
     ]
 
 
-def _normalise_workflow_net_boundaries(
-    net: Any,
-    initial_marking: Any,
-    final_marking: Any,
-) -> tuple[Any, Any, dict[str, Any]]:
-    """give Woflan one synthetic source and sink when BPMN boundaries multiply
+_WOFLAN_SUPPORTED_NODE_TYPES = {
+    FlowNodeType.START_EVENT,
+    FlowNodeType.END_EVENT,
+    FlowNodeType.TASK,
+    FlowNodeType.USER_TASK,
+    FlowNodeType.SERVICE_TASK,
+    FlowNodeType.SCRIPT_TASK,
+    FlowNodeType.SEND_TASK,
+    FlowNodeType.RECEIVE_TASK,
+    FlowNodeType.MANUAL_TASK,
+    FlowNodeType.EXCLUSIVE_GATEWAY,
+    FlowNodeType.INCLUSIVE_GATEWAY,
+    FlowNodeType.PARALLEL_GATEWAY,
+}
 
-    Woflan refuses to analyse a net without a unique structural source and sink.
-    Wrapping them here leaves the BPMN IR untouched.
-    """
-    from pm4py.objects.petri_net.obj import Marking, PetriNet
-    from pm4py.objects.petri_net.utils import petri_utils
 
-    source_places = sorted(
-        (place for place in net.places if not place.in_arcs),
-        key=lambda place: str(place.name),
-    )
-    sink_places = sorted(
-        (place for place in net.places if not place.out_arcs),
-        key=lambda place: str(place.name),
-    )
-    metadata = {
-        "applied": len(source_places) > 1 or len(sink_places) > 1,
-        "source_places": [str(place.name) for place in source_places],
-        "sink_places": [str(place.name) for place in sink_places],
-    }
+@cache
+def _load_woflan_modules() -> tuple[Any, Any, Any]:
+    """Load the formal checker once, before per-model timeout accounting."""
+    import pm4py
+    from pm4py.algo.analysis.woflan import algorithm as woflan
+    from pm4py.objects.conversion.bpmn import converter as bpmn_converter
 
-    if len(source_places) > 1:
-        synthetic_source = PetriNet.Place("__bpmn_ai_source__")
-        net.places.add(synthetic_source)
-        for index, place in enumerate(source_places):
-            transition = PetriNet.Transition(
-                f"__bpmn_ai_source_{index}__",
-                None,
-            )
-            net.transitions.add(transition)
-            petri_utils.add_arc_from_to(synthetic_source, transition, net)
-            petri_utils.add_arc_from_to(transition, place, net)
-        initial_marking = Marking()
-        initial_marking[synthetic_source] = 1
-
-    if len(sink_places) > 1:
-        synthetic_sink = PetriNet.Place("__bpmn_ai_sink__")
-        net.places.add(synthetic_sink)
-        for index, place in enumerate(sink_places):
-            transition = PetriNet.Transition(
-                f"__bpmn_ai_sink_{index}__",
-                None,
-            )
-            net.transitions.add(transition)
-            petri_utils.add_arc_from_to(place, transition, net)
-            petri_utils.add_arc_from_to(transition, synthetic_sink, net)
-        final_marking = Marking()
-        final_marking[synthetic_sink] = 1
-
-    return initial_marking, final_marking, metadata
+    return pm4py, woflan, bpmn_converter
 
 
 def _parse_woflan_result(result: Any) -> tuple[bool, dict[Any, Any]]:

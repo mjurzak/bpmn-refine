@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import asyncio
 from enum import StrEnum
+import multiprocessing
 from pathlib import Path
+from multiprocessing.connection import Connection
 
 from app.experiments import ExperimentConfig, T2Tool, TiersEnabled, hash_bytes
 from app.model.registry import get_converter
@@ -22,7 +24,7 @@ from app.services.validation import validate_diagram
 from app.validation.rules import Severity, ValidationIssue, ValidationTier
 from pydantic import BaseModel, Field
 
-PROBE_VERSION = "1.0"
+PROBE_VERSION = "1.1"
 
 
 class Verdict(StrEnum):
@@ -34,6 +36,7 @@ class Verdict(StrEnum):
 	ROUND_TRIP_FAILED = "round_trip_failed"
 	TIER1_FINDINGS = "tier1_findings"
 	TIER2_UNSOUND = "tier2_unsound"
+	TIER2_UNSUPPORTED = "tier2_unsupported"
 	TIER2_ERROR = "tier2_error"
 
 
@@ -148,6 +151,15 @@ async def probe_model(
 			update={"verdict": Verdict.TIER2_ERROR, "detail": _describe(runtime_errors)}
 		)
 
+	unsupported = [issue for issue in tier2 if issue.rule_id.endswith(":unsupported")]
+	if unsupported:
+		return record.model_copy(
+			update={
+				"verdict": Verdict.TIER2_UNSUPPORTED,
+				"detail": _describe(unsupported),
+			}
+		)
+
 	unsound = [issue for issue in tier2 if issue.severity == Severity.ERROR]
 	if unsound:
 		return record.model_copy(
@@ -248,5 +260,39 @@ def run_probe(
 	description_dir: Path | None = None,
 	config: ExperimentConfig = _GATE_CONFIG,
 ) -> ProbeReport:
-	"""synchronous entry point for callers outside an event loop"""
-	return asyncio.run(probe_corpus(source_dir, description_dir, config=config))
+	"""Run each model in an isolated process so timed-out Woflan threads die."""
+	context = multiprocessing.get_context("spawn")
+	records: list[ProbeRecord] = []
+	for path in sorted(source_dir.glob("*.bpmn")):
+		description = description_dir / f"{path.stem}.txt" if description_dir else None
+		receive, send = context.Pipe(duplex=False)
+		process = context.Process(
+			target=_probe_model_worker,
+			args=(send, path, description, config),
+		)
+		process.start()
+		send.close()
+		if not receive.poll(30):
+			process.terminate()
+			process.join()
+			raise TimeoutError(f"probe worker did not return for {path.name}")
+		records.append(ProbeRecord.model_validate(receive.recv()))
+		receive.close()
+		if process.is_alive():
+			process.terminate()
+		process.join()
+	return ProbeReport(source_dir=str(source_dir), records=records)
+
+
+def _probe_model_worker(
+	connection: Connection,
+	path: Path,
+	description: Path | None,
+	config: ExperimentConfig,
+) -> None:
+	loop = asyncio.new_event_loop()
+	try:
+		record = loop.run_until_complete(probe_model(path, description, config))
+		connection.send(record.model_dump(mode="json"))
+	finally:
+		connection.close()
