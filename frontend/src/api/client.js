@@ -121,3 +121,16 @@ export async function getRevision(sessionId, revId) {
 export async function revertToRevision(sessionId, revId) {
   return request(`/history/${sessionId}/revert/${revId}`, { method: "POST" });
 }
+
+export async function getDatasetIndex(version = "v1.3.0", signal) {
+  return request(`/evaluation/datasets/${encodeURIComponent(version)}`, {
+    signal,
+  });
+}
+
+export async function getDatasetComparison(version, variantId, signal) {
+  return request(
+    `/evaluation/datasets/${encodeURIComponent(version)}/comparisons/${encodeURIComponent(variantId)}`,
+    { signal },
+  );
+}

@@ -1277,6 +1277,13 @@ export default function App() {
           interactive BPMN validation and refinement
         </div>
         <div className="toolbar-spacer" />
+        <a
+          href="/dataset-compare"
+          className="toolbar-btn"
+          title="Compare evaluation seeds with generated variants"
+        >
+          Dataset diff
+        </a>
         <div className="toolbar-settings">
           <button
             onClick={() => setLlmSettingsOpen((open) => !open)}
