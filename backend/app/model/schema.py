@@ -55,6 +55,31 @@ class Waypoint(BaseModel):
     y: float
 
 
+class EventDefinitionType(StrEnum):
+    MESSAGE = "messageEventDefinition"
+    TIMER = "timerEventDefinition"
+    CONDITIONAL = "conditionalEventDefinition"
+    SIGNAL = "signalEventDefinition"
+    ERROR = "errorEventDefinition"
+    ESCALATION = "escalationEventDefinition"
+    COMPENSATE = "compensateEventDefinition"
+    CANCEL = "cancelEventDefinition"
+    TERMINATE = "terminateEventDefinition"
+    LINK = "linkEventDefinition"
+
+
+class EventDefinition(BaseModel):
+    """The event trigger kind and its attributes.
+
+    Nested trigger details such as timer schedules are deliberately outside the
+    current IR and are reported by the import diagnostic instead of being lost.
+    """
+
+    type: EventDefinitionType
+    id: str | None = None
+    extra: dict = Field(default_factory=dict)
+
+
 class FlowNode(BaseModel):
     id: FlowNodeId
     type: FlowNodeType
@@ -62,6 +87,7 @@ class FlowNode(BaseModel):
     # sequence flow IDs, derived from the flows
     outgoing: list[SequenceFlowId] = Field(default_factory=list)
     incoming: list[SequenceFlowId] = Field(default_factory=list)
+    event_definitions: list[EventDefinition] = Field(default_factory=list)
     # None means the node never had a shape, so the serialiser lays it out
     bounds: Bounds | None = None
     label_bounds: Bounds | None = None
@@ -155,6 +181,12 @@ class BpmnDiagram(BaseModel):
         for proc in self.processes:
             ids.append(proc.id)
             ids.extend(node.id for node in proc.flow_nodes)
+            ids.extend(
+                definition.id
+                for node in proc.flow_nodes
+                for definition in node.event_definitions
+                if definition.id
+            )
             ids.extend(flow.id for flow in proc.sequence_flows)
             for pool in proc.pools:
                 ids.append(pool.id)

@@ -14,6 +14,8 @@ from app.model.schema import (
     Bounds,
     BpmnDiagram,
     BpmnProcess,
+    EventDefinition,
+    EventDefinitionType,
     FlowNode,
     FlowNodeId,
     FlowNodeType,
@@ -37,6 +39,7 @@ _H_GAP = 50
 _Y_CENTER = 200
 
 _FLOW_NODE_TAGS = {t.value for t in FlowNodeType}
+_EVENT_DEFINITION_TAGS = {t.value for t in EventDefinitionType}
 
 # definitions-level children the converter handles, and metadata it may skip
 # because it carries no control flow
@@ -226,7 +229,7 @@ def _parse_process(
             continue  # skip comment and processing-instruction nodes
         local = etree.QName(child.tag).localname
         if local in _FLOW_NODE_TAGS:
-            node = _parse_flow_node(child, local)
+            node = _parse_flow_node(child, local, unsupported, proc_id)
             _reject_duplicate_id(node.id, proc_el, seen_ids)
             flow_nodes.append(node)
         elif local == "sequenceFlow":
@@ -294,14 +297,71 @@ def _reject_duplicate_id(
     seen_ids.add(element_id)
 
 
-def _parse_flow_node(el: etree._Element, local_name: str) -> FlowNode:
+def _parse_flow_node(
+    el: etree._Element,
+    local_name: str,
+    unsupported: list[UnsupportedElement] | None = None,
+    proc_id: str | None = None,
+) -> FlowNode:
     extra = {k: v for k, v in el.attrib.items() if k not in ("id", "name")}
+    node_id = FlowNodeId(el.get("id") or "")
+    event_definitions: list[EventDefinition] = []
+
+    for child in el:
+        if not isinstance(child.tag, str):
+            continue
+        local = etree.QName(child.tag).localname
+        if local in _EVENT_DEFINITION_TAGS:
+            event_definitions.append(_parse_event_definition(child, local))
+            _report_children(child, unsupported, local, child.get("id") or node_id)
+        elif local not in {"incoming", "outgoing"} and unsupported is not None:
+            unsupported.append(
+                UnsupportedElement(
+                    tag=local,
+                    scope=local_name,
+                    element_id=child.get("id"),
+                    parent_id=node_id or proc_id,
+                )
+            )
+
     return FlowNode(
-        id=FlowNodeId(el.get("id") or ""),
+        id=node_id,
         type=FlowNodeType(local_name),
         name=el.get("name"),
+        event_definitions=event_definitions,
         extra=extra,
     )
+
+
+def _parse_event_definition(
+    el: etree._Element, local_name: str
+) -> EventDefinition:
+    return EventDefinition(
+        type=EventDefinitionType(local_name),
+        id=el.get("id"),
+        extra={key: value for key, value in el.attrib.items() if key != "id"},
+    )
+
+
+def _report_children(
+    parent: etree._Element,
+    unsupported: list[UnsupportedElement] | None,
+    scope: str,
+    parent_id: str | None,
+) -> None:
+    if unsupported is None:
+        return
+    for child in parent:
+        if not isinstance(child.tag, str):
+            continue
+        unsupported.append(
+            UnsupportedElement(
+                tag=etree.QName(child.tag).localname,
+                scope=scope,
+                element_id=child.get("id"),
+                parent_id=parent_id,
+            )
+        )
 
 
 def _parse_sequence_flow(el: etree._Element) -> SequenceFlow:
@@ -363,6 +423,15 @@ def _serialize_process(
             etree.SubElement(node_el, f"{{{bpmn_ns}}}outgoing").text = out_id
         for in_id in node.incoming:
             etree.SubElement(node_el, f"{{{bpmn_ns}}}incoming").text = in_id
+        for definition in node.event_definitions:
+            etree.SubElement(
+                node_el,
+                f"{{{bpmn_ns}}}{definition.type.value}",
+                attrib={
+                    **({"id": definition.id} if definition.id else {}),
+                    **definition.extra,
+                },
+            )
 
     for sf in proc.sequence_flows:
         sf_attrib: dict[str, str] = {

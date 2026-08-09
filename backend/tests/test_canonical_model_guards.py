@@ -7,6 +7,8 @@ from app.model.formats.pydantic_ir import PydanticConverter
 from app.model.schema import (
     BpmnDiagram,
     BpmnProcess,
+    EventDefinition,
+    EventDefinitionType,
     FlowNode,
     FlowNodeType,
     Lane,
@@ -374,3 +376,75 @@ def test_the_supported_subset_still_imports_intact():
     process = diagram.processes[0]
     assert [node.id for node in process.flow_nodes] == ["start_1", "task_1", "end_1"]
     assert [flow.id for flow in process.sequence_flows] == ["sf_1", "sf_2"]
+
+
+_XML_WITH_EVENT_DEFINITIONS = b"""<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  id="defs_events" targetNamespace="http://example.test/events">
+  <bpmn:process id="Process_events">
+    <bpmn:startEvent id="start_message">
+      <bpmn:messageEventDefinition id="message_def" messageRef="Message_1" />
+    </bpmn:startEvent>
+    <bpmn:intermediateCatchEvent id="wait_timer">
+      <bpmn:timerEventDefinition id="timer_def">
+        <bpmn:timeDuration>PT1H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="end_1" />
+    <bpmn:sequenceFlow id="sf_1" sourceRef="start_message" targetRef="wait_timer" />
+    <bpmn:sequenceFlow id="sf_2" sourceRef="wait_timer" targetRef="end_1" />
+  </bpmn:process>
+</bpmn:definitions>
+"""
+
+
+def test_event_definition_kind_id_and_attributes_round_trip():
+    converter = PydanticConverter()
+    diagram, unsupported = converter.parse_with_diagnostics(
+        _XML_WITH_EVENT_DEFINITIONS
+    )
+
+    message = diagram.processes[0].flow_nodes[0].event_definitions[0]
+    assert message == EventDefinition(
+        type=EventDefinitionType.MESSAGE,
+        id="message_def",
+        extra={"messageRef": "Message_1"},
+    )
+
+    reparsed, _ = converter.parse_with_diagnostics(converter.serialize(diagram))
+    assert reparsed.processes[0].flow_nodes[0].event_definitions == [message]
+    assert [item.tag for item in unsupported] == ["timeDuration"]
+
+
+def test_nested_event_trigger_detail_is_reported_with_location():
+    _, unsupported = PydanticConverter().parse_with_diagnostics(
+        _XML_WITH_EVENT_DEFINITIONS
+    )
+
+    schedule = unsupported[0]
+    assert schedule.scope == "timerEventDefinition"
+    assert schedule.parent_id == "timer_def"
+
+
+def test_event_definition_ids_are_document_scoped():
+    with pytest.raises(ValidationError, match="message_def"):
+        BpmnDiagram(
+            definitions_id="defs_1",
+            processes=[
+                BpmnProcess(
+                    id="Process_1",
+                    flow_nodes=[
+                        FlowNode(
+                            id="message_def",
+                            type=FlowNodeType.START_EVENT,
+                            event_definitions=[
+                                EventDefinition(
+                                    id="message_def",
+                                    type=EventDefinitionType.MESSAGE,
+                                )
+                            ],
+                        )
+                    ],
+                )
+            ],
+        )

@@ -28,8 +28,10 @@ _NODE_KEYS = {
     "name": "n",
     "outgoing": "o",
     "incoming": "m",
+    "event_definitions": "d",
     "extra": "x",
 }
+_EVENT_DEFINITION_KEYS = {"type": "t", "id": "i", "extra": "x"}
 _FLOW_KEYS = {
     "id": "i",
     "source_ref": "s",
@@ -95,7 +97,17 @@ def _compact_process(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def _compact_node(data: dict[str, Any]) -> dict[str, Any]:
-    return _drop_empty({_NODE_KEYS[key]: data.get(key) for key in _NODE_KEYS})
+    compacted = {_NODE_KEYS[key]: data.get(key) for key in _NODE_KEYS}
+    compacted[_NODE_KEYS["event_definitions"]] = [
+        _drop_empty(
+            {
+                _EVENT_DEFINITION_KEYS[key]: item.get(key)
+                for key in _EVENT_DEFINITION_KEYS
+            }
+        )
+        for item in data.get("event_definitions", [])
+    ]
+    return _drop_empty(compacted)
 
 
 def _compact_flow(data: dict[str, Any]) -> dict[str, Any]:
@@ -145,6 +157,10 @@ def _expand_node(data: dict[str, Any]) -> dict[str, Any]:
         "name": data.get("n"),
         "outgoing": data.get("o", []),
         "incoming": data.get("m", []),
+        "event_definitions": [
+            {"type": item["t"], "id": item.get("i"), "extra": item.get("x", {})}
+            for item in data.get("d", [])
+        ],
         "extra": data.get("x", {}),
     }
 
