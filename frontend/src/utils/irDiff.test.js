@@ -42,7 +42,7 @@ function mutate(fn) {
   return copy;
 }
 
-describe("changes the old diff already reported", () => {
+describe("node changes", () => {
   it("reports an added node", () => {
     const next = mutate((d) =>
       d.processes[0].flow_nodes.push({ id: "task_2", type: "task", name: "Pay" }),
@@ -82,7 +82,7 @@ describe("changes the old diff already reported", () => {
   });
 });
 
-describe("changes the old diff silently dropped", () => {
+describe("flow changes", () => {
   it("reports a rerouted flow", () => {
     const next = mutate((d) => {
       d.processes[0].sequence_flows[1].target_ref = "start_1";

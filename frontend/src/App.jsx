@@ -21,6 +21,7 @@ import { opElementIds } from "./utils/editOps.js";
 import { llmTraceTitle } from "./utils/llmTraceLabels.js";
 import { sortValidationFindings } from "./utils/validationFindings.js";
 import useResize from "./hooks/useResize.js";
+import { PROVIDER_OPTIONS } from "./llmProviders.js";
 import "./app.css";
 
 const UI_SESSION_KEYS = {
@@ -52,7 +53,6 @@ const VALIDATION_MODES = {
 
 const DEEP_VALIDATE_CONFIG = {
   tiers_enabled: { t1: true, t2: true, t3: false },
-  t2_tools: ["woflan"],
 };
 
 const SEMANTIC_VALIDATE_CONFIG = {
@@ -65,46 +65,6 @@ const VALIDATION_MODE_CONFIG = {
   [VALIDATION_MODES.DEEP]: DEEP_VALIDATE_CONFIG,
   [VALIDATION_MODES.SEMANTIC]: SEMANTIC_VALIDATE_CONFIG,
 };
-
-const PROVIDER_OPTIONS = [
-  {
-    value: "openai",
-    label: "OpenAI",
-    models: ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-5.5"],
-    reasoningEfforts: ["none", "low", "medium", "high", "xhigh"],
-  },
-  {
-    value: "anthropic",
-    label: "Anthropic",
-    models: [
-      "claude-opus-5",
-      "claude-fable-5",
-      "claude-sonnet-5",
-      "claude-haiku-4-5",
-      "claude-opus-4-8",
-    ],
-    reasoningEfforts: ["low", "medium", "high"],
-  },
-  {
-    value: "gemini",
-    label: "Gemini",
-    models: [
-      "gemini-3.1-pro-preview",
-      "gemini-3.5-flash",
-      "gemini-3-flash-preview",
-      "gemini-3.1-flash-lite",
-    ],
-    reasoningEfforts: [],
-  },
-  {
-    value: "ollama",
-    label: "Ollama",
-    models: [],
-    customOnly: true,
-    customPlaceholder: "llama3.2",
-    reasoningEfforts: [],
-  },
-];
 
 const INTERACTION_OPTIONS = [
   { key: "validation", label: "Validation" },
@@ -1277,13 +1237,6 @@ export default function App() {
           interactive BPMN validation and refinement
         </div>
         <div className="toolbar-spacer" />
-        <a
-          href="/dataset-compare"
-          className="toolbar-btn"
-          title="Compare evaluation seeds with generated variants"
-        >
-          Dataset diff
-        </a>
         <div className="toolbar-settings">
           <button
             onClick={() => setLlmSettingsOpen((open) => !open)}

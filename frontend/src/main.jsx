@@ -3,7 +3,8 @@ import ReactDOM from "react-dom/client";
 import "./app.css";
 
 const RootComponent = lazy(() =>
-  window.location.pathname.startsWith("/dataset-compare")
+  window.location.pathname === "/dataset-compare" ||
+  window.location.pathname.startsWith("/dataset-compare/")
     ? import("./components/DatasetComparePage.jsx")
     : import("./App.jsx"),
 );

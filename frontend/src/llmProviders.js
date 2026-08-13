@@ -1,0 +1,55 @@
+export const PROVIDER_OPTIONS = [
+  {
+    value: "openai",
+    label: "OpenAI",
+    models: ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-5.5"],
+    reasoningEfforts: ["none", "low", "medium", "high", "xhigh"],
+  },
+  {
+    value: "anthropic",
+    label: "Anthropic",
+    models: [
+      "claude-opus-5",
+      "claude-fable-5",
+      "claude-sonnet-5",
+      "claude-haiku-4-5",
+      "claude-opus-4-8",
+    ],
+    reasoningEfforts: ["low", "medium", "high"],
+  },
+  {
+    value: "codex_cli",
+    label: "Codex CLI",
+    models: [],
+    customOnly: true,
+    customPlaceholder: "gpt-5.6-sol",
+    reasoningEfforts: ["low", "medium", "high", "xhigh"],
+  },
+  {
+    value: "claude_cli",
+    label: "Claude Code",
+    models: [],
+    customOnly: true,
+    customPlaceholder: "claude-sonnet-5",
+    reasoningEfforts: ["low", "medium", "high", "xhigh"],
+  },
+  {
+    value: "gemini",
+    label: "Gemini",
+    models: [
+      "gemini-3.1-pro-preview",
+      "gemini-3.5-flash",
+      "gemini-3-flash-preview",
+      "gemini-3.1-flash-lite",
+    ],
+    reasoningEfforts: [],
+  },
+  {
+    value: "ollama",
+    label: "Ollama",
+    models: [],
+    customOnly: true,
+    customPlaceholder: "llama3.2",
+    reasoningEfforts: [],
+  },
+];

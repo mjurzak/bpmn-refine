@@ -3,6 +3,7 @@ import BpmnModeler from "bpmn-js/lib/Modeler";
 import "bpmn-js/dist/assets/bpmn-js.css";
 import "bpmn-js/dist/assets/diagram-js.css";
 import "bpmn-js/dist/assets/bpmn-font/css/bpmn.css";
+import { createConditionExpressionOverlayManager } from "../utils/conditionExpressionOverlays.js";
 
 const DEFAULT_DIAGRAM = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
@@ -28,6 +29,8 @@ const DIFF_MARKERS = ["diff-added", "diff-modified", "diff-selected"];
 const BpmnEditor = forwardRef(function BpmnEditor({ xml, onXmlChange }, ref) {
   const containerRef = useRef(null);
   const modelerRef = useRef(null);
+  const conditionOverlaysRef = useRef(null);
+  const importTokenRef = useRef(0);
 
   // stable reference so the commandStack listener doesn't go stale
   const onXmlChangeRef = useRef(onXmlChange);
@@ -36,11 +39,12 @@ const BpmnEditor = forwardRef(function BpmnEditor({ xml, onXmlChange }, ref) {
   useEffect(() => {
     const modeler = new BpmnModeler({ container: containerRef.current });
     modelerRef.current = modeler;
-
-    modeler.importXML(xml || DEFAULT_DIAGRAM).catch(console.error);
+    const conditionOverlays = createConditionExpressionOverlayManager(modeler);
+    conditionOverlaysRef.current = conditionOverlays;
 
     modeler.on("commandStack.changed", async () => {
       if (!modelerRef.current) return;
+      conditionOverlays.render();
       try {
         const { xml: updatedXml } = await modeler.saveXML({ format: true });
         onXmlChangeRef.current?.(updatedXml);
@@ -50,14 +54,39 @@ const BpmnEditor = forwardRef(function BpmnEditor({ xml, onXmlChange }, ref) {
     });
 
     return () => {
+      conditionOverlays.destroy();
+      conditionOverlaysRef.current = null;
       modelerRef.current = null;
       modeler.destroy();
     };
   }, []);
 
   useEffect(() => {
-    if (!xml || !modelerRef.current) return;
-    modelerRef.current.importXML(xml).catch(console.error);
+    const modeler = modelerRef.current;
+    const conditionOverlays = conditionOverlaysRef.current;
+    if (!modeler || !conditionOverlays) return undefined;
+
+    let cancelled = false;
+    const importToken = ++importTokenRef.current;
+    conditionOverlays.clear();
+    modeler
+      .importXML(xml || DEFAULT_DIAGRAM)
+      .then(() => {
+        if (
+          !cancelled &&
+          importTokenRef.current === importToken &&
+          modelerRef.current === modeler
+        ) {
+          conditionOverlays.render();
+        }
+      })
+      .catch((reason) => {
+        if (!cancelled) console.error(reason);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [xml]);
 
   useImperativeHandle(ref, () => ({
@@ -68,8 +97,22 @@ const BpmnEditor = forwardRef(function BpmnEditor({ xml, onXmlChange }, ref) {
     },
 
     importXml(xml) {
-      if (!modelerRef.current) return;
-      modelerRef.current.importXML(xml).catch(console.error);
+      const modeler = modelerRef.current;
+      const conditionOverlays = conditionOverlaysRef.current;
+      if (!modeler || !conditionOverlays) return;
+      const importToken = ++importTokenRef.current;
+      conditionOverlays.clear();
+      modeler
+        .importXML(xml)
+        .then(() => {
+          if (
+            importTokenRef.current === importToken &&
+            modelerRef.current === modeler
+          ) {
+            conditionOverlays.render();
+          }
+        })
+        .catch(console.error);
     },
 
     // bpmn-js measures zero while the pane is display:none, so refit on return

@@ -167,6 +167,26 @@ html, body, #root {
   text-decoration: none;
 }
 
+.condition-expression-overlay {
+  max-width: 220px;
+  overflow: hidden;
+  padding: 2px 5px;
+  border: 1px solid var(--clr-accent);
+  border-radius: 3px;
+  background: var(--clr-surface);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--clr-text) 18%, transparent);
+  color: var(--clr-text);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: help;
+  transform: translate(-50%, -50%);
+  user-select: none;
+}
+
 /* ── evaluation dataset comparison ── */
 .dataset-compare-page {
   min-height: 100%;
@@ -204,12 +224,16 @@ html, body, #root {
 
 .dataset-compare-controls {
   display: grid;
-  grid-template-columns: minmax(150px, 0.45fr) minmax(280px, 1fr) auto;
+  grid-template-columns: minmax(140px, 0.35fr) minmax(150px, 0.4fr) minmax(280px, 1fr) auto;
   align-items: end;
   gap: 14px;
   padding: 12px 18px;
   border-bottom: 1px solid var(--clr-border);
   background: var(--clr-sidebar);
+}
+
+.dataset-compare-case-select {
+  grid-column: span 2;
 }
 
 .dataset-compare-controls label {
@@ -267,6 +291,38 @@ html, body, #root {
   border-radius: var(--radius-sm);
   background: var(--clr-error-bg);
   color: var(--clr-error);
+}
+
+.dataset-enhancement-contract {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.5fr) minmax(240px, 1fr) minmax(130px, 0.35fr);
+  gap: 10px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--clr-border);
+  background: var(--clr-surface);
+}
+
+.dataset-enhancement-contract > div {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--clr-border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--clr-bg);
+}
+
+.dataset-enhancement-contract span {
+  color: var(--clr-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dataset-enhancement-contract p {
+  margin-top: 4px;
+  color: var(--clr-text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .dataset-diff-summary {
@@ -421,6 +477,14 @@ html, body, #root {
 
   .dataset-compare-ground-truth {
     grid-column: 1 / -1;
+  }
+
+  .dataset-compare-case-select {
+    grid-column: auto;
+  }
+
+  .dataset-enhancement-contract {
+    grid-template-columns: 1fr;
   }
 
   .dataset-compare-grid {

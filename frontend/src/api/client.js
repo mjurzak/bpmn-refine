@@ -122,15 +122,30 @@ export async function revertToRevision(sessionId, revId) {
   return request(`/history/${sessionId}/revert/${revId}`, { method: "POST" });
 }
 
-export async function getDatasetIndex(version = "v1.3.0", signal) {
+export async function getDatasetIndex(version = "v1.0", signal) {
   return request(`/evaluation/datasets/${encodeURIComponent(version)}`, {
     signal,
   });
 }
 
 export async function getDatasetComparison(version, variantId, signal) {
+  const encodedVariant = variantId
+    .split("/")
+    .map((part) => encodeURIComponent(part))
+    .join("/");
   return request(
-    `/evaluation/datasets/${encodeURIComponent(version)}/comparisons/${encodeURIComponent(variantId)}`,
+    `/evaluation/datasets/${encodeURIComponent(version)}/comparisons/${encodedVariant}`,
+    { signal },
+  );
+}
+
+export async function getEnhancementIndex(signal) {
+  return request("/evaluation/datasets/enhancement", { signal });
+}
+
+export async function getEnhancementComparison(caseId, signal) {
+  return request(
+    `/evaluation/datasets/enhancement/comparisons/${encodeURIComponent(caseId)}`,
     { signal },
   );
 }
