@@ -38,7 +38,7 @@
   ],
   "counts": {
     "seeds": 43,
-    "variants": 549,
+    "variants": 548,
     "F01": 28,
     "F02": 45,
     "F03": 4,
@@ -48,12 +48,12 @@
     "M03": 35,
     "M04": 20,
     "M05": 60,
-    "M06": 39,
+    "M06": 38,
     "M07": 22,
     "S01": 68,
     "S02": 68,
     "S03": 110,
-    "k1": 426,
+    "k1": 425,
     "k2_disjoint": 80,
     "k2_interacting": 43
   },
@@ -68,7 +68,7 @@
     },
     {
       "path": "SEMANTIC.md",
-      "sha256": "83d5a14f5a4eae84d6ef59f4f72a1f32c3a4fd3e84294a2ad2dd5263d65ad1a7"
+      "sha256": "5037644103dc73efe1f7b822b9f1fa3a7c893fa9b5c60de623b178c7055e883a"
     },
     {
       "path": "applicability.json",
@@ -1769,10 +1769,6 @@
     {
       "path": "descriptions/variants/single/M06/10.txt",
       "sha256": "fdcf26aeb64899ce91fc4b3967822b94de040fc31b22d19a75a54efc4a1bec9f"
-    },
-    {
-      "path": "descriptions/variants/single/M06/11.txt",
-      "sha256": "6b521c58d3af83f4af39ec16ce294dfdd2a564fa53a036507842754bcbeb2d82"
     },
     {
       "path": "descriptions/variants/single/M06/12.txt",
@@ -3967,10 +3963,6 @@
       "sha256": "35bcbb5b9d05a252dad7165913b61fe51359b193fa83fdb4d8d7b1d6c4318b1d"
     },
     {
-      "path": "ground_truth/single/M06/11.json",
-      "sha256": "316b797056681655da363ad9adf2a5e51ae43a85d4a9bc7031f0fd87efeb828e"
-    },
-    {
       "path": "ground_truth/single/M06/12.json",
       "sha256": "953ebf8359ea897b582bbe73fce9f1bda619632db5f79903c61481d22ed8167d"
     },
@@ -4643,6 +4635,10 @@
       "sha256": "4d4b34a45c88b049016765f73fb8a5e439241684c0477f5352185e3fa4d6de6b"
     },
     {
+      "path": "seeds.txt",
+      "sha256": "8f5b42760bd1d2fe7fd3739b1e3bd51754738d020e842541885deddf004ffce7"
+    },
+    {
       "path": "seeds/01.bpmn",
       "sha256": "d45f1d056cd4c446f5d035786874825e6c595d56adbe995c3091b2b0b64ac0dc"
     },
@@ -4813,10 +4809,6 @@
     {
       "path": "seeds/55.bpmn",
       "sha256": "5524c31857d55cf0af22f350fd88d1261ca1bf4ff6901968472ac650ac9b92fb"
-    },
-    {
-      "path": "seeds.txt",
-      "sha256": "8f5b42760bd1d2fe7fd3739b1e3bd51754738d020e842541885deddf004ffce7"
     },
     {
       "path": "variants/disjoint/F01+F02/02.bpmn",
@@ -6341,10 +6333,6 @@
     {
       "path": "variants/single/M06/10.bpmn",
       "sha256": "f640d1d73dad49332cdd33324ca96b957b50430b15a1bda85ba009a96e07c23d"
-    },
-    {
-      "path": "variants/single/M06/11.bpmn",
-      "sha256": "c1e5db0e97fcca04e74711dbcbef6c7d9dba8c7b8f192bd6b291f8bf17adf14e"
     },
     {
       "path": "variants/single/M06/12.bpmn",

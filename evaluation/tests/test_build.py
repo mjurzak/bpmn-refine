@@ -10,7 +10,11 @@ from app.experiments import hash_bytes
 from app.model.registry import get_converter
 from app.repair.ops import apply_edit_ops
 from app.validation.rules import validate
-from evaluation.generator.build import audit_dataset, build_dataset
+from evaluation.generator.build import (
+    audit_dataset,
+    build_dataset,
+    refresh_dataset_manifest,
+)
 from evaluation.generator.models import GroundTruthRecord
 from evaluation.generator.probe import ProbeRecord, ProbeReport, Verdict
 
@@ -47,7 +51,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
     return source, descriptions, probe
 
 
-def test_build_emits_two_joinable_structural_variants(tmp_path: Path):
+def test_build_emits_joinable_single_and_interacting_variants(tmp_path: Path):
     source, descriptions, probe = _fixture(tmp_path)
     out = tmp_path / "dataset"
 
@@ -59,26 +63,34 @@ def test_build_emits_two_joinable_structural_variants(tmp_path: Path):
         dataset_version="test-v1",
     )
 
-    variants = sorted((out / "variants").glob("*.bpmn"))
-    truths = sorted((out / "ground_truth").glob("*.json"))
+    variants = sorted((out / "variants").rglob("*.bpmn"))
+    truths = sorted((out / "ground_truth").rglob("*.json"))
     assert manifest.counts == {
         "seeds": 1,
-        "variants": 2,
-        "S01": 1,
+        "variants": 4,
+        "S01": 2,
         "S02": 1,
+        "S03": 2,
         "F01": 0,
         "F02": 0,
         "F03": 0,
         "F04": 0,
+        "k1": 3,
+        "k2_disjoint": 0,
+        "k2_interacting": 1,
     }
-    assert [path.stem for path in variants] == [path.stem for path in truths]
+    assert [
+        path.relative_to(out / "variants").with_suffix("") for path in variants
+    ] == [
+        path.relative_to(out / "ground_truth").with_suffix("") for path in truths
+    ]
     assert (out / "seeds" / "01.bpmn").read_bytes() == SOUND
     assert (out / "ATTRIBUTION.md").is_file()
     assert (out / "manifest.json").is_file()
-    assert audit_dataset(out) == {"seeds": 1, "variants": 2}
+    assert audit_dataset(out) == {"seeds": 1, "variants": 4}
 
 
-@pytest.mark.parametrize("operator", ["S01", "S02"])
+@pytest.mark.parametrize("operator", ["S01", "S02", "S03"])
 def test_stored_repairs_clear_the_injected_finding(tmp_path: Path, operator: str):
     source, descriptions, probe = _fixture(tmp_path)
     out = tmp_path / "dataset"
@@ -89,8 +101,9 @@ def test_stored_repairs_clear_the_injected_finding(tmp_path: Path, operator: str
         out=out,
         dataset_version="test-v1",
     )
-    truth_path = next((out / "ground_truth").glob(f"*_{operator}_*.json"))
-    variant_path = out / "variants" / f"{truth_path.stem}.bpmn"
+    truth_path = next((out / "ground_truth").rglob(f"{operator}/*.json"))
+    relative = truth_path.relative_to(out / "ground_truth").with_suffix(".bpmn")
+    variant_path = out / "variants" / relative
     truth = GroundTruthRecord.model_validate_json(truth_path.read_bytes())
     diagram = get_converter().parse(variant_path.read_bytes())
 
@@ -161,8 +174,31 @@ def test_audit_detects_a_modified_variant(tmp_path: Path):
         out=out,
         dataset_version="test-v1",
     )
-    variant = next((out / "variants").glob("*.bpmn"))
+    variant = next((out / "variants").rglob("*.bpmn"))
     variant.write_bytes(variant.read_bytes() + b"\n")
 
     with pytest.raises(ValueError, match="hash mismatch"):
         audit_dataset(out)
+
+
+def test_refresh_manifest_tracks_an_explicit_curation_removal(tmp_path: Path):
+    source, descriptions, probe = _fixture(tmp_path)
+    out = tmp_path / "dataset"
+    build_dataset(
+        source_dir=source,
+        description_dir=descriptions,
+        probe_path=probe,
+        out=out,
+        dataset_version="test-v1",
+    )
+    relative = Path("single/S02/01")
+    (out / "variants" / relative.with_suffix(".bpmn")).unlink()
+    (out / "ground_truth" / relative.with_suffix(".json")).unlink()
+    (out / "descriptions" / "variants" / relative.with_suffix(".txt")).unlink()
+
+    manifest = refresh_dataset_manifest(out)
+
+    assert manifest.counts["variants"] == 3
+    assert manifest.counts["S02"] == 0
+    assert manifest.counts["k1"] == 2
+    assert audit_dataset(out) == {"seeds": 1, "variants": 3}

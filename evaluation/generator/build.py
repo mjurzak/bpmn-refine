@@ -2,33 +2,42 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import hashlib
 import json
-import re
 import shutil
 from pathlib import Path
 
 from app.model.registry import get_converter
 from app.model.schema import BpmnDiagram
-from app.repair.ops import apply_edit_ops
+from app.repair.ops import AtomicEditOp, apply_edit_ops
 from app.validation.checkers import run_woflan
 from app.validation.rules import validate
 from evaluation.generator.models import (
     DatasetManifest,
+    DatasetInjectionOp,
+    DefectExpectation,
     DefectClass,
     FileRecord,
     GroundTruthRecord,
+    InteractionRegime,
     OperatorId,
 )
 from evaluation.generator.exclusions import render_exclusions, render_seed_list
 from evaluation.generator.operators import (
+    CompositeInjection,
+    Injection,
+    apply_injection_ops,
+    disjoint_injection,
+    interacting_injection,
     soundness_candidate_injections,
     soundness_injections,
+    structural_candidate_injections,
     structural_injections,
 )
 from evaluation.generator.probe import ProbeReport
 
-GENERATOR_VERSION = "1.3"
+GENERATOR_VERSION = "1.7"
 DEFAULT_RANDOM_SEED = 20260809
 _GENERATED_PATHS = (
     "manifest.json",
@@ -42,6 +51,103 @@ _GENERATED_PATHS = (
     "ground_truth",
     "descriptions",
 )
+
+
+@dataclass(frozen=True)
+class _VariantPlan:
+    defects: tuple[Injection, ...]
+    defect_class: DefectClass
+    diagram: BpmnDiagram
+    injection: list[DatasetInjectionOp]
+    repair: list[AtomicEditOp]
+    interaction: InteractionRegime
+
+
+def _single_plan(injection: Injection) -> _VariantPlan:
+    return _VariantPlan(
+        defects=(injection,),
+        defect_class=injection.defect_class,
+        diagram=injection.diagram,
+        injection=injection.injection,
+        repair=injection.repair,
+        interaction=InteractionRegime.SINGLE,
+    )
+
+
+def _disjoint_plan(injection: CompositeInjection) -> _VariantPlan:
+    return _VariantPlan(
+        defects=injection.defects,
+        defect_class=injection.defect_class,
+        diagram=injection.diagram,
+        injection=injection.injection,
+        repair=injection.repair,
+        interaction=InteractionRegime.DISJOINT,
+    )
+
+
+def _interacting_plan(injection: CompositeInjection) -> _VariantPlan:
+    return _VariantPlan(
+        defects=injection.defects,
+        defect_class=injection.defect_class,
+        diagram=injection.diagram,
+        injection=injection.injection,
+        repair=injection.repair,
+        interaction=InteractionRegime.INTERACTING,
+    )
+
+
+def _validate_plan_findings(
+    plan: _VariantPlan,
+    issues: list,
+    variant_id: str,
+) -> None:
+    findings = {issue.rule_id for issue in issues}
+    rule_defects = [
+        defect for defect in plan.defects
+        if defect.expected_finding.startswith("R")
+    ]
+    for defect in rule_defects:
+        if not _issue_matches(defect, issues):
+            raise ValueError(
+                f"variant {variant_id} did not produce "
+                f"{defect.expected_finding} at {defect.expected_elements}: "
+                f"{sorted(findings)}"
+            )
+
+    operators = {defect.operator for defect in plan.defects}
+    if len(plan.defects) == 1 and plan.defect_class is DefectClass.STRUCT:
+        if (
+            OperatorId.DANGLING_FLOW_REF not in operators
+            and findings != {plan.defects[0].expected_finding}
+        ):
+            raise ValueError(
+                f"variant {variant_id} produced findings {sorted(findings)}"
+            )
+    if plan.defect_class is DefectClass.SOUND:
+        if OperatorId.DELETE_BRIDGE_FLOW in operators:
+            if findings - {"R007", "R008"}:
+                raise ValueError(
+                    f"bridge-flow variant {variant_id} produced findings "
+                    f"{sorted(findings)}"
+                )
+        elif findings:
+            raise ValueError(
+                f"soundness variant {variant_id} produced tier-1 findings "
+                f"{sorted(findings)}"
+            )
+
+
+def _issue_matches(defect: Injection, issues: list) -> bool:
+    expected_elements = set(defect.expected_elements)
+    return any(
+        issue.rule_id == defect.expected_finding
+        and (
+            issue.element_id is None
+            or not expected_elements
+            or issue.element_id in expected_elements
+        )
+        for issue in issues
+    )
 
 
 def census_soundness_sites(
@@ -115,7 +221,7 @@ def build_dataset(
     dataset_version: str,
     random_seed: int = DEFAULT_RANDOM_SEED,
 ) -> DatasetManifest:
-    """Snapshot eligible seeds and emit deterministic S01/S02/F01/F02 variants.
+    """Snapshot eligible seeds and emit deterministic structural variants.
 
     The function refuses to overwrite generated content. Dataset versions become
     immutable once experiments cite them, so replacement must be an explicit
@@ -149,6 +255,7 @@ def build_dataset(
     files: list[FileRecord] = []
     variant_count = 0
     operator_counts = {operator.value: 0 for operator in OperatorId}
+    multiplicity_counts = {"k1": 0, "k2_disjoint": 0, "k2_interacting": 0}
 
     for record in report.seeds:
         source = source_dir / f"{record.seed}.bpmn"
@@ -184,53 +291,58 @@ def build_dataset(
             ]
         )
 
-        injections = structural_injections(diagram) + soundness_injections(
+        single_injections = structural_injections(
+            diagram,
+            seed_id=record.seed,
+            random_seed=random_seed,
+        ) + soundness_injections(
             diagram,
             seed_id=record.seed,
             random_seed=random_seed,
         )
-        for injection in injections:
-            variant_id = _variant_id(record.seed, injection.operator, injection.site)
-            variant_path = variant_dir / f"{variant_id}.bpmn"
-            truth_path = truth_dir / f"{variant_id}.json"
-            variant_description = variant_description_dir / f"{variant_id}.txt"
+        candidates = structural_candidate_injections(
+            diagram
+        ) + soundness_candidate_injections(diagram)
+        composite = disjoint_injection(
+            diagram,
+            candidates,
+            seed_id=record.seed,
+            random_seed=random_seed,
+        )
+        interacting = interacting_injection(
+            diagram,
+            candidates,
+            seed_id=record.seed,
+            random_seed=random_seed,
+        )
+        plans = [_single_plan(injection) for injection in single_injections]
+        if composite is not None:
+            plans.append(_disjoint_plan(composite))
+        if interacting is not None:
+            plans.append(_interacting_plan(interacting))
 
-            variant_bytes = converter.serialize(injection.diagram)
+        for plan in plans:
+            relative_base = _plan_relative_path(record.seed, plan)
+            variant_id = relative_base.as_posix()
+            variant_path = variant_dir / relative_base.with_suffix(".bpmn")
+            truth_path = truth_dir / relative_base.with_suffix(".json")
+            variant_description = (
+                variant_description_dir / relative_base.with_suffix(".txt")
+            )
+            for path in (variant_path, truth_path, variant_description):
+                path.parent.mkdir(parents=True, exist_ok=True)
+
+            variant_bytes = converter.serialize(plan.diagram)
             reparsed, dropped = converter.parse_with_diagnostics(variant_bytes)
             if dropped:
                 raise ValueError(f"generated variant {variant_id} is lossy")
             findings = {issue.rule_id for issue in validate(reparsed).issues}
-            if (
-                injection.defect_class is DefectClass.STRUCT
-                and findings != {injection.expected_finding}
-            ):
-                raise ValueError(
-                    f"variant {variant_id} produced findings {sorted(findings)}"
-                )
-            if (
-                injection.operator is OperatorId.DELETE_BRIDGE_FLOW
-                and (
-                    injection.expected_finding not in findings
-                    or findings - {"R007", "R008"}
-                )
-            ):
-                raise ValueError(
-                    f"bridge-flow variant {variant_id} produced findings "
-                    f"{sorted(findings)}"
-                )
-            if (
-                injection.defect_class is DefectClass.SOUND
-                and injection.operator is not OperatorId.DELETE_BRIDGE_FLOW
-                and findings
-            ):
-                raise ValueError(
-                    f"soundness variant {variant_id} produced tier-1 findings "
-                    f"{sorted(findings)}"
-                )
+            issues = validate(reparsed).issues
+            _validate_plan_findings(plan, issues, variant_id)
 
             woflan_findings = (
                 []
-                if injection.defect_class is DefectClass.STRUCT
+                if plan.defect_class is DefectClass.STRUCT
                 else [issue.rule_id for issue in run_woflan(reparsed)]
             )
             detected_by = {
@@ -241,16 +353,40 @@ def build_dataset(
 
             variant_path.write_bytes(variant_bytes)
             shutil.copyfile(description, variant_description)
+            expectations = [
+                DefectExpectation(
+                    operator=defect.operator,
+                    expected_finding=defect.expected_finding,
+                    expected_elements=defect.expected_elements,
+                    injection_site=list(defect.site),
+                )
+                for defect in plan.defects
+            ]
+            expected_findings = [
+                defect.expected_finding for defect in plan.defects
+            ]
             truth = GroundTruthRecord(
                 variant_id=variant_id,
                 seed=record.seed,
-                operators=[injection.operator],
-                **{"class": injection.defect_class},
-                expected_finding=injection.expected_finding,
-                expected_elements=injection.expected_elements,
-                injection_site=list(injection.site),
-                injection=injection.injection,
-                repair=injection.repair,
+                operators=[defect.operator for defect in plan.defects],
+                **{"class": plan.defect_class},
+                expected_finding=" + ".join(expected_findings),
+                expected_findings=expected_findings,
+                expected_elements=list(dict.fromkeys(
+                    element
+                    for defect in plan.defects
+                    for element in defect.expected_elements
+                )),
+                injection_site=[
+                    element
+                    for defect in plan.defects
+                    for element in defect.site
+                ],
+                defects=expectations,
+                multiplicity=len(plan.defects),
+                interaction=plan.interaction,
+                injection=plan.injection,
+                repair=plan.repair,
                 detected_by_construction=detected,
                 detected_by=detected_by,
             )
@@ -271,7 +407,14 @@ def build_dataset(
                 ]
             )
             variant_count += 1
-            operator_counts[injection.operator.value] += 1
+            for defect in plan.defects:
+                operator_counts[defect.operator.value] += 1
+            if plan.interaction is InteractionRegime.SINGLE:
+                multiplicity_counts["k1"] += 1
+            elif plan.interaction is InteractionRegime.DISJOINT:
+                multiplicity_counts["k2_disjoint"] += 1
+            else:
+                multiplicity_counts["k2_interacting"] += 1
 
     metadata = {
         "probe.json": probe_bytes,
@@ -309,6 +452,7 @@ def build_dataset(
             "seeds": len(report.seeds),
             "variants": variant_count,
             **operator_counts,
+            **multiplicity_counts,
         },
         files=sorted(files, key=lambda item: item.path),
     )
@@ -320,7 +464,7 @@ def build_dataset(
 
 
 def audit_dataset(out: Path) -> dict[str, int]:
-    """Verify hashes, stem joins, expected findings, and inverse repairs."""
+    """Verify hashes, relative-path joins, findings, and inverse repairs."""
     manifest = DatasetManifest.model_validate_json(
         (out / "manifest.json").read_bytes()
     )
@@ -331,14 +475,15 @@ def audit_dataset(out: Path) -> dict[str, int]:
         if _sha256(path.read_bytes()) != record.sha256:
             raise ValueError(f"hash mismatch: {record.path}")
 
-    variants = {path.stem: path for path in (out / "variants").glob("*.bpmn")}
-    truths = {path.stem: path for path in (out / "ground_truth").glob("*.json")}
-    descriptions = {
-        path.stem: path
-        for path in (out / "descriptions" / "variants").glob("*.txt")
-    }
+    variants = _relative_artifacts(out / "variants", ".bpmn")
+    truths = _relative_artifacts(out / "ground_truth", ".json")
+    descriptions = _relative_artifacts(
+        out / "descriptions" / "variants", ".txt"
+    )
     if variants.keys() != truths.keys() or variants.keys() != descriptions.keys():
-        raise ValueError("variant, ground-truth, and description stems do not match")
+        raise ValueError(
+            "variant, ground-truth, and description paths do not match"
+        )
 
     converter = get_converter()
     for variant_id in sorted(variants):
@@ -350,9 +495,29 @@ def audit_dataset(out: Path) -> dict[str, int]:
         )
         if unsupported:
             raise ValueError(f"variant is lossy: {variant_id}")
-        findings = {issue.rule_id for issue in validate(variant).issues}
+        issues = validate(variant).issues
+        findings = {issue.rule_id for issue in issues}
+        expectations = truth.defects or [
+            DefectExpectation(
+                operator=truth.operators[0],
+                expected_finding=truth.expected_finding,
+                expected_elements=truth.expected_elements,
+                injection_site=truth.injection_site,
+            )
+        ]
+        for expectation in expectations:
+            if (
+                expectation.expected_finding.startswith("R")
+                and not _truth_issue_matches(expectation, issues)
+            ):
+                raise ValueError(
+                    f"missing {expectation.expected_finding} for {variant_id}: "
+                    f"{sorted(findings)}"
+                )
         if (
-            truth.defect_class is DefectClass.STRUCT
+            truth.multiplicity == 1
+            and truth.defect_class is DefectClass.STRUCT
+            and OperatorId.DANGLING_FLOW_REF not in truth.operators
             and findings != {truth.expected_finding}
         ):
             raise ValueError(
@@ -360,10 +525,7 @@ def audit_dataset(out: Path) -> dict[str, int]:
             )
         if (
             OperatorId.DELETE_BRIDGE_FLOW in truth.operators
-            and (
-                truth.expected_finding not in findings
-                or findings - {"R007", "R008"}
-            )
+            and findings - {"R007", "R008"}
         ):
             raise ValueError(
                 f"unexpected bridge-flow findings for {variant_id}: "
@@ -379,8 +541,8 @@ def audit_dataset(out: Path) -> dict[str, int]:
             )
         seed = converter.parse((out / "seeds" / f"{truth.seed}.bpmn").read_bytes())
         if truth.injection:
-            injected, injection_results = apply_edit_ops(truth.injection, seed)
-            if not all(result.applied for result in injection_results):
+            injected, injection_results = apply_injection_ops(truth.injection, seed)
+            if not all(injection_results):
                 raise ValueError(f"stored injection failed: {variant_id}")
             if _without_layout(injected) != _without_layout(variant):
                 raise ValueError(
@@ -397,6 +559,64 @@ def audit_dataset(out: Path) -> dict[str, int]:
     return {"seeds": manifest.counts["seeds"], "variants": len(variants)}
 
 
+def refresh_dataset_manifest(out: Path) -> DatasetManifest:
+    """Recompute counts and hashes after an explicitly reviewed curation edit."""
+    manifest_path = out / "manifest.json"
+    current = DatasetManifest.model_validate_json(manifest_path.read_bytes())
+    truths = sorted((out / "ground_truth").rglob("*.json"))
+    records = [GroundTruthRecord.model_validate_json(path.read_bytes()) for path in truths]
+    operator_counts: dict[str, int] = {operator: 0 for operator in current.operators}
+    multiplicity_counts = {"k1": 0, "k2_disjoint": 0, "k2_interacting": 0}
+    for record in records:
+        for operator in record.operators:
+            operator_counts[operator] = operator_counts.get(operator, 0) + 1
+        if record.multiplicity == 1:
+            multiplicity_counts["k1"] += 1
+        elif record.interaction is InteractionRegime.DISJOINT:
+            multiplicity_counts["k2_disjoint"] += 1
+        elif record.interaction is InteractionRegime.INTERACTING:
+            multiplicity_counts["k2_interacting"] += 1
+
+    files = sorted(
+        (
+            _file_record(out, path)
+            for path in out.rglob("*")
+            if path.is_file() and path != manifest_path
+        ),
+        key=lambda item: item.path,
+    )
+    refreshed = current.model_copy(
+        update={
+            "operators": sorted(operator_counts),
+            "counts": {
+                "seeds": len(list((out / "seeds").glob("*.bpmn"))),
+                "variants": len(records),
+                **dict(sorted(operator_counts.items())),
+                **multiplicity_counts,
+            },
+            "files": files,
+        }
+    )
+    manifest_path.write_text(
+        json.dumps(refreshed.model_dump(mode="json"), indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return refreshed
+
+
+def _truth_issue_matches(expectation: DefectExpectation, issues: list) -> bool:
+    expected_elements = set(expectation.expected_elements)
+    return any(
+        issue.rule_id == expectation.expected_finding
+        and (
+            issue.element_id is None
+            or not expected_elements
+            or issue.element_id in expected_elements
+        )
+        for issue in issues
+    )
+
+
 def _require_empty_targets(out: Path) -> None:
     out.mkdir(parents=True, exist_ok=True)
     occupied = [name for name in _GENERATED_PATHS if (out / name).exists()]
@@ -407,11 +627,16 @@ def _require_empty_targets(out: Path) -> None:
         )
 
 
-def _variant_id(seed: str, operator: OperatorId, site: tuple[str, ...]) -> str:
-    safe_site = "__".join(
-        re.sub(r"[^A-Za-z0-9_-]+", "_", item).strip("_") for item in site
-    )
-    return f"{seed}_{operator.value}_{safe_site}"
+def _plan_relative_path(seed: str, plan: _VariantPlan) -> Path:
+    operators = "+".join(defect.operator.value for defect in plan.defects)
+    return Path(plan.interaction.value) / operators / seed
+
+
+def _relative_artifacts(root: Path, suffix: str) -> dict[str, Path]:
+    return {
+        path.relative_to(root).with_suffix("").as_posix(): path
+        for path in root.rglob(f"*{suffix}")
+    }
 
 
 def _sha256(payload: bytes) -> str:

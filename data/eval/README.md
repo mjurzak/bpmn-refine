@@ -4,8 +4,8 @@ Built from `data/pmo-dataset/` per [`evaluation/METHODOLOGY.md`](../../evaluatio
 
 ```
 v1.0/
-  manifest.json          version, source snapshot, RNG seed, counts per class,
-                         assisting model + prompt version, rejection rate
+  manifest.json          version, source snapshot, RNG seed, counts, hashes,
+                         assisting model family and construction trace
   seeds/<seed>.bpmn      models that passed the eligibility gate
   descriptions/seeds/    source descriptions for eligible seeds
   variants/<regime>/<operators>/<seed>.bpmn
@@ -38,7 +38,7 @@ v1.0/
 }
 ```
 
-`injection` stores the exact mutations applied to the seed; `S03` uses the generator-local `repoint_flow` operation, while the other operators use production `EditOp`s. `repair` always stores a production `EditOp` plan. `defects` keeps each expectation separate for `k=2`; the singular fields remain as a compatibility summary. `interaction` is `single`, `disjoint`, or `interacting`. Expected findings come from operator definitions, not from running the checker under evaluation. SEM records additionally store `human_verified`, technical gates, and an `anchor` containing the description claim and relation.
+`injection` stores the exact mutations applied to the seed; `S03` uses the generator-local `repoint_flow` operation, while the other operators use production `EditOp`s. `repair` always stores a production `EditOp` plan. `defects` keeps each expectation separate for `k=2`; the singular fields summarize the complete record. `interaction` is `single`, `disjoint`, or `interacting`. Expected findings come from operator definitions, not from running the checker under evaluation. SEM records additionally store `human_verified`, technical gates, and an `anchor` containing the description claim and relation.
 
 `ATTRIBUTION.md` identifies the PMo source, its DOI and CC BY 4.0 license, and the changes made by the generator. `manifest.json` records SHA-256 hashes for every generated or copied file except the manifest itself.
 

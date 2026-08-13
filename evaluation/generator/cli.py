@@ -12,6 +12,7 @@ from evaluation.generator.build import (
 	audit_dataset,
 	build_dataset,
 	census_soundness_sites,
+	refresh_dataset_manifest,
 )
 from evaluation.generator.exclusions import render_exclusions, render_seed_list
 from evaluation.generator.probe import Verdict, run_probe
@@ -85,13 +86,13 @@ def build_command(
 		file_okay=False,
 	),
 	probe: Path = typer.Option(
-		Path("data/eval/v1.3.0/probe.json"),
+		Path("data/eval/v1.0/probe.json"),
 		"--probe",
 		exists=True,
 		dir_okay=False,
 	),
 	out: Path = typer.Option(..., "--out", help="dataset version directory"),
-	dataset_version: str = typer.Option("v1.3.0", "--dataset-version"),
+	dataset_version: str = typer.Option("v1.0", "--dataset-version"),
 	random_seed: int = typer.Option(DEFAULT_RANDOM_SEED, "--random-seed"),
 ) -> None:
 	"""Snapshot eligible seeds and generate deterministic dataset variants."""
@@ -118,7 +119,7 @@ def census_soundness_command(
 		file_okay=False,
 	),
 	probe: Path = typer.Option(
-		Path("data/eval/v1.3.0/probe.json"),
+		Path("data/eval/v1.0/probe.json"),
 		"--probe",
 		exists=True,
 		dir_okay=False,
@@ -152,6 +153,23 @@ def audit_command(
 	counts = audit_dataset(dataset)
 	typer.echo(
 		f"verified {counts['seeds']} seeds and {counts['variants']} variants"
+	)
+
+
+@app.command("refresh-manifest")
+def refresh_manifest_command(
+	dataset: Path = typer.Option(
+		...,
+		"--dataset",
+		exists=True,
+		file_okay=False,
+	),
+) -> None:
+	"""Refresh hashes and counts after an explicit human curation change."""
+	manifest = refresh_dataset_manifest(dataset)
+	typer.echo(
+		f"refreshed manifest for {manifest.counts['seeds']} seeds and "
+		f"{manifest.counts['variants']} variants"
 	)
 
 

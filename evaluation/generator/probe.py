@@ -17,7 +17,7 @@ import multiprocessing
 from pathlib import Path
 from multiprocessing.connection import Connection
 
-from app.experiments import ExperimentConfig, T2Tool, TiersEnabled, hash_bytes
+from app.experiments import ExperimentConfig, TiersEnabled, hash_bytes
 from app.model.registry import get_converter
 from app.model.schema import BpmnDiagram
 from app.services.validation import validate_diagram
@@ -79,7 +79,6 @@ class ProbeReport(BaseModel):
 # tier 3 is an LLM call and plays no part in the seed gate
 _GATE_CONFIG = ExperimentConfig(
 	tiers_enabled=TiersEnabled(t1=True, t2=True, t3=False),
-	t2_tools=[T2Tool.WOFLAN],
 )
 
 

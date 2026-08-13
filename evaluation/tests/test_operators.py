@@ -9,9 +9,14 @@ from app.repair.ops import apply_edit_ops
 from app.validation.rules import validate
 from evaluation.generator.models import OperatorId
 from evaluation.generator.operators import (
+    apply_injection_ops,
+    disjoint_injection,
+    interacting_injection,
     soundness_candidate_injections,
     soundness_injections,
     soundness_sites,
+    structural_injections,
+    structural_candidate_injections,
 )
 
 
@@ -191,6 +196,107 @@ def test_bridge_flow_produces_reversible_f04():
         "R008",
     }
     repaired, results = apply_edit_ops(injection.repair, injection.diagram)
+    assert all(result.applied for result in results)
+    assert _control_flow(repaired) == _control_flow(diagram)
+
+
+def test_s03_repoints_one_flow_reproducibly_and_is_reversible():
+    diagram = _gateway_region(FlowNodeType.EXCLUSIVE_GATEWAY)
+
+    first = structural_injections(diagram, seed_id="01", random_seed=42)
+    second = structural_injections(diagram, seed_id="01", random_seed=42)
+    injection = next(
+        item for item in first if item.operator is OperatorId.DANGLING_FLOW_REF
+    )
+
+    assert injection.site == next(
+        item for item in second if item.operator is OperatorId.DANGLING_FLOW_REF
+    ).site
+    findings = {issue.rule_id for issue in validate(injection.diagram).issues}
+    assert injection.expected_finding in findings
+    replayed, applied = apply_injection_ops(injection.injection, diagram)
+    assert all(applied)
+    assert replayed == injection.diagram
+    repaired, results = apply_edit_ops(injection.repair, injection.diagram)
+    assert all(result.applied for result in results)
+    assert _control_flow(repaired) == _control_flow(diagram)
+
+
+def test_disjoint_k2_selection_is_reproducible_and_reversible():
+    node_ids = ["Start", "A", "B", "C", "D", "End"]
+    diagram = BpmnDiagram(
+        definitions_id="Defs_long",
+        processes=[
+            BpmnProcess(
+                id="Process",
+                flow_nodes=[
+                    FlowNode(
+                        id=node_id,
+                        type=(
+                            FlowNodeType.START_EVENT
+                            if node_id == "Start"
+                            else FlowNodeType.END_EVENT
+                            if node_id == "End"
+                            else FlowNodeType.TASK
+                        ),
+                    )
+                    for node_id in node_ids
+                ],
+                sequence_flows=[
+                    SequenceFlow(
+                        id=f"Flow_{index}",
+                        source_ref=source,
+                        target_ref=target,
+                    )
+                    for index, (source, target) in enumerate(
+                        zip(node_ids, node_ids[1:]), start=1
+                    )
+                ],
+            )
+        ],
+    )
+    candidates = structural_candidate_injections(diagram)
+
+    boundary_candidates = [
+        item for item in candidates
+        if item.operator
+        in {OperatorId.DELETE_ONLY_START, OperatorId.DELETE_ONLY_END}
+    ]
+    boundary_pair = disjoint_injection(
+        diagram, boundary_candidates, seed_id="long", random_seed=42
+    )
+    assert boundary_pair is not None
+    assert {item.operator for item in boundary_pair.defects} == {
+        OperatorId.DELETE_ONLY_START,
+        OperatorId.DELETE_ONLY_END,
+    }
+    assert interacting_injection(
+        diagram, boundary_candidates, seed_id="long", random_seed=42
+    ) is None
+
+    first = disjoint_injection(
+        diagram, candidates, seed_id="long", random_seed=42
+    )
+    second = disjoint_injection(
+        diagram, candidates, seed_id="long", random_seed=42
+    )
+
+    assert first is not None
+    assert second is not None
+    assert [item.site for item in first.defects] == [
+        item.site for item in second.defects
+    ]
+    assert len(first.defects) == 2
+    repaired, results = apply_edit_ops(first.repair, first.diagram)
+    assert all(result.applied for result in results)
+    assert _control_flow(repaired) == _control_flow(diagram)
+
+    interacting = interacting_injection(
+        diagram, candidates, seed_id="long", random_seed=42
+    )
+    assert interacting is not None
+    assert len(interacting.defects) == 2
+    repaired, results = apply_edit_ops(interacting.repair, interacting.diagram)
     assert all(result.applied for result in results)
     assert _control_flow(repaired) == _control_flow(diagram)
 

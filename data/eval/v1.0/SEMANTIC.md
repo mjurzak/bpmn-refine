@@ -3,10 +3,12 @@
 Semantic variants use the same `variants/`, `descriptions/variants/`, and
 `ground_truth/` layout as structural and soundness variants.
 
-- `single/M01` through `single/M07`: 199 human-verified single defects.
+- `single/M01` through `single/M07`: 198 human-verified single defects.
 - `disjoint/Mxx+Myy`: 37 deterministic pairs with non-overlapping immediate
   control-flow footprints.
 - `01-M06` was excluded because its candidate also produced Tier-1 `R007`.
+- `11-M06` was removed because its diagram was byte-identical to `11-M04`;
+  the latter is the more specific label for the described cancellation path.
 
 The matching ground-truth JSON is the complete construction trace. It records
 the exact ordered `injection` operations, inverse `repair`, expected semantic

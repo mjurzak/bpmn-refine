@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+from itertools import combinations
 import random
 
 from app.model.schema import BpmnDiagram, FlowNode, FlowNodeType, SequenceFlow
@@ -17,7 +18,12 @@ from app.repair.ops import (
     apply_edit_ops,
 )
 from app.validation.rules import validate
-from evaluation.generator.models import DefectClass, OperatorId
+from evaluation.generator.models import (
+    DatasetInjectionOp,
+    DefectClass,
+    OperatorId,
+    RepointFlowOp,
+)
 
 
 @dataclass(frozen=True)
@@ -27,13 +33,45 @@ class Injection:
     site: tuple[str, ...]
     expected_finding: str
     expected_elements: list[str]
-    injection: list[AtomicEditOp]
+    injection: list[DatasetInjectionOp]
     repair: list[AtomicEditOp]
     diagram: BpmnDiagram
 
 
-def structural_injections(diagram: BpmnDiagram) -> list[Injection]:
-    """Return every applicable S01/S02 injection in stable order."""
+@dataclass(frozen=True)
+class CompositeInjection:
+    defects: tuple[Injection, Injection]
+    defect_class: DefectClass
+    injection: list[DatasetInjectionOp]
+    repair: list[AtomicEditOp]
+    diagram: BpmnDiagram
+
+
+def structural_injections(
+    diagram: BpmnDiagram,
+    *,
+    seed_id: str,
+    random_seed: int,
+) -> list[Injection]:
+    """Return S01-S03 injections, with one reproducible S03 site per seed."""
+    candidates = structural_candidate_injections(diagram)
+    injections = [
+        item for item in candidates
+        if item.operator is not OperatorId.DANGLING_FLOW_REF
+    ]
+    dangling_candidates = [
+        item for item in candidates
+        if item.operator is OperatorId.DANGLING_FLOW_REF
+    ]
+    if dangling_candidates:
+        material = f"{random_seed}:{seed_id}:STRUCT:S03".encode()
+        local_seed = int.from_bytes(hashlib.sha256(material).digest()[:8], "big")
+        injections.append(random.Random(local_seed).choice(dangling_candidates))
+    return sorted(injections, key=lambda item: (item.operator, item.site))
+
+
+def structural_candidate_injections(diagram: BpmnDiagram) -> list[Injection]:
+    """Return every independently applicable S01-S03 injection."""
     injections: list[Injection] = []
     for process in diagram.processes:
         starts = [
@@ -68,6 +106,197 @@ def structural_injections(diagram: BpmnDiagram) -> list[Injection]:
             )
             if candidate is not None:
                 injections.append(candidate)
+    injections.extend(_dangling_flow_injections(diagram))
+    return sorted(injections, key=lambda item: (item.operator, item.site))
+
+
+def disjoint_injection(
+    diagram: BpmnDiagram,
+    candidates: list[Injection],
+    *,
+    seed_id: str,
+    random_seed: int,
+) -> CompositeInjection | None:
+    """Choose at most one reproducible pair with non-overlapping neighborhoods."""
+    return _paired_injection(
+        diagram,
+        candidates,
+        seed_id=seed_id,
+        random_seed=random_seed,
+        require_overlap=False,
+        regime="DISJOINT",
+    )
+
+
+def interacting_injection(
+    diagram: BpmnDiagram,
+    candidates: list[Injection],
+    *,
+    seed_id: str,
+    random_seed: int,
+) -> CompositeInjection | None:
+    """Choose one reproducible pair whose local footprints overlap."""
+    return _paired_injection(
+        diagram,
+        candidates,
+        seed_id=seed_id,
+        random_seed=random_seed,
+        require_overlap=True,
+        regime="INTERACTING",
+    )
+
+
+def _paired_injection(
+    diagram: BpmnDiagram,
+    candidates: list[Injection],
+    *,
+    seed_id: str,
+    random_seed: int,
+    require_overlap: bool,
+    regime: str,
+) -> CompositeInjection | None:
+    grouped: dict[tuple[DefectClass, OperatorId, OperatorId], list[tuple[Injection, Injection]]] = {}
+    footprints = {
+        id(injection): _injection_footprint(diagram, injection)
+        for injection in candidates
+    }
+    for first, second in combinations(candidates, 2):
+        if first.defect_class is not second.defect_class:
+            continue
+        overlaps = bool(footprints[id(first)] & footprints[id(second)])
+        if overlaps is not require_overlap:
+            continue
+        operators = tuple(sorted((first.operator, second.operator)))
+        grouped.setdefault(
+            (first.defect_class, operators[0], operators[1]), []
+        ).append((first, second))
+    if not grouped:
+        return None
+
+    material = f"{random_seed}:{seed_id}:K2:{regime}".encode()
+    local_seed = int.from_bytes(hashlib.sha256(material).digest()[:8], "big")
+    rng = random.Random(local_seed)
+    group_keys = sorted(grouped, key=lambda item: tuple(str(part) for part in item))
+    rng.shuffle(group_keys)
+    for key in group_keys:
+        pairs = sorted(
+            grouped[key],
+            key=lambda pair: tuple(
+                (item.operator, item.site) for item in pair
+            ),
+        )
+        rng.shuffle(pairs)
+        for pair in pairs:
+            ops = [op for defect in pair for op in defect.injection]
+            updated, applied = apply_injection_ops(ops, diagram)
+            if not all(applied):
+                continue
+            issues = validate(updated).issues
+            rule_defects = [
+                defect for defect in pair
+                if defect.expected_finding.startswith("R")
+            ]
+            if not all(
+                _expected_issue_present(defect, issues)
+                for defect in rule_defects
+            ):
+                continue
+            if not all(_injection_persists(defect, updated) for defect in pair):
+                continue
+            repair = [
+                op
+                for defect in reversed(pair)
+                for op in defect.repair
+            ]
+            repaired, repair_results = apply_edit_ops(repair, updated)
+            if (
+                not all(result.applied for result in repair_results)
+                or _without_layout(repaired) != _without_layout(diagram)
+            ):
+                continue
+            return CompositeInjection(
+                defects=pair,
+                defect_class=pair[0].defect_class,
+                injection=ops,
+                repair=repair,
+                diagram=updated,
+            )
+    return None
+
+
+def apply_injection_ops(
+    ops: list[DatasetInjectionOp], diagram: BpmnDiagram
+) -> tuple[BpmnDiagram, list[bool]]:
+    """Apply recorded dataset mutations, including deliberately invalid ones."""
+    updated = diagram.model_copy(deep=True)
+    applied: list[bool] = []
+    for op in ops:
+        if isinstance(op, RepointFlowOp):
+            found = _find_flow(updated, op.flow_id)
+            if found is None:
+                applied.append(False)
+                continue
+            setattr(found[1], op.endpoint, op.new_ref)
+            updated = BpmnDiagram.model_validate(updated.model_dump())
+            applied.append(True)
+            continue
+        updated, results = apply_edit_ops([op], updated)
+        applied.append(results[0].applied)
+    return updated, applied
+
+
+def _dangling_flow_injections(diagram: BpmnDiagram) -> list[Injection]:
+    injections: list[Injection] = []
+    declared_ids = set(diagram.element_ids())
+    for process in diagram.processes:
+        for flow in sorted(process.sequence_flows, key=lambda item: item.id):
+            for endpoint, finding in (
+                ("source_ref", "R005"),
+                ("target_ref", "R006"),
+            ):
+                original_ref = getattr(flow, endpoint)
+                missing_ref = f"Missing_{flow.id}_{endpoint}"
+                if missing_ref in declared_ids:
+                    continue
+                mutation = RepointFlowOp(
+                    flow_id=flow.id,
+                    endpoint=endpoint,
+                    new_ref=missing_ref,
+                )
+                updated, results = apply_injection_ops([mutation], diagram)
+                findings = {issue.rule_id for issue in validate(updated).issues}
+                if not all(results) or finding not in findings:
+                    continue
+                injections.append(
+                    Injection(
+                        operator=OperatorId.DANGLING_FLOW_REF,
+                        defect_class=DefectClass.STRUCT,
+                        site=(flow.id, endpoint, missing_ref),
+                        expected_finding=finding,
+                        expected_elements=[flow.id],
+                        injection=[mutation],
+                        repair=[
+                            RemoveFlowOp(id=flow.id),
+                            AddFlowOp(
+                                process_id=process.id,
+                                id=flow.id,
+                                source_ref=(
+                                    original_ref
+                                    if endpoint == "source_ref"
+                                    else flow.source_ref
+                                ),
+                                target_ref=(
+                                    original_ref
+                                    if endpoint == "target_ref"
+                                    else flow.target_ref
+                                ),
+                                name=flow.name,
+                                condition_expression=flow.condition_expression,
+                            ),
+                        ],
+                        diagram=updated,
+                    )
+                )
     return injections
 
 
@@ -481,9 +710,104 @@ def _select_injections(
     return sorted(selected, key=lambda item: (item.operator, item.site))
 
 
+def _injection_footprint(
+    diagram: BpmnDiagram, injection: Injection
+) -> set[str]:
+    """Return the injection site plus its immediate control-flow neighborhood."""
+    declared = set(diagram.element_ids())
+    footprint = {item for item in injection.site if item in declared}
+    for process in diagram.processes:
+        flows = {flow.id: flow for flow in process.sequence_flows}
+        for flow_id in list(footprint):
+            flow = flows.get(flow_id)
+            if flow is not None:
+                footprint.update((flow.source_ref, flow.target_ref))
+        local_nodes = {
+            item for item in footprint
+            if any(node.id == item for node in process.flow_nodes)
+        }
+        for flow in process.sequence_flows:
+            if flow.source_ref in local_nodes or flow.target_ref in local_nodes:
+                footprint.update((flow.id, flow.source_ref, flow.target_ref))
+    return footprint
+
+
+def _expected_issue_present(injection: Injection, issues: list) -> bool:
+    expected_elements = set(injection.expected_elements)
+    return any(
+        issue.rule_id == injection.expected_finding
+        and (
+            issue.element_id is None
+            or not expected_elements
+            or issue.element_id in expected_elements
+        )
+        for issue in issues
+    )
+
+
+def _injection_persists(injection: Injection, diagram: BpmnDiagram) -> bool:
+    for op in injection.injection:
+        if isinstance(op, RepointFlowOp):
+            found = _find_flow(diagram, op.flow_id)
+            if found is None or getattr(found[1], op.endpoint) != op.new_ref:
+                return False
+        elif isinstance(op, ChangeGatewayTypeOp):
+            found = _find_node_optional(diagram, op.id)
+            if found is None or found[1].type is not op.new_type:
+                return False
+        elif isinstance(op, RemoveNodeOp):
+            if _find_node_optional(diagram, op.id) is not None:
+                return False
+        elif isinstance(op, RemoveFlowOp):
+            if _find_flow(diagram, op.id) is not None:
+                return False
+        elif isinstance(op, AddFlowOp):
+            found = _find_flow(diagram, op.id)
+            if (
+                found is None
+                or found[1].source_ref != op.source_ref
+                or found[1].target_ref != op.target_ref
+            ):
+                return False
+    return True
+
+
+def _without_layout(diagram: BpmnDiagram) -> BpmnDiagram:
+    stripped = diagram.model_copy(deep=True)
+    stripped.namespaces = {}
+    for process in stripped.processes:
+        for node in process.flow_nodes:
+            node.bounds = None
+            node.label_bounds = None
+            node.incoming.sort()
+            node.outgoing.sort()
+        for flow in process.sequence_flows:
+            flow.waypoints = []
+            flow.label_bounds = None
+        process.flow_nodes.sort(key=lambda node: node.id)
+        process.sequence_flows.sort(key=lambda flow: flow.id)
+    stripped.processes.sort(key=lambda process: process.id)
+    return stripped
+
+
 def _find_node(diagram: BpmnDiagram, node_id: str):
     for process in diagram.processes:
         for node in process.flow_nodes:
             if node.id == node_id:
                 return process, node
     raise ValueError(f"node not found: {node_id}")
+
+
+def _find_node_optional(diagram: BpmnDiagram, node_id: str):
+    try:
+        return _find_node(diagram, node_id)
+    except ValueError:
+        return None
+
+
+def _find_flow(diagram: BpmnDiagram, flow_id: str):
+    for process in diagram.processes:
+        for flow in process.sequence_flows:
+            if flow.id == flow_id:
+                return process, flow
+    return None
