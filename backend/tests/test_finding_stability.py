@@ -104,6 +104,14 @@ def test_semantic_rule_ids_are_derived_from_the_category():
     assert issues[0].rule_id == semantic_rule_id(SemanticCategory.MISSING_STEP)
 
 
+def test_unwanted_action_is_a_closed_stable_semantic_category():
+    issues = _normalise_semantic_findings(
+        [_finding(category=SemanticCategory.UNWANTED_ACTION)], _diagram(), []
+    )
+    assert issues[0].rule_id == "semantic:unwanted_action"
+    assert semantic_rule_id(SemanticCategory.UNWANTED_ACTION) == issues[0].rule_id
+
+
 def test_the_response_schema_closes_the_category_set():
     categories = _SEMANTIC_SCHEMA["$defs"]["SemanticCategory"]
     assert set(categories["enum"]) == {

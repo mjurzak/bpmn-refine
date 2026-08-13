@@ -134,6 +134,7 @@ async def repair_diagram(
     session_id: str | None = None,
     config: ExperimentConfig | None = None,
     snapshot: bool = True,
+    reference_description: str | None = None,
 ) -> RepairResult:
     """repair a diagram using the existing repair prompt and issue list"""
     active_config = config or ExperimentConfig()
@@ -146,6 +147,7 @@ async def repair_diagram(
             )
             for issue in issues
         ],
+        "reference_description": reference_description,
     }
     async def attempt(feedback: str | None) -> tuple[BpmnDiagram, list[UnresolvedRepair]]:
         prompt = json.dumps(payload)
@@ -264,6 +266,7 @@ async def repair_with_edit_ops(
     issues: list[ValidationIssue],
     config: ExperimentConfig | None = None,
     context_issues: list[ValidationIssue] | None = None,
+    reference_description: str | None = None,
 ) -> AtomicEditOpList:
     """repair the assigned issues by asking the LLM for one atomic EditOp plan
 
@@ -280,6 +283,7 @@ async def repair_with_edit_ops(
         ],
         "repair_mode": RepairMode.ATOMIC,
         "id_constraints": _diagram_id_constraints(diagram),
+        "reference_description": reference_description,
     }
     if context_issues:
         payload["other_open_issues"] = [
@@ -324,6 +328,7 @@ async def dispatch_repair(
     repair_fn: RepairFn | None = None,
     atomic_repair_fn: AtomicRepairFn | None = None,
     single_plan: bool = False,
+    reference_description: str | None = None,
 ) -> DispatcherRepairResult:
     """repair issues once for review, or run the closed loop to convergence
 
@@ -356,6 +361,7 @@ async def dispatch_repair(
                 issues=assigned_issues,
                 config=active_config,
                 snapshot=False,
+                reference_description=reference_description,
             )
             current = result.repaired_diagram
             applied_ops.append(ReplaceDiagramOp(diagram=current))
@@ -373,6 +379,7 @@ async def dispatch_repair(
                     context_issues=[
                         other for other in remaining if id(other) not in assigned_ids
                     ],
+                    reference_description=reference_description,
                 )
             current, op_results = apply_edit_ops(ops, current)
             for op_result in op_results:
@@ -387,6 +394,7 @@ async def dispatch_repair(
             current,
             include_semantic=active_config.tiers_enabled.t3,
             config=active_config,
+            reference_description=reference_description,
         )
         remaining = validation.issues + validation.semantic_issues
         iterations += 1

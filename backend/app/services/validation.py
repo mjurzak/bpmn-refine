@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import json
+from enum import StrEnum
 from pathlib import Path
 
 from pydantic import BaseModel, Field, ValidationError
 
-from app.experiments import ExperimentConfig
+from app.experiments import ExperimentConfig, LlmValidationScope
 from app.llm import client as llm_client
 from app.llm.envelope import LlmResponseEnvelope
 from app.llm.prompt_context import render_prompt_template
@@ -30,6 +31,7 @@ from app.validation.rules import (
 
 _PROMPT_DIR = Path(__file__).parent.parent / "llm" / "prompts"
 _VALIDATE_PROMPT = _PROMPT_DIR / "validate.txt"
+_HOLISTIC_VALIDATE_PROMPT = _PROMPT_DIR / "validate_holistic.txt"
 
 
 class ValidationResult(BaseModel):
@@ -67,12 +69,55 @@ SemanticResponse = LlmResponseEnvelope[SemanticFindings]
 _SEMANTIC_SCHEMA = strict_json_schema(SemanticResponse)
 
 
+class HolisticCategory(StrEnum):
+    """Closed taxonomy for the LLM-only holistic validation ablation."""
+
+    MISSING_START_EVENT = "missing_start_event"
+    MISSING_END_EVENT = "missing_end_event"
+    DANGLING_REFERENCE = "dangling_reference"
+    DEADLOCK = "deadlock"
+    LACK_OF_SYNCHRONIZATION = "lack_of_synchronization"
+    IMPROPER_COMPLETION = "improper_completion"
+    UNREACHABLE_REGION = "unreachable_region"
+    MISSING_STEP = SemanticCategory.MISSING_STEP.value
+    CONTRADICTORY_FLOW = SemanticCategory.CONTRADICTORY_FLOW.value
+    UNREACHABLE_BRANCH = SemanticCategory.UNREACHABLE_BRANCH.value
+    MISSING_EXCEPTION_HANDLING = SemanticCategory.MISSING_EXCEPTION_HANDLING.value
+    INCONSISTENT_NAMING = SemanticCategory.INCONSISTENT_NAMING.value
+    IMPROPER_TERMINATION = SemanticCategory.IMPROPER_TERMINATION.value
+    UNWANTED_ACTION = SemanticCategory.UNWANTED_ACTION.value
+
+
+class HolisticFinding(BaseModel):
+    """One finding from the complete structural and semantic taxonomy."""
+
+    category: HolisticCategory = Field(description="The defect taxonomy category.")
+    severity: Severity = Field(
+        description="'error' when execution or completion is blocked, otherwise 'warning'."
+    )
+    message: str = Field(description="Concise description of the issue.")
+    element_refs: list[str] = Field(
+        default_factory=list,
+        description="Affected BPMN element IDs. Empty for a process-wide finding.",
+    )
+    suggestion: str | None = Field(default=None, description="Actionable fix suggestion.")
+
+
+class HolisticFindings(BaseModel):
+    findings: list[HolisticFinding] = Field(default_factory=list)
+
+
+HolisticResponse = LlmResponseEnvelope[HolisticFindings]
+_HOLISTIC_SCHEMA = strict_json_schema(HolisticResponse)
+
+
 async def validate_diagram(
     diagram: BpmnDiagram,
     include_semantic: bool | None = None,
     include_t2: bool | None = None,
     include_t1: bool | None = None,
     config: ExperimentConfig | None = None,
+    reference_description: str | None = None,
 ) -> ValidationResult:
     """run deterministic validation and optionally an LLM semantic pass
 
@@ -100,12 +145,24 @@ async def validate_diagram(
         checker_issues = await run_tier2_checkers(diagram, active_config)
 
     if should_run_t3:
-        # runs last so it receives tier 1 and 2 findings and can skip re-reporting them
-        semantic_issues = await _semantic_validate(
-            diagram,
-            rule_issues + checker_issues,
-            config=active_config,
-        )
+        existing_issues = rule_issues + checker_issues
+        # Holistic validation uses a separate prompt/schema and keeps findings
+        # that overlap with deterministic tiers.
+        if active_config.llm_validation_scope == LlmValidationScope.HOLISTIC:
+            semantic_issues = await _holistic_validate(
+                diagram,
+                existing_issues,
+                config=active_config,
+                reference_description=reference_description,
+            )
+        else:
+            # runs last so it receives tier 1 and 2 findings and can skip re-reporting them
+            semantic_issues = await _semantic_validate(
+                diagram,
+                existing_issues,
+                config=active_config,
+                reference_description=reference_description,
+            )
 
     issues = _sort_issues_by_severity(rule_issues + checker_issues)
     semantic_issues = _sort_issues_by_severity(semantic_issues)
@@ -134,12 +191,14 @@ async def _semantic_validate(
     diagram: BpmnDiagram,
     existing_issues: list[ValidationIssue],
     config: ExperimentConfig | None = None,
+    reference_description: str | None = None,
 ) -> list[ValidationIssue]:
     active_config = config or ExperimentConfig()
     system_prompt = render_prompt_template(_VALIDATE_PROMPT, config=config)
     payload = {
         "ir_format": str(active_config.ir_format),
         "diagram": diagram_payload(diagram, config),
+        "reference_description": reference_description,
         "existing_issues": [
             issue_to_dict(
                 issue,
@@ -229,6 +288,97 @@ def _normalise_semantic_findings(
     return issues
 
 
+async def _holistic_validate(
+    diagram: BpmnDiagram,
+    existing_issues: list[ValidationIssue],
+    config: ExperimentConfig | None = None,
+    reference_description: str | None = None,
+) -> list[ValidationIssue]:
+    active_config = config or ExperimentConfig()
+    system_prompt = render_prompt_template(_HOLISTIC_VALIDATE_PROMPT, config=config)
+    payload = {
+        "ir_format": str(active_config.ir_format),
+        "diagram": diagram_payload(diagram, config),
+        "reference_description": reference_description,
+        "existing_issues": [
+            issue_to_dict(
+                issue,
+                include_formal_evidence=active_config.include_formal_evidence,
+            )
+            for issue in existing_issues
+        ],
+    }
+    try:
+        parsed = await llm_client.complete_structured(
+            prompt=json.dumps(payload),
+            schema=_HOLISTIC_SCHEMA,
+            task=TaskType.SEMANTIC_VALIDATION,
+            system=system_prompt,
+            model=resolve_model(TaskType.SEMANTIC_VALIDATION, config=config),
+            provider=resolve_provider(TaskType.SEMANTIC_VALIDATION, config=config),
+            reasoning_effort=str(config.reasoning_effort) if config and config.reasoning_effort else None,
+            **resolve_sampling(config),
+        )
+        response = HolisticResponse.model_validate(parsed)
+    except (json.JSONDecodeError, ValidationError) as exc:
+        return [
+            ValidationIssue(
+                rule_id="LLM_PARSE_ERROR",
+                severity=Severity.WARNING,
+                message=(
+                    "LLM holistic validation returned an unparseable response: "
+                    f"{type(exc).__name__}: {exc}"
+                ),
+                tier=ValidationTier.TIER3,
+                source=SOURCE_LLM,
+            )
+        ]
+
+    return _normalise_holistic_findings(
+        response.result.findings, diagram, existing_issues
+    )
+
+
+def _normalise_holistic_findings(
+    findings: list[HolisticFinding],
+    diagram: BpmnDiagram,
+    existing_issues: list[ValidationIssue] | None = None,
+) -> list[ValidationIssue]:
+    """Stamp holistic findings without suppressing deterministic overlap.
+
+    ``existing_issues`` mirrors the semantic normalizer's call contract. It is
+    intentionally unused: overlap is part of the holistic ablation.
+    """
+    known_ids = set(diagram.element_ids())
+    seen: set[tuple[str, tuple[str, ...]]] = set()
+    issues: list[ValidationIssue] = []
+
+    for finding in findings:
+        refs = [ref for ref in finding.element_refs if ref in known_ids]
+        rule_id = f"llm:{finding.category.value}"
+        key = (rule_id, tuple(sorted(refs)))
+        if key in seen:
+            continue
+        seen.add(key)
+        severity = (
+            Severity.ERROR if finding.severity == Severity.ERROR else Severity.WARNING
+        )
+        issues.append(
+            ValidationIssue(
+                rule_id=rule_id,
+                severity=severity,
+                message=finding.message,
+                tier=ValidationTier.TIER3,
+                element_id=refs[0] if refs else None,
+                element_refs=refs,
+                suggestion=finding.suggestion,
+                source=SOURCE_LLM,
+            )
+        )
+
+    return issues
+
+
 # categories that overlap what tiers 1 and 2 already decide structurally
 _STRUCTURAL_CATEGORIES = frozenset(
     {
@@ -247,9 +397,11 @@ def _elements_named_by(issues: list[ValidationIssue]) -> set[str]:
     return named
 
 
-def validate_prompt_name() -> str:
-    return _VALIDATE_PROMPT.name
+def validate_prompt_name(config: ExperimentConfig | None = None) -> str:
+    return validate_prompt_path(config).name
 
 
-def validate_prompt_path() -> Path:
+def validate_prompt_path(config: ExperimentConfig | None = None) -> Path:
+    if config and config.llm_validation_scope == LlmValidationScope.HOLISTIC:
+        return _HOLISTIC_VALIDATE_PROMPT
     return _VALIDATE_PROMPT

@@ -11,8 +11,8 @@ Every tier-1 rule is an `error`, so firing always means a real defect. Heuristic
 checks (disconnected fragments, gateway split/join mismatches) are left to tier 2
 and tier 3. Implicit splits go to tier 3 alone: pm4py encodes a node with several
 outgoing flows as a free choice where BPMN specifies parallel, so Woflan reports
-SOUND on a model that ends in contradictory states (TODO.md 2f). Multiple start
-events are legal BPMN and not checked.
+SOUND on a model that ends in contradictory states. Multiple start events are
+legal BPMN and not checked.
 """
 
 from __future__ import annotations
@@ -54,6 +54,7 @@ class SemanticCategory(StrEnum):
     MISSING_EXCEPTION_HANDLING = "missing_exception_handling"
     INCONSISTENT_NAMING = "inconsistent_naming"
     IMPROPER_TERMINATION = "improper_termination"
+    UNWANTED_ACTION = "unwanted_action"
 
 
 def semantic_rule_id(category: SemanticCategory) -> str:

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from app.experiments import ExperimentConfig, T2Tool, TiersEnabled, config_hash
-from app.llm.client import _resolve_sampling
+from app.experiments import ExperimentConfig, TiersEnabled, config_hash
+from app.llm.client import _resolve_controls
 from app.llm.router import resolve_sampling
 from app.model.schema import (
     BpmnDiagram,
@@ -71,7 +71,6 @@ def _woflan_issue() -> ValidationIssue:
 
 @pytest.mark.asyncio
 async def test_tier1_can_be_disabled():
-    """Regression: the t1 switch used to be advertised but never read."""
     config = ExperimentConfig(tiers_enabled=TiersEnabled(t1=False, t2=False, t3=False))
     result = await validate_diagram(_broken_diagram(), config=config)
     assert result.issues == []
@@ -114,7 +113,9 @@ async def test_every_non_empty_tier_subset_executes_exactly_its_tiers(
         executed.add("t2")
         return []
 
-    async def fake_tier3(diagram, existing_issues, config=None):
+    async def fake_tier3(
+        diagram, existing_issues, config=None, reference_description=None
+    ):
         executed.add("t3")
         return []
 
@@ -221,19 +222,19 @@ class _FullProvider:
 
 
 def test_provider_that_supports_seed_receives_it():
-    honored, unsupported = _resolve_sampling(_FullProvider(), 0.5, 42)
+    honored, unsupported, _ = _resolve_controls(_FullProvider(), None, 0.5, 42, None)
     assert honored == {"temperature": 0.5, "seed": 42}
     assert unsupported == []
 
 
 def test_provider_without_seed_reports_it_rather_than_implying_it_ran():
-    honored, unsupported = _resolve_sampling(_SeedlessProvider(), 0.5, 42)
+    honored, unsupported, _ = _resolve_controls(_SeedlessProvider(), None, 0.5, 42, None)
     assert honored == {"temperature": 0.5}
     assert unsupported == ["seed"]
 
 
 def test_unset_controls_are_neither_sent_nor_reported():
-    honored, unsupported = _resolve_sampling(_SeedlessProvider(), None, None)
+    honored, unsupported, _ = _resolve_controls(_SeedlessProvider(), None, None, None, None)
     assert honored == {}
     assert unsupported == []
 
@@ -269,9 +270,7 @@ async def test_trace_records_the_controls_the_provider_could_not_honor(monkeypat
 def test_run_block_preserves_the_configuration_not_only_its_hash():
     from app.experiments import build_run_block
 
-    config = ExperimentConfig(
-        temperature=0.4, seed=11, t2_tools=[T2Tool.WOFLAN], max_repair_iters=3
-    )
+    config = ExperimentConfig(temperature=0.4, seed=11, max_repair_iters=3)
     run = build_run_block(
         config=config,
         model_used="test-model",

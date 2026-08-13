@@ -9,6 +9,8 @@ The request contains:
    gateway IDs.
 5. On a correction attempt, `repair_feedback` — why the previous plan was
    rejected. No operation from a rejected plan was applied.
+6. Optional `reference_description` — the intended process behavior. Use it
+   when you repair a semantic finding.
 
 ## IR context
 
@@ -71,6 +73,9 @@ local gateway-type or flow correction.
 
 Treat `other_open_issues` only as background. Do not fix them, but avoid making
 them worse.
+
+For a semantic finding, preserve behavior that agrees with
+`reference_description`. Make only the change that removes the contradiction.
 
 ## Plan checks
 

@@ -44,6 +44,22 @@ def test_missing_end_event():
     assert "R002" in rule_ids
 
 
+def test_missing_both_boundary_events_reports_both_rules():
+    diagram = BpmnDiagram(
+        definitions_id="def_without_boundaries",
+        processes=[
+            BpmnProcess(
+                id="proc_without_boundaries",
+                flow_nodes=[FlowNode(id="task_1", type=FlowNodeType.TASK)],
+            )
+        ],
+    )
+
+    rule_ids = [issue.rule_id for issue in validate(diagram).errors()]
+
+    assert rule_ids == ["R001", "R002"]
+
+
 def test_multiple_start_events_not_flagged():
     """Multiple start events are sound and deliberately not checked."""
     diagram = _minimal_valid_diagram()

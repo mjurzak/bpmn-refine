@@ -67,12 +67,11 @@ async def test_validate_diagram_runs_tier2_with_tier1_precondition_errors(monkey
     assert [issue.rule_id for issue in result.issues] == ["R003"]
 
 
-def test_checker_versions_reports_enabled_selected_woflan():
+def test_checker_versions_reports_enabled_woflan():
     versions = checker_versions(
         ExperimentConfig.model_validate(
             {
                 "tiers_enabled": {"t2": True},
-                "t2_tools": ["woflan"],
             }
         )
     )

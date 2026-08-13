@@ -26,12 +26,16 @@ async def test_semantic_validation_prompt_uses_selected_ir_format(monkeypatch):
         canonical_full_diagram(),
         include_semantic=True,
         config=ExperimentConfig(ir_format=IrFormat.YAML),
+        reference_description="The clerk reviews the application.",
     )
 
     prompt = json.loads(captured["prompt"])
     assert prompt["ir_format"] == "yaml"
     assert isinstance(prompt["diagram"], str)
     assert "definitions_id: definitions_1" in prompt["diagram"]
+    assert prompt["reference_description"] == (
+        "The clerk reviews the application."
+    )
 
 
 async def test_regen_repair_parses_selected_ir_format(monkeypatch):

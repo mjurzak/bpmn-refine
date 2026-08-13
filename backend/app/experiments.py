@@ -38,6 +38,8 @@ class ProviderName(StrEnum):
     OPENAI = "openai"
     OLLAMA = "ollama"
     GEMINI = "gemini"
+    CODEX_CLI = "codex_cli"
+    CLAUDE_CLI = "claude_cli"
 
 
 class IrFormat(StrEnum):
@@ -46,12 +48,6 @@ class IrFormat(StrEnum):
     YAML = "yaml"
     MERMAID = "mermaid"
     COMPACT_JSON = "compact_json"
-
-
-class T2Tool(StrEnum):
-    BPMN_ANALYZER = "bpmn_analyzer"
-    WOFLAN = "woflan"
-    BPMNSPECTOR = "bpmnspector"
 
 
 class RepairMode(StrEnum):
@@ -67,6 +63,13 @@ class ReasoningEffort(StrEnum):
     XHIGH = "xhigh"
 
 
+class LlmValidationScope(StrEnum):
+    """The defect taxonomy used by the optional tier-3 validator."""
+
+    SEMANTIC = "semantic"
+    HOLISTIC = "holistic"
+
+
 class TiersEnabled(BaseModel):
     t1: bool = True
     t2: bool = False
@@ -76,11 +79,13 @@ class TiersEnabled(BaseModel):
 class ExperimentConfig(BaseModel):
     model_tier: ModelTier = ModelTier.STRONG
     model_override: str | None = None
-    provider_override: ProviderName | None = None
+    # Built-ins use ProviderName constants, while custom registered adapters remain valid.
+    provider_override: str | None = None
     ir_format: IrFormat = IrFormat.PYDANTIC
     tiers_enabled: TiersEnabled = Field(default_factory=TiersEnabled)
-    t2_tools: list[T2Tool] = Field(default_factory=lambda: list(T2Tool))
     include_formal_evidence: bool = True
+    include_reference_description: bool = True
+    llm_validation_scope: LlmValidationScope = LlmValidationScope.SEMANTIC
     repair_mode: RepairMode = RepairMode.ATOMIC
     max_repair_iters: int = Field(default=5, ge=1)
     temperature: float | None = Field(default=None, ge=0.0)

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -11,7 +10,7 @@ from typing import Any
 
 import yaml
 
-from app.experiments import ExperimentConfig, T2Tool
+from app.experiments import ExperimentConfig
 from app.model.formats.pydantic_ir import PydanticConverter
 from app.model.schema import BpmnDiagram, FlowNodeType
 from app.validation.rules import (
@@ -23,6 +22,7 @@ from app.validation.rules import (
 )
 
 CHECKERS_CONFIG_PATH = Path(__file__).with_name("checkers.yaml")
+WOFLAN_TOOL = "woflan"
 
 
 async def run_tier2_checkers(
@@ -33,21 +33,15 @@ async def run_tier2_checkers(
     checker_config = load_checker_config()
     issues: list[ValidationIssue] = []
 
-    if _is_selected(T2Tool.WOFLAN, config) and _is_enabled(T2Tool.WOFLAN, checker_config):
-        timeout_ms = _timeout_ms(T2Tool.WOFLAN, checker_config)
+    if _is_enabled(WOFLAN_TOOL, checker_config):
         try:
-            # Loading PM4Py can build Matplotlib's cache and must happen on the
-            # main thread. That one-time setup cost is machine state, not model
-            # analysis time, so keep it outside the per-model timeout.
-            _load_woflan_modules()
-            issues.extend(
-                await asyncio.wait_for(
-                    asyncio.to_thread(run_woflan, diagram),
-                    timeout=timeout_ms / 1000,
-                )
-            )
+            # PM4Py's CPU-bound analysis is not reliably cancellable in a
+            # worker thread. A timed-out thread keeps running and can make
+            # subsequent checker calls time out too. Corpus-level isolation
+            # belongs to the probe worker; request validation runs locally.
+            issues.extend(run_woflan(diagram))
         except Exception as exc:
-            issues.append(_checker_runtime_issue(T2Tool.WOFLAN, exc))
+            issues.append(_checker_runtime_issue(WOFLAN_TOOL, exc))
 
     # tier provenance is stamped here, so an adapter never has to
     for issue in issues:
@@ -60,8 +54,8 @@ def checker_versions(config: ExperimentConfig) -> dict[str, str]:
     checker_config = load_checker_config()
     versions: dict[str, str] = {}
 
-    if _is_selected(T2Tool.WOFLAN, config) and _is_enabled(T2Tool.WOFLAN, checker_config):
-        versions[T2Tool.WOFLAN.value] = _woflan_version()
+    if _is_enabled(WOFLAN_TOOL, checker_config):
+        versions[WOFLAN_TOOL] = _woflan_version()
 
     return versions
 
@@ -93,7 +87,7 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
                 ),
                 tier=ValidationTier.TIER2,
                 element_refs=[node.id for node in unsupported],
-                source=T2Tool.WOFLAN.value,
+                source=WOFLAN_TOOL,
                 raw={"unsupported_node_types": types},
             )
         ]
@@ -143,7 +137,7 @@ def run_woflan(diagram: BpmnDiagram) -> list[ValidationIssue]:
             message=description,
             tier=ValidationTier.TIER2,
             element_refs=element_refs,
-            source=T2Tool.WOFLAN.value,
+            source=WOFLAN_TOOL,
             formal_witness=FormalWitness(
                 kind="soundness",
                 description=description,
@@ -361,26 +355,17 @@ def _woflan_version() -> str:
     return f"pm4py-{pm4py.__version__}"
 
 
-def _is_selected(tool: T2Tool, config: ExperimentConfig) -> bool:
-    return tool in config.t2_tools
+def _is_enabled(tool: str, checker_config: dict[str, dict[str, Any]]) -> bool:
+    return bool(checker_config.get(tool, {}).get("enabled", False))
 
 
-def _is_enabled(tool: T2Tool, checker_config: dict[str, dict[str, Any]]) -> bool:
-    return bool(checker_config.get(tool.value, {}).get("enabled", False))
-
-
-def _timeout_ms(tool: T2Tool, checker_config: dict[str, dict[str, Any]]) -> int:
-    value = checker_config.get(tool.value, {}).get("timeout_ms", 5000)
-    return int(value)
-
-
-def _checker_runtime_issue(tool: T2Tool, exc: Exception) -> ValidationIssue:
+def _checker_runtime_issue(tool: str, exc: Exception) -> ValidationIssue:
     return ValidationIssue(
-        rule_id=f"{tool.value}:runtime_error",
+        rule_id=f"{tool}:runtime_error",
         severity=Severity.WARNING,
-        message=f"{tool.value} checker failed: {type(exc).__name__}: {exc}".rstrip(": "),
+        message=f"{tool} checker failed: {type(exc).__name__}: {exc}".rstrip(": "),
         tier=ValidationTier.TIER2,
-        source=tool.value,
+        source=tool,
         raw={"error": str(exc), "error_type": type(exc).__name__},
     )
 

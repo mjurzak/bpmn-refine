@@ -46,7 +46,6 @@ def test_validate_tier2_response_records_checker_versions():
             "include_semantic": False,
             "config": {
                 "tiers_enabled": {"t2": True},
-                "t2_tools": ["woflan"],
             },
         },
     )

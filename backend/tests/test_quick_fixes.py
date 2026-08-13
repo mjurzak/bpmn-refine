@@ -85,7 +85,6 @@ def test_quick_fix_declines_to_fork_start_to_orphan_end():
 
 
 def test_quick_fix_never_staples_two_orphans_together():
-    """Regression: R003 and R004 fixes used to wire an orphan start to an orphan end."""
     from pathlib import Path
 
     from app.model.formats.pydantic_ir import PydanticConverter

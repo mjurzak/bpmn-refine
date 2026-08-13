@@ -80,6 +80,7 @@ async def test_dispatch_repair_uses_atomic_llm_ops_when_no_quick_fix_exists():
             )
         ],
         atomic_repair_fn=fake_atomic_repair,
+        reference_description="The clerk reviews the request.",
     )
 
     assert result.iterations == 1
@@ -88,6 +89,7 @@ async def test_dispatch_repair_uses_atomic_llm_ops_when_no_quick_fix_exists():
     assert [op.op for op in result.applied_ops] == ["rename_node"]
     assert result.applied_op_origins == [OpOrigin.MODEL_PLAN]
     assert calls[0][1][0].rule_id == "R999"
+    assert calls[0][2]["reference_description"] == "The clerk reviews the request."
 
 
 async def test_dispatch_repair_batches_errors_then_retries_only_what_remains(
@@ -293,7 +295,6 @@ async def test_dispatch_repair_respects_max_iteration_cap():
 
 
 async def test_dispatch_repair_targets_a_warning_once_no_error_remains():
-    """Regression: the loop used to select errors only and never reach warnings."""
     calls = []
 
     async def fake_atomic_repair(diagram, issues, **kwargs):
@@ -372,6 +373,7 @@ async def test_repair_with_edit_ops_parses_atomic_llm_output(monkeypatch):
             )
         ],
         config=ExperimentConfig(),
+        reference_description="The clerk reviews the request.",
     )
 
     assert [op.op for op in ops] == ["rename_node"]
@@ -381,7 +383,9 @@ async def test_repair_with_edit_ops_parses_atomic_llm_output(monkeypatch):
     ]
     assert "replace_diagram" not in captured["system"]
     assert '"$defs"' not in captured["system"]
-    assert json.loads(captured["prompt"])["repair_mode"] == "atomic"
+    payload = json.loads(captured["prompt"])
+    assert payload["repair_mode"] == "atomic"
+    assert payload["reference_description"] == "The clerk reviews the request."
 
 
 async def test_repair_with_edit_ops_sends_diagram_specific_id_enums(monkeypatch):

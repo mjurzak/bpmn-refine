@@ -26,7 +26,6 @@ def test_experiment_config_defaults_match_current_runtime():
     assert data["model_tier"] == "strong"
     assert data["ir_format"] == "pydantic"
     assert data["tiers_enabled"] == {"t1": True, "t2": False, "t3": False}
-    assert data["t2_tools"] == ["bpmn_analyzer", "woflan", "bpmnspector"]
     assert data["repair_mode"] == "atomic"
     assert data["max_repair_iters"] == 5
     # unset by default, so the provider's own default applies
@@ -74,10 +73,10 @@ def test_canonical_config_json_drops_nulls_and_sorts_keys():
 
     assert canonical == (
         '{"experiment_id":"exp-1","include_formal_evidence":true,'
-        '"ir_format":"pydantic","max_repair_iters":5,'
+        '"include_reference_description":true,"ir_format":"pydantic",'
+        '"llm_validation_scope":"semantic","max_repair_iters":5,'
         '"model_tier":"strong","provider_override":"openai",'
         '"repair_mode":"atomic","seed":42,'
-        '"t2_tools":["bpmn_analyzer","woflan","bpmnspector"],'
         '"tiers_enabled":{"t1":true,"t2":false,"t3":false}}'
     )
     # an unset temperature is dropped like any other null

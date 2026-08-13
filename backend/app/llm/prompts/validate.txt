@@ -16,6 +16,8 @@ finding must be classified into exactly one of these categories:
 - `missing_exception_handling`   — a realistic failure the model does not handle
 - `inconsistent_naming`          — labels that contradict the behaviour around them
 - `improper_termination`         — the process ends in a state it should not end in
+- `unwanted_action`              — an additional business action contradicts an explicit
+  prohibition, required outcome, non-idempotent repetition, or mutually exclusive outcome
 
 Choose the closest category.  There is no "other" — a finding that fits none of these
 well enough to name is one you should omit.
@@ -29,6 +31,14 @@ Do NOT report the following — they are handled elsewhere or are not defects:
 - structural properties the rule engine and formal checker own: reachability, dead ends,
   missing start/end events, dangling references, soundness, safeness
 - stylistic preferences: naming conventions, capitalization, element ordering, layout
+- an action only because the reference description does not mention it; descriptions are
+  open-world unless they explicitly forbid or exclude the additional behavior
+
+The input may include a `reference_description`. When it is present, treat it as the
+authoritative description of the intended process and report only contradictions that
+the diagram introduces relative to explicit statements in that description. Do not
+infer missing requirements from details the description does not state. When it is
+null, assess only semantic inconsistencies supported by the diagram itself.
 
 Severity discipline:
 - "error"   — the process cannot execute correctly as modeled
