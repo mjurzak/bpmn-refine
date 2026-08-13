@@ -1,0 +1,4227 @@
+{
+  "schema_version": "enhancement-cases@1",
+  "cases": [
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M01-refine-01",
+      "seed_id": "01",
+      "core": "candidates/M01/01/core.bpmn",
+      "reference": "candidates/M01/01/reference.bpmn",
+      "instruction": "The order is then recorded in the system, and the customer receives confirmation of their order.",
+      "d_core": "This process begins when a potential customer inquires about a product or service.\nSales staff or customer support collects relevant information and addresses any concerns or questions.\nIf the customer is interested, they are guided through selecting the appropriate product or service.\nNext, the sales representative provides a quote, and after approval from the customer, the process moves to order placement.\nThe process ends when the order is successfully placed and confirmed.",
+      "d_extra": "The order is then recorded in the system, and the customer receives confirmation of their order.",
+      "source_lines": [
+        {
+          "line": 5,
+          "text": "The order is then recorded in the system, and the customer receives confirmation of their order."
+        }
+      ],
+      "relation": {
+        "type": "exists_task",
+        "arguments": [
+          {
+            "role": "task",
+            "element_ref": "Task_1",
+            "label": "Record order in system"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      },
+      "expected_element_ids": [
+        "Task_1"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_13",
+        "Task_1"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_2",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_2",
+        "SequenceFlow_3",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_4"
+        },
+        {
+          "op": "add_node",
+          "id": "Task_1",
+          "node_type": "task",
+          "process_id": "Process_1",
+          "name": "Record order in system"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_13",
+          "source_ref": "Task_6",
+          "target_ref": "Task_1",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_4",
+          "source_ref": "Task_1",
+          "target_ref": "Task_8",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M01",
+        "expected_finding": "missing_step",
+        "source_seed": "01",
+        "relation_type": "exists_task",
+        "bridge_flow_id": "SequenceFlow_4",
+        "removed_task_id": "Task_1",
+        "verification": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/01.bpmn",
+        "source_description": "descriptions/seeds/01.txt",
+        "source_ground_truth": "ground_truth/single/M01/01.json",
+        "source_human_verified": true
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M01-refine-20",
+      "seed_id": "20",
+      "core": "candidates/M01/20/core.bpmn",
+      "reference": "candidates/M01/20/reference.bpmn",
+      "instruction": "When a guest calls room service at The Evanstonian, the room-service manager takes down the order.",
+      "d_core": "The Evanstonian is an upscale independent hotel.\nShe then submits an order ticket to the kitchen to begin preparing the food.\nShe also gives an order to the sommelier (i.e., the wine waiter) to fetch wine from the cellar and to prepare any other alcoholic beverages.\nEighty percent of room-service orders include wine or some other alcoholic beverage.\nFinally, she assigns the order to the waiter.\nWhile the kitchen and the sommelier are doing their tasks, the waiter readies a cart (i.e., puts a tablecloth on the cart and gathers silverware).\nThe waiter is also responsible for nonalcoholic drinks.\nOnce the food, wine, and cart are ready, the waiter delivers it to the guest's room.\nAfter returning to the room-service station, the waiter debits the guest's account.\nThe waiter may wait to do the billing if he has another order to prepare or deliver.",
+      "d_extra": "When a guest calls room service at The Evanstonian, the room-service manager takes down the order.",
+      "source_lines": [
+        {
+          "line": 2,
+          "text": "When a guest calls room service at The Evanstonian, the room-service manager takes down the order."
+        }
+      ],
+      "relation": {
+        "type": "exists_task",
+        "arguments": [
+          {
+            "role": "task",
+            "element_ref": "Task_4",
+            "label": "Manager takes down the order"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      },
+      "expected_element_ids": [
+        "Task_4"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_4",
+        "Task_4"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ParallelGateway_3",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_26",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_11",
+        "Task_12",
+        "Task_13",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ParallelGateway_3",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_26",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_11",
+        "Task_12",
+        "Task_13",
+        "Task_2",
+        "Task_3",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_3"
+        },
+        {
+          "op": "add_node",
+          "id": "Task_4",
+          "node_type": "task",
+          "process_id": "Process_1",
+          "name": "Manager takes down the order"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_4",
+          "source_ref": "Task_13",
+          "target_ref": "Task_4",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_3",
+          "source_ref": "Task_4",
+          "target_ref": "ParallelGateway_3",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M01",
+        "expected_finding": "missing_step",
+        "source_seed": "20",
+        "relation_type": "exists_task",
+        "bridge_flow_id": "SequenceFlow_3",
+        "removed_task_id": "Task_4",
+        "verification": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/20.bpmn",
+        "source_description": "descriptions/seeds/20.txt",
+        "source_ground_truth": "ground_truth/single/M01/20.json",
+        "source_human_verified": true
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M01-refine-35",
+      "seed_id": "35",
+      "core": "candidates/M01/35/core.bpmn",
+      "reference": "candidates/M01/35/reference.bpmn",
+      "instruction": "During production, you regularly send updates to your customer.",
+      "d_core": "Title: Chainsaw\n\nYou produce custom chainsaws on demand.\nYour chainsaws have at least 5 properties such as length of the \"guide bar\" (Schwertlaenge), chain width, electric or motor chainsaw.\nAfter your customer told you the properties, you can start ordering the parts from various online sources (in parallel).\nAfter the parts arrive you have to do a manual inspection of all parts, and then assemble the parts.\nAfter producing the first saw you send it to your customer.\nIf he likes it, the rest of his order are produced.",
+      "d_extra": "During production, you regularly send updates to your customer.",
+      "source_lines": [
+        {
+          "line": 7,
+          "text": "During production, you regularly send updates to your customer."
+        }
+      ],
+      "relation": {
+        "type": "exists_task",
+        "arguments": [
+          {
+            "role": "task",
+            "element_ref": "ServiceTask_5",
+            "label": "Send updates"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      },
+      "expected_element_ids": [
+        "ServiceTask_5"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_12",
+        "ServiceTask_5"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "ServiceTask_5",
+        "ServiceTask_6",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_2",
+        "UserTask_3",
+        "UserTask_4",
+        "UserTask_5",
+        "UserTask_6"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "ServiceTask_6",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_2",
+        "UserTask_3",
+        "UserTask_4",
+        "UserTask_5",
+        "UserTask_6"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_13"
+        },
+        {
+          "op": "add_node",
+          "id": "ServiceTask_5",
+          "node_type": "serviceTask",
+          "process_id": "Process_1",
+          "name": "Send updates"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_12",
+          "source_ref": "ServiceTask_4",
+          "target_ref": "ServiceTask_5",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_13",
+          "source_ref": "ServiceTask_5",
+          "target_ref": "UserTask_4",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M01",
+        "expected_finding": "missing_step",
+        "source_seed": "35",
+        "relation_type": "exists_task",
+        "bridge_flow_id": "SequenceFlow_13",
+        "removed_task_id": "ServiceTask_5",
+        "verification": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/35.bpmn",
+        "source_description": "descriptions/seeds/35.txt",
+        "source_ground_truth": "ground_truth/single/M01/35.json",
+        "source_human_verified": true
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M01-refine-43",
+      "seed_id": "43",
+      "core": "candidates/M01/43/core.bpmn",
+      "reference": "candidates/M01/43/reference.bpmn",
+      "instruction": "At the car service facility the mechanic enters the problems of your car for reference.",
+      "d_core": "Title: Car Service\n\nThe police has a new app to remind you of your car service.\nThe process is started after a successful service.\nWhen a service is necessary, the system checks if your car is still registered.\nIf it is registered, you are notified.\nIf you do not go to the service, you are fined after 30 days.\nWhile you wait (can take several days), you get status updates via email.\nYou can pay through the app, when the repair is done.\nThe mechanic enters that the repair was successful and you got your \"Pickerl\".\nThe mechanic enters the time for you next service.",
+      "d_extra": "At the car service facility the mechanic enters the problems of your car for reference.",
+      "source_lines": [
+        {
+          "line": 8,
+          "text": "At the car service facility the mechanic enters the problems of your car for reference."
+        }
+      ],
+      "relation": {
+        "type": "exists_task",
+        "arguments": [
+          {
+            "role": "task",
+            "element_ref": "UserTask_1",
+            "label": "Mechanic check a car and enter problems"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      },
+      "expected_element_ids": [
+        "UserTask_1"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_6",
+        "UserTask_1"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ManualTask_1",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "ReceiveTask_1",
+        "SendTask_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "ServiceTask_5",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_2",
+        "UserTask_3",
+        "UserTask_4",
+        "UserTask_5"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ManualTask_1",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ReceiveTask_1",
+        "SendTask_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_7",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "ServiceTask_5",
+        "StartEvent_1",
+        "UserTask_2",
+        "UserTask_3",
+        "UserTask_4",
+        "UserTask_5"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_8"
+        },
+        {
+          "op": "add_node",
+          "id": "UserTask_1",
+          "node_type": "userTask",
+          "process_id": "Process_1",
+          "name": "Mechanic check a car and enter problems"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_6",
+          "source_ref": "ExclusiveGateway_2",
+          "target_ref": "UserTask_1",
+          "name": "yes",
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_8",
+          "source_ref": "UserTask_1",
+          "target_ref": "ServiceTask_3",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M01",
+        "expected_finding": "missing_step",
+        "source_seed": "43",
+        "relation_type": "exists_task",
+        "bridge_flow_id": "SequenceFlow_8",
+        "removed_task_id": "UserTask_1",
+        "verification": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/43.bpmn",
+        "source_description": "descriptions/seeds/43.txt",
+        "source_ground_truth": "ground_truth/single/M01/43.json",
+        "source_human_verified": true
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M01-refine-49",
+      "seed_id": "49",
+      "core": "candidates/M01/49/core.bpmn",
+      "reference": "candidates/M01/49/reference.bpmn",
+      "instruction": "A customer brings in a defective computer and the CRS checks the defect and hands out a repair cost calculation back.",
+      "d_core": "If the customer decides that the costs are acceptable, the process continues, otherwise she takes her computer home unrepaired.\nThe ongoing repair consists of two activities, which are executed, in an arbitrary order.\nThe first activity is to check and repair the hardware, whereas the second activity checks and configures the software.\nAfter each of these activities, the proper system functionality is tested.\nIf an error is detected another arbitrary repair activity is executed, otherwise the repair is finished.",
+      "d_extra": "A customer brings in a defective computer and the CRS checks the defect and hands out a repair cost calculation back.",
+      "source_lines": [
+        {
+          "line": 1,
+          "text": "A customer brings in a defective computer and the CRS checks the defect and hands out a repair cost calculation back."
+        }
+      ],
+      "relation": {
+        "type": "exists_task",
+        "arguments": [
+          {
+            "role": "task",
+            "element_ref": "Task_3",
+            "label": "CRS hands out a repair cost calculation"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      },
+      "expected_element_ids": [
+        "Task_3"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_3",
+        "Task_3"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_2",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_4"
+        },
+        {
+          "op": "add_node",
+          "id": "Task_3",
+          "node_type": "task",
+          "process_id": "Process_1",
+          "name": "CRS hands out a repair cost calculation"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_3",
+          "source_ref": "Task_2",
+          "target_ref": "Task_3",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_4",
+          "source_ref": "Task_3",
+          "target_ref": "ExclusiveGateway_1",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M01",
+        "expected_finding": "missing_step",
+        "source_seed": "49",
+        "relation_type": "exists_task",
+        "bridge_flow_id": "SequenceFlow_4",
+        "removed_task_id": "Task_3",
+        "verification": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/49.bpmn",
+        "source_description": "descriptions/seeds/49.txt",
+        "source_ground_truth": "ground_truth/single/M01/49.json",
+        "source_human_verified": true
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M01-refine-52",
+      "seed_id": "52",
+      "core": "candidates/M01/52/core.bpmn",
+      "reference": "candidates/M01/52/reference.bpmn",
+      "instruction": "The MPOO reviews the dismissal.",
+      "d_core": "The MPON sents the dismissal to the MPOO.\nThe MPOO opposes the dismissal of MPON or the MPOO confirmes the dismissal of the MPON.",
+      "d_extra": "The MPOO reviews the dismissal.",
+      "source_lines": [
+        {
+          "line": 2,
+          "text": "The MPOO reviews the dismissal."
+        }
+      ],
+      "relation": {
+        "type": "exists_task",
+        "arguments": [
+          {
+            "role": "task",
+            "element_ref": "Task_2",
+            "label": "MPOO reviews the dismissal"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      },
+      "expected_element_ids": [
+        "Task_2"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_2",
+        "Task_2"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_2",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "StartEvent_1",
+        "Task_1",
+        "Task_2",
+        "Task_3",
+        "Task_4"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "SequenceFlow_1",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "StartEvent_1",
+        "Task_1",
+        "Task_3",
+        "Task_4"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_3"
+        },
+        {
+          "op": "add_node",
+          "id": "Task_2",
+          "node_type": "task",
+          "process_id": "Process_1",
+          "name": "MPOO reviews the dismissal"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_2",
+          "source_ref": "Task_1",
+          "target_ref": "Task_2",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_3",
+          "source_ref": "Task_2",
+          "target_ref": "ExclusiveGateway_1",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M01",
+        "expected_finding": "missing_step",
+        "source_seed": "52",
+        "relation_type": "exists_task",
+        "bridge_flow_id": "SequenceFlow_3",
+        "removed_task_id": "Task_2",
+        "verification": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/52.bpmn",
+        "source_description": "descriptions/seeds/52.txt",
+        "source_ground_truth": "ground_truth/single/M01/52.json",
+        "source_human_verified": true
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M02-refine-02",
+      "seed_id": "02",
+      "core": "candidates/M02/02/core.bpmn",
+      "reference": "candidates/M02/02/reference.bpmn",
+      "instruction": "Resumes are collected and screened, followed by initial phone interviews.",
+      "d_core": "This process kicks off when a department identifies the need for a new hire.\nHR creates a job description and posts it on job boards.\nSelected candidates are invited for in-person or virtual interviews depending on each candidate's preference.\nOnce a candidate is chosen, an offer is extended, and salary negotiations may take place.\nAfter the offer is accepted, the onboarding process begins, including paperwork, orientation, and training.\nThe process concludes once all onboarding steps are completed and the new hire is fully integrated into the team.",
+      "d_extra": "Resumes are collected and screened, followed by initial phone interviews.",
+      "source_lines": [
+        {
+          "line": 3,
+          "text": "Resumes are collected and screened, followed by initial phone interviews."
+        }
+      ],
+      "relation": {
+        "type": "precedes",
+        "arguments": [
+          {
+            "role": "before",
+            "element_ref": "Task_14",
+            "label": "Screen resumes"
+          },
+          {
+            "role": "after",
+            "element_ref": "Task_2",
+            "label": "Conduct initial phone interviews"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      },
+      "expected_element_ids": [
+        "Task_14",
+        "Task_2"
+      ],
+      "removed_element_ids": [],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ExclusiveGateway_6",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_26",
+        "SequenceFlow_27",
+        "SequenceFlow_28",
+        "SequenceFlow_29",
+        "SequenceFlow_3",
+        "SequenceFlow_30",
+        "SequenceFlow_31",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_11",
+        "Task_12",
+        "Task_13",
+        "Task_14",
+        "Task_15",
+        "Task_16",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ExclusiveGateway_6",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_26",
+        "SequenceFlow_27",
+        "SequenceFlow_28",
+        "SequenceFlow_29",
+        "SequenceFlow_3",
+        "SequenceFlow_30",
+        "SequenceFlow_31",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_11",
+        "Task_12",
+        "Task_13",
+        "Task_15",
+        "Task_16",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_19"
+        },
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_4"
+        },
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_5"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_19",
+          "source_ref": "Task_7",
+          "target_ref": "Task_14",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_4",
+          "source_ref": "Task_14",
+          "target_ref": "Task_2",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_5",
+          "source_ref": "Task_2",
+          "target_ref": "Task_11",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M02",
+        "type": "semantic_refinement",
+        "expected_finding": "contradictory_flow",
+        "source_seed": "02",
+        "relation_type": "precedes",
+        "changed_element_ids": [
+          "SequenceFlow_19",
+          "SequenceFlow_4",
+          "SequenceFlow_5",
+          "Task_14",
+          "Task_2"
+        ],
+        "added_element_ids": [],
+        "source_record": "ground_truth/single/M02/02.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M02/02.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/02.bpmn",
+        "source_variant": "variants/single/M02/02.bpmn",
+        "source_description": "descriptions/seeds/02.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M02-refine-31",
+      "seed_id": "31",
+      "core": "candidates/M02/31/core.bpmn",
+      "reference": "candidates/M02/31/reference.bpmn",
+      "instruction": "If you do not have one yet, you enter the account information and click the link you receive in the confirmation mail.",
+      "d_core": "Title: Blizzard Online Character Generator\n\nBlizzard creates a cool online tool for creating characters for their new WoW expansion.\nWhen creating a World of Warcraft character, you can start doing two things: \nWhile you are setting up your account, you can already come up with good character names.\nThe setup of your account starts with checking whether you have a battle.net account.\nAs soon as you have a battle.net account, you can check if you have an active WoW subscription.\nIf not, you can select the payment method.\nIf you choose credit card, enter your credit card information.\nIf you choose your bank account, enter your IBAN and BIC numbers.\nAfter that you can log into the game and select realm, race and class of your character.\nUntil now, you should have come up with some good names.\nYou enter them one by one until a name is still available.\nYou get a confirmation, and some selfies of your character, as soon as a expansion is released you get another message.",
+      "d_extra": "If you do not have one yet, you enter the account information and click the link you receive in the confirmation mail.",
+      "source_lines": [
+        {
+          "line": 7,
+          "text": "If you do not have one yet, you enter the account information and click the link you receive in the confirmation mail."
+        }
+      ],
+      "relation": {
+        "type": "precedes",
+        "arguments": [
+          {
+            "role": "before",
+            "element_ref": "UserTask_2",
+            "label": "Create battle.net account"
+          },
+          {
+            "role": "after",
+            "element_ref": "UserTask_3",
+            "label": "Confirm registration via email link"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      },
+      "expected_element_ids": [
+        "UserTask_2",
+        "UserTask_3"
+      ],
+      "removed_element_ids": [],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ExclusiveGateway_6",
+        "ExclusiveGateway_7",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ParallelGateway_3",
+        "ParallelGateway_4",
+        "ParallelGateway_5",
+        "ParallelGateway_6",
+        "ParallelGateway_7",
+        "ParallelGateway_8",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_26",
+        "SequenceFlow_27",
+        "SequenceFlow_28",
+        "SequenceFlow_29",
+        "SequenceFlow_3",
+        "SequenceFlow_30",
+        "SequenceFlow_31",
+        "SequenceFlow_32",
+        "SequenceFlow_33",
+        "SequenceFlow_34",
+        "SequenceFlow_35",
+        "SequenceFlow_36",
+        "SequenceFlow_37",
+        "SequenceFlow_38",
+        "SequenceFlow_39",
+        "SequenceFlow_4",
+        "SequenceFlow_40",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_10",
+        "UserTask_11",
+        "UserTask_2",
+        "UserTask_3",
+        "UserTask_4",
+        "UserTask_5",
+        "UserTask_6",
+        "UserTask_7",
+        "UserTask_8",
+        "UserTask_9"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ExclusiveGateway_6",
+        "ExclusiveGateway_7",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ParallelGateway_3",
+        "ParallelGateway_4",
+        "ParallelGateway_5",
+        "ParallelGateway_6",
+        "ParallelGateway_7",
+        "ParallelGateway_8",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_26",
+        "SequenceFlow_27",
+        "SequenceFlow_28",
+        "SequenceFlow_29",
+        "SequenceFlow_3",
+        "SequenceFlow_30",
+        "SequenceFlow_31",
+        "SequenceFlow_32",
+        "SequenceFlow_33",
+        "SequenceFlow_34",
+        "SequenceFlow_35",
+        "SequenceFlow_36",
+        "SequenceFlow_37",
+        "SequenceFlow_38",
+        "SequenceFlow_39",
+        "SequenceFlow_40",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_10",
+        "UserTask_11",
+        "UserTask_4",
+        "UserTask_5",
+        "UserTask_6",
+        "UserTask_7",
+        "UserTask_8",
+        "UserTask_9"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_4"
+        },
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_5"
+        },
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_6"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_4",
+          "source_ref": "ExclusiveGateway_1",
+          "target_ref": "UserTask_2",
+          "name": "No",
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_5",
+          "source_ref": "UserTask_2",
+          "target_ref": "UserTask_3",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_6",
+          "source_ref": "UserTask_3",
+          "target_ref": "ExclusiveGateway_2",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M02",
+        "type": "semantic_refinement",
+        "expected_finding": "contradictory_flow",
+        "source_seed": "31",
+        "relation_type": "precedes",
+        "changed_element_ids": [
+          "SequenceFlow_4",
+          "SequenceFlow_5",
+          "SequenceFlow_6",
+          "UserTask_2",
+          "UserTask_3"
+        ],
+        "added_element_ids": [],
+        "source_record": "ground_truth/single/M02/31.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M02/31.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/31.bpmn",
+        "source_variant": "variants/single/M02/31.bpmn",
+        "source_description": "descriptions/seeds/31.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M02-refine-46",
+      "seed_id": "46",
+      "core": "candidates/M02/46/core.bpmn",
+      "reference": "candidates/M02/46/reference.bpmn",
+      "instruction": "First, the order is read from the automatic order management system.\nThen, it's checked if the first product from the order is in stock.",
+      "d_core": "Title: Storage management\n\nIf it's in stock then it's withdrawn from the warehouse.\nHowever, if it's not in stock then it's reordered from the wholesaler.\nNote, that if it was necessary to wait more then 10 days for the arrival of the  product then a delivery delay penalty is automatically demanded from the wholesaler.\nAfter the ordered product has arrived it's registered in the stock management system.\nFinally, it's checked if the whole order is ready for shipment.\nIf the order is ready for shipment, a courier is requested and the products are packed simultaneously and finally shipped.\nIf it isn't then the next product from the order is selected and the process starts again with checking if this order is in stock or not.",
+      "d_extra": "First, the order is read from the automatic order management system.\nThen, it's checked if the first product from the order is in stock.",
+      "source_lines": [
+        {
+          "line": 3,
+          "text": "First, the order is read from the automatic order management system."
+        },
+        {
+          "line": 4,
+          "text": "Then, it's checked if the first product from the order is in stock."
+        }
+      ],
+      "relation": {
+        "type": "precedes",
+        "arguments": [
+          {
+            "role": "before",
+            "element_ref": "ServiceTask_1",
+            "label": "Read order"
+          },
+          {
+            "role": "after",
+            "element_ref": "ServiceTask_2",
+            "label": "Check if product is in stock"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      },
+      "expected_element_ids": [
+        "ServiceTask_1",
+        "ServiceTask_2"
+      ],
+      "removed_element_ids": [],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ManualTask_1",
+        "ManualTask_2",
+        "ManualTask_3",
+        "ManualTask_4",
+        "ManualTask_5",
+        "ManualTask_6",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "ServiceTask_5",
+        "StartEvent_1"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ManualTask_1",
+        "ManualTask_2",
+        "ManualTask_3",
+        "ManualTask_4",
+        "ManualTask_5",
+        "ManualTask_6",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "ServiceTask_5",
+        "StartEvent_1"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_1"
+        },
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_2"
+        },
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_15"
+        },
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_3"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_1",
+          "source_ref": "StartEvent_1",
+          "target_ref": "ServiceTask_1",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_2",
+          "source_ref": "ServiceTask_1",
+          "target_ref": "ExclusiveGateway_5",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_15",
+          "source_ref": "ExclusiveGateway_5",
+          "target_ref": "ServiceTask_2",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_3",
+          "source_ref": "ServiceTask_2",
+          "target_ref": "ExclusiveGateway_1",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M02",
+        "type": "semantic_refinement",
+        "expected_finding": "contradictory_flow",
+        "source_seed": "46",
+        "relation_type": "precedes",
+        "changed_element_ids": [
+          "SequenceFlow_1",
+          "SequenceFlow_15",
+          "SequenceFlow_2",
+          "SequenceFlow_3",
+          "ServiceTask_1",
+          "ServiceTask_2"
+        ],
+        "added_element_ids": [],
+        "source_record": "ground_truth/single/M02/46.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M02/46.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/46.bpmn",
+        "source_variant": "variants/single/M02/46.bpmn",
+        "source_description": "descriptions/seeds/46.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M03-refine-36",
+      "seed_id": "36",
+      "core": "candidates/M03/36/core.bpmn",
+      "reference": "candidates/M03/36/reference.bpmn",
+      "instruction": "E.g. manufacturing the vodka bar is done by the Russian team, the whiskey bar is manufactured by an Irish team.",
+      "d_core": "Title: Luxury Airplane\n\nYou produce airplanes.\nWhile the base model is always the same, your customer likes to pimp their airplane with fancy interior.\nYou let them decide between a number of 5 different bars, the number of seats, their color, and the amount of water in the toilets of their plane (you can come up with additional stuff).\nAfter you received the specifications you send the requirements to different teams to manufacture the parts.\nAfter receiving the individual bits and pieces, the interior of the plane is assembled, and the plane is sent on a test flight.\nDuring the flight you create a test protocol which is sent to you and the customer.\nThe plane is delivered to the customer, which has to confirm.",
+      "d_extra": "E.g. manufacturing the vodka bar is done by the Russian team, the whiskey bar is manufactured by an Irish team.",
+      "source_lines": [
+        {
+          "line": 7,
+          "text": "E.g. manufacturing the vodka bar is done by the Russian team, the whiskey bar is manufactured by an Irish team."
+        }
+      ],
+      "relation": {
+        "type": "branch_condition",
+        "arguments": [
+          {
+            "role": "condition_gateway",
+            "element_ref": "ExclusiveGateway_2",
+            "label": "Bar type"
+          },
+          {
+            "role": "branch_target",
+            "element_ref": "SendTask_2",
+            "label": "Send requirements to the russian team"
+          },
+          {
+            "role": "branch_flow",
+            "element_ref": "SequenceFlow_35",
+            "label": "Vodka bar"
+          }
+        ],
+        "condition_text": "manufacturing the vodka bar",
+        "outcome_text": "done by the Russian team"
+      },
+      "expected_element_ids": [
+        "ExclusiveGateway_2",
+        "SendTask_2",
+        "SequenceFlow_35"
+      ],
+      "removed_element_ids": [],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ManualTask_1",
+        "ManualTask_2",
+        "ManualTask_3",
+        "ManualTask_4",
+        "ManualTask_5",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ParallelGateway_3",
+        "ParallelGateway_4",
+        "Process_1",
+        "ReceiveTask_1",
+        "ReceiveTask_2",
+        "SendTask_1",
+        "SendTask_2",
+        "SendTask_3",
+        "SendTask_4",
+        "SendTask_5",
+        "SendTask_6",
+        "SendTask_7",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_26",
+        "SequenceFlow_27",
+        "SequenceFlow_28",
+        "SequenceFlow_29",
+        "SequenceFlow_3",
+        "SequenceFlow_30",
+        "SequenceFlow_31",
+        "SequenceFlow_32",
+        "SequenceFlow_33",
+        "SequenceFlow_34",
+        "SequenceFlow_35",
+        "SequenceFlow_36",
+        "SequenceFlow_37",
+        "SequenceFlow_38",
+        "SequenceFlow_39",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_2",
+        "UserTask_3",
+        "UserTask_4",
+        "UserTask_5",
+        "message_1"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ManualTask_1",
+        "ManualTask_2",
+        "ManualTask_3",
+        "ManualTask_4",
+        "ManualTask_5",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ParallelGateway_3",
+        "ParallelGateway_4",
+        "ReceiveTask_1",
+        "ReceiveTask_2",
+        "SendTask_1",
+        "SendTask_2",
+        "SendTask_3",
+        "SendTask_4",
+        "SendTask_5",
+        "SendTask_6",
+        "SendTask_7",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_26",
+        "SequenceFlow_27",
+        "SequenceFlow_28",
+        "SequenceFlow_29",
+        "SequenceFlow_3",
+        "SequenceFlow_30",
+        "SequenceFlow_31",
+        "SequenceFlow_32",
+        "SequenceFlow_33",
+        "SequenceFlow_34",
+        "SequenceFlow_36",
+        "SequenceFlow_37",
+        "SequenceFlow_38",
+        "SequenceFlow_39",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_2",
+        "UserTask_3",
+        "UserTask_4",
+        "UserTask_5"
+      ],
+      "oracle_plan": [
+        {
+          "op": "set_condition",
+          "flow_id": "SequenceFlow_35",
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M03",
+        "type": "semantic_refinement",
+        "expected_finding": "unreachable_branch",
+        "source_seed": "36",
+        "relation_type": "branch_condition",
+        "changed_element_ids": [
+          "SequenceFlow_35"
+        ],
+        "added_element_ids": [],
+        "source_record": "ground_truth/single/M03/36.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M03/36.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/36.bpmn",
+        "source_variant": "variants/single/M03/36.bpmn",
+        "source_description": "descriptions/seeds/36.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M03-refine-43",
+      "seed_id": "43",
+      "core": "candidates/M03/43/core.bpmn",
+      "reference": "candidates/M03/43/reference.bpmn",
+      "instruction": "If you do not go to the service, you are fined after 30 days.",
+      "d_core": "Title: Car Service\n\nThe police has a new app to remind you of your car service.\nThe process is started after a successful service.\nWhen a service is necessary, the system checks if your car is still registered.\nIf it is registered, you are notified.\nAt the car service facility the mechanic enters the problems of your car for reference.\nWhile you wait (can take several days), you get status updates via email.\nYou can pay through the app, when the repair is done.\nThe mechanic enters that the repair was successful and you got your \"Pickerl\".\nThe mechanic enters the time for you next service.",
+      "d_extra": "If you do not go to the service, you are fined after 30 days.",
+      "source_lines": [
+        {
+          "line": 7,
+          "text": "If you do not go to the service, you are fined after 30 days."
+        }
+      ],
+      "relation": {
+        "type": "branch_condition",
+        "arguments": [
+          {
+            "role": "condition_gateway",
+            "element_ref": "ExclusiveGateway_2",
+            "label": "Gone to service?"
+          },
+          {
+            "role": "condition_gateway",
+            "element_ref": "ExclusiveGateway_3",
+            "label": "> 30 days?"
+          },
+          {
+            "role": "branch_target",
+            "element_ref": "ServiceTask_2",
+            "label": "User fined"
+          },
+          {
+            "role": "branch_flow",
+            "element_ref": "SequenceFlow_7",
+            "label": "yes"
+          }
+        ],
+        "condition_text": "If you do not go to the service, you are fined after 30 days.",
+        "outcome_text": "you are fined after 30 days"
+      },
+      "expected_element_ids": [
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ServiceTask_2",
+        "SequenceFlow_7"
+      ],
+      "removed_element_ids": [],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ManualTask_1",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "ReceiveTask_1",
+        "SendTask_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "ServiceTask_5",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_2",
+        "UserTask_3",
+        "UserTask_4",
+        "UserTask_5"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ManualTask_1",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ReceiveTask_1",
+        "SendTask_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "ServiceTask_5",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_2",
+        "UserTask_3",
+        "UserTask_4",
+        "UserTask_5"
+      ],
+      "oracle_plan": [
+        {
+          "op": "set_condition",
+          "flow_id": "SequenceFlow_7",
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M03",
+        "type": "semantic_refinement",
+        "expected_finding": "unreachable_branch",
+        "source_seed": "43",
+        "relation_type": "branch_condition",
+        "changed_element_ids": [
+          "SequenceFlow_7"
+        ],
+        "added_element_ids": [],
+        "source_record": "ground_truth/single/M03/43.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M03/43.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/43.bpmn",
+        "source_variant": "variants/single/M03/43.bpmn",
+        "source_description": "descriptions/seeds/43.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M03-refine-49",
+      "seed_id": "49",
+      "core": "candidates/M03/49/core.bpmn",
+      "reference": "candidates/M03/49/reference.bpmn",
+      "instruction": "If the customer decides that the costs are acceptable, the process continues, otherwise she takes her computer home unrepaired.",
+      "d_core": "A customer brings in a defective computer and the CRS checks the defect and hands out a repair cost calculation back.\nThe ongoing repair consists of two activities, which are executed, in an arbitrary order.\nThe first activity is to check and repair the hardware, whereas the second activity checks and configures the software.\nAfter each of these activities, the proper system functionality is tested.\nIf an error is detected another arbitrary repair activity is executed, otherwise the repair is finished.",
+      "d_extra": "If the customer decides that the costs are acceptable, the process continues, otherwise she takes her computer home unrepaired.",
+      "source_lines": [
+        {
+          "line": 2,
+          "text": "If the customer decides that the costs are acceptable, the process continues, otherwise she takes her computer home unrepaired."
+        }
+      ],
+      "relation": {
+        "type": "branch_condition",
+        "arguments": [
+          {
+            "role": "condition_gateway",
+            "element_ref": "ExclusiveGateway_1",
+            "label": null
+          },
+          {
+            "role": "branch_target",
+            "element_ref": "Task_4",
+            "label": "Client takes her computer home unrepaired"
+          },
+          {
+            "role": "branch_flow",
+            "element_ref": "SequenceFlow_17",
+            "label": "costs are not acceptable"
+          }
+        ],
+        "condition_text": "otherwise",
+        "outcome_text": "she takes her computer home unrepaired"
+      },
+      "expected_element_ids": [
+        "ExclusiveGateway_1",
+        "Task_4",
+        "SequenceFlow_17"
+      ],
+      "removed_element_ids": [],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "oracle_plan": [
+        {
+          "op": "set_condition",
+          "flow_id": "SequenceFlow_17",
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M03",
+        "type": "semantic_refinement",
+        "expected_finding": "unreachable_branch",
+        "source_seed": "49",
+        "relation_type": "branch_condition",
+        "changed_element_ids": [
+          "SequenceFlow_17"
+        ],
+        "added_element_ids": [],
+        "source_record": "ground_truth/single/M03/49.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M03/49.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/49.bpmn",
+        "source_variant": "variants/single/M03/49.bpmn",
+        "source_description": "descriptions/seeds/49.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M04-refine-09",
+      "seed_id": "09",
+      "core": "candidates/M04/09/core.bpmn",
+      "reference": "candidates/M04/09/reference.bpmn",
+      "instruction": "Feedback from the testing phase is collected, and the prototype may be refined accordingly.\nIf a refinement is needed, then the testing phase is reinitiated.",
+      "d_core": "The process starts with identifying an idea for a new product or improvement to an existing one.\nThe R&D team conducts initial research and feasibility studies, followed by drafting design concepts.\nAfter selecting a promising design, a prototype is built using available materials and resources.\nThe prototype undergoes various tests to assess its functionality, safety, and market potential.\nThe process ends when the prototype is either approved for further development or discarded.",
+      "d_extra": "Feedback from the testing phase is collected, and the prototype may be refined accordingly.\nIf a refinement is needed, then the testing phase is reinitiated.",
+      "source_lines": [
+        {
+          "line": 5,
+          "text": "Feedback from the testing phase is collected, and the prototype may be refined accordingly."
+        },
+        {
+          "line": 6,
+          "text": "If a refinement is needed, then the testing phase is reinitiated."
+        }
+      ],
+      "relation": {
+        "type": "exists_path",
+        "arguments": [
+          {
+            "role": "path_entry",
+            "element_ref": "Task_5",
+            "label": "Refine prototype"
+          },
+          {
+            "role": "path_step",
+            "element_ref": "Task_6",
+            "label": "Test functionality"
+          },
+          {
+            "role": "path_exit",
+            "element_ref": "Task_3",
+            "label": "Collect feedback from testing phase"
+          }
+        ],
+        "condition_text": "If a refinement is needed",
+        "outcome_text": "the testing phase is reinitiated"
+      },
+      "expected_element_ids": [
+        "Task_5",
+        "Task_6",
+        "Task_3"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_15",
+        "SequenceFlow_4",
+        "Task_5"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ParallelGateway_3",
+        "ParallelGateway_4",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_26",
+        "SequenceFlow_27",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_11",
+        "Task_12",
+        "Task_13",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ParallelGateway_3",
+        "ParallelGateway_4",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_26",
+        "SequenceFlow_27",
+        "SequenceFlow_3",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_11",
+        "Task_12",
+        "Task_13",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_28"
+        },
+        {
+          "op": "add_node",
+          "id": "Task_5",
+          "node_type": "task",
+          "process_id": "Process_1",
+          "name": "Refine prototype"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_15",
+          "source_ref": "ExclusiveGateway_1",
+          "target_ref": "Task_5",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_4",
+          "source_ref": "Task_5",
+          "target_ref": "ExclusiveGateway_4",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M04",
+        "type": "semantic_refinement",
+        "expected_finding": "missing_exception_handling",
+        "source_seed": "09",
+        "relation_type": "exists_path",
+        "changed_element_ids": [
+          "ExclusiveGateway_1",
+          "ExclusiveGateway_4"
+        ],
+        "added_element_ids": [
+          "SequenceFlow_28"
+        ],
+        "source_record": "ground_truth/single/M04/09.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M04/09.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/09.bpmn",
+        "source_variant": "variants/single/M04/09.bpmn",
+        "source_description": "descriptions/seeds/09.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M04-refine-40",
+      "seed_id": "40",
+      "core": "candidates/M04/40/core.bpmn",
+      "reference": "candidates/M04/40/reference.bpmn",
+      "instruction": "If the OEE falls below a certain value/percentage, stop the machine and send an email to an engineer.",
+      "d_core": "Title: OEE\n\nWrite a process, that collects relevant information from a machine, and calculated the Overall Equipment Efficiency (OEE).\nWhen the machine is restarted, continue measuring.\nWhen the machine is disconnected, stop the process.",
+      "d_extra": "If the OEE falls below a certain value/percentage, stop the machine and send an email to an engineer.",
+      "source_lines": [
+        {
+          "line": 4,
+          "text": "If the OEE falls below a certain value/percentage, stop the machine and send an email to an engineer."
+        }
+      ],
+      "relation": {
+        "type": "exists_path",
+        "arguments": [
+          {
+            "role": "path_entry",
+            "element_ref": "ExclusiveGateway_1",
+            "label": "OEE below 50%?"
+          },
+          {
+            "role": "path_step",
+            "element_ref": "ServiceTask_1",
+            "label": "Stop the machine"
+          },
+          {
+            "role": "path_step",
+            "element_ref": "ServiceTask_2",
+            "label": "Send email to an engineer"
+          },
+          {
+            "role": "path_exit",
+            "element_ref": "ExclusiveGateway_3",
+            "label": "Machine worth repairing?"
+          }
+        ],
+        "condition_text": "If the OEE falls below a certain value/percentage",
+        "outcome_text": "stop the machine and send an email to an engineer"
+      },
+      "expected_element_ids": [
+        "ExclusiveGateway_1",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ExclusiveGateway_3"
+      ],
+      "removed_element_ids": [
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ExclusiveGateway_6",
+        "ManualTask_1",
+        "ManualTask_2",
+        "ManualTask_3",
+        "ManualTask_4",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ExclusiveGateway_6",
+        "ManualTask_1",
+        "ManualTask_2",
+        "ManualTask_3",
+        "ManualTask_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "ServiceTask_5",
+        "ServiceTask_6",
+        "StartEvent_1"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_2",
+        "SequenceFlow_24",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "ServiceTask_5",
+        "ServiceTask_6",
+        "StartEvent_1"
+      ],
+      "oracle_plan": [
+        {
+          "op": "add_node",
+          "id": "ServiceTask_1",
+          "node_type": "serviceTask",
+          "process_id": "Process_1",
+          "name": "Stop the machine"
+        },
+        {
+          "op": "add_node",
+          "id": "ServiceTask_2",
+          "node_type": "serviceTask",
+          "process_id": "Process_1",
+          "name": "Send email to an engineer"
+        },
+        {
+          "op": "add_node",
+          "id": "ExclusiveGateway_3",
+          "node_type": "exclusiveGateway",
+          "process_id": "Process_1",
+          "name": "Machine worth repairing?"
+        },
+        {
+          "op": "add_node",
+          "id": "ManualTask_4",
+          "node_type": "manualTask",
+          "process_id": "Process_1",
+          "name": "Disconnect the machine"
+        },
+        {
+          "op": "add_node",
+          "id": "ExclusiveGateway_4",
+          "node_type": "exclusiveGateway",
+          "process_id": "Process_1",
+          "name": null
+        },
+        {
+          "op": "add_node",
+          "id": "ExclusiveGateway_6",
+          "node_type": "exclusiveGateway",
+          "process_id": "Process_1",
+          "name": null
+        },
+        {
+          "op": "add_node",
+          "id": "ManualTask_2",
+          "node_type": "manualTask",
+          "process_id": "Process_1",
+          "name": "Repair the issue"
+        },
+        {
+          "op": "add_node",
+          "id": "ExclusiveGateway_5",
+          "node_type": "exclusiveGateway",
+          "process_id": "Process_1",
+          "name": "Remaining issues?"
+        },
+        {
+          "op": "add_node",
+          "id": "ManualTask_3",
+          "node_type": "manualTask",
+          "process_id": "Process_1",
+          "name": "Restart the machine"
+        },
+        {
+          "op": "add_node",
+          "id": "ManualTask_1",
+          "node_type": "manualTask",
+          "process_id": "Process_1",
+          "name": "Continue measuring"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_8",
+          "source_ref": "ExclusiveGateway_1",
+          "target_ref": "ServiceTask_1",
+          "name": "Yes",
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_9",
+          "source_ref": "ServiceTask_1",
+          "target_ref": "ServiceTask_2",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_11",
+          "source_ref": "ServiceTask_2",
+          "target_ref": "ExclusiveGateway_3",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_16",
+          "source_ref": "ExclusiveGateway_3",
+          "target_ref": "ManualTask_4",
+          "name": "No",
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_20",
+          "source_ref": "ExclusiveGateway_3",
+          "target_ref": "ExclusiveGateway_6",
+          "name": "Yes",
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_18",
+          "source_ref": "ManualTask_4",
+          "target_ref": "ExclusiveGateway_4",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_17",
+          "source_ref": "ExclusiveGateway_4",
+          "target_ref": "ExclusiveGateway_2",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_19",
+          "source_ref": "ManualTask_1",
+          "target_ref": "ExclusiveGateway_4",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_23",
+          "source_ref": "ExclusiveGateway_5",
+          "target_ref": "ExclusiveGateway_6",
+          "name": "Yes",
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_22",
+          "source_ref": "ExclusiveGateway_6",
+          "target_ref": "ManualTask_2",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_12",
+          "source_ref": "ManualTask_2",
+          "target_ref": "ExclusiveGateway_5",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_21",
+          "source_ref": "ExclusiveGateway_5",
+          "target_ref": "ManualTask_3",
+          "name": "No",
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_13",
+          "source_ref": "ManualTask_3",
+          "target_ref": "ManualTask_1",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M04",
+        "type": "semantic_refinement",
+        "expected_finding": "missing_exception_handling",
+        "source_seed": "40",
+        "relation_type": "exists_path",
+        "changed_element_ids": [
+          "ExclusiveGateway_1",
+          "ExclusiveGateway_2"
+        ],
+        "added_element_ids": [],
+        "source_record": "ground_truth/single/M04/40.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M04/40.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/40.bpmn",
+        "source_variant": "variants/single/M04/40.bpmn",
+        "source_description": "descriptions/seeds/40.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M04-refine-48",
+      "seed_id": "48",
+      "core": "candidates/M04/48/core.bpmn",
+      "reference": "candidates/M04/48/reference.bpmn",
+      "instruction": "If you can do it in less than 25 minutes, you are good.\nIf not, you need to train and check until you have achieved this goal.",
+      "d_core": "Title: App For Participating at the Vienna Night Run\n\nIf you want to participate at the Vienna Night Run, you need to select a starting block first.\nAfter that, you run for 5km and measure the time.\nAfter that, you can get your starting number.\nDepending on when your work day ends, you have to find out whether you can go there from home, or need to leave directly from work.\nIf more than one hour is left between your starting time and the end of your workday, you can go there from home.\nElse, you need to leave directly from work.\nWhile running at the Night Run, you run and drink at the same time.\nIn the end, you receive your final running time.\n\nSome of the above information you have to enter into the app, some of the information is collected by fitness gadgets.",
+      "d_extra": "If you can do it in less than 25 minutes, you are good.\nIf not, you need to train and check until you have achieved this goal.",
+      "source_lines": [
+        {
+          "line": 5,
+          "text": "If you can do it in less than 25 minutes, you are good."
+        },
+        {
+          "line": 6,
+          "text": "If not, you need to train and check until you have achieved this goal."
+        }
+      ],
+      "relation": {
+        "type": "exists_path",
+        "arguments": [
+          {
+            "role": "path_entry",
+            "element_ref": "ExclusiveGateway_1",
+            "label": "time less than 25 minutes?"
+          },
+          {
+            "role": "path_step",
+            "element_ref": "ManualTask_2",
+            "label": "train"
+          },
+          {
+            "role": "path_exit",
+            "element_ref": "ExclusiveGateway_2",
+            "label": null
+          }
+        ],
+        "condition_text": "If not",
+        "outcome_text": "If not, you need to train and check until you have achieved this goal"
+      },
+      "expected_element_ids": [
+        "ExclusiveGateway_1",
+        "ManualTask_2",
+        "ExclusiveGateway_2"
+      ],
+      "removed_element_ids": [
+        "ManualTask_2",
+        "SequenceFlow_7",
+        "SequenceFlow_8"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ManualTask_1",
+        "ManualTask_2",
+        "ManualTask_3",
+        "ManualTask_4",
+        "ManualTask_5",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ParallelGateway_3",
+        "ParallelGateway_4",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_2"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ManualTask_1",
+        "ManualTask_3",
+        "ManualTask_4",
+        "ManualTask_5",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ParallelGateway_3",
+        "ParallelGateway_4",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_2"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_26"
+        },
+        {
+          "op": "add_node",
+          "id": "ManualTask_2",
+          "node_type": "manualTask",
+          "process_id": "Process_1",
+          "name": "train"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_8",
+          "source_ref": "ExclusiveGateway_1",
+          "target_ref": "ManualTask_2",
+          "name": "No",
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_7",
+          "source_ref": "ManualTask_2",
+          "target_ref": "ExclusiveGateway_2",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M04",
+        "type": "semantic_refinement",
+        "expected_finding": "missing_exception_handling",
+        "source_seed": "48",
+        "relation_type": "exists_path",
+        "changed_element_ids": [
+          "ExclusiveGateway_1",
+          "ExclusiveGateway_2"
+        ],
+        "added_element_ids": [
+          "SequenceFlow_26"
+        ],
+        "source_record": "ground_truth/single/M04/48.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M04/48.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/48.bpmn",
+        "source_variant": "variants/single/M04/48.bpmn",
+        "source_description": "descriptions/seeds/48.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M06-refine-03",
+      "seed_id": "03",
+      "core": "candidates/M06/03/core.bpmn",
+      "reference": "candidates/M06/03/reference.bpmn",
+      "instruction": "The process ends when the inventory levels are updated after the restock is complete.",
+      "d_core": "This process begins with monitoring inventory levels in a warehouse or store.\nWhen stock reaches a predefined threshold, an automated alert or manual check signals the need to reorder.\nThe procurement team then places an order with suppliers, considering factors like cost, delivery time, and supplier reliability.\nOnce the order is placed, the inventory system updates with expected delivery dates.\nUpon receiving the stock, it is inspected for quality, recorded in the system, and placed on shelves or in storage.",
+      "d_extra": "The process ends when the inventory levels are updated after the restock is complete.",
+      "source_lines": [
+        {
+          "line": 6,
+          "text": "The process ends when the inventory levels are updated after the restock is complete."
+        }
+      ],
+      "relation": {
+        "type": "reaches",
+        "arguments": [
+          {
+            "role": "outcome",
+            "element_ref": "Task_1",
+            "label": "Update inventory levels"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": "the inventory levels are updated after the restock is complete"
+      },
+      "expected_element_ids": [
+        "Task_1"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_14",
+        "SequenceFlow_19",
+        "Task_1"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ExclusiveGateway_6",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_11",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "preserved_element_ids": [
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ExclusiveGateway_6",
+        "ParallelGateway_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_10",
+        "Task_11",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_25"
+        },
+        {
+          "op": "add_node",
+          "id": "Task_1",
+          "node_type": "task",
+          "process_id": "Process_1",
+          "name": "Update inventory levels"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_14",
+          "source_ref": "ParallelGateway_2",
+          "target_ref": "Task_1",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_19",
+          "source_ref": "Task_1",
+          "target_ref": "EndEvent_1",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M06",
+        "type": "semantic_refinement",
+        "expected_finding": "improper_termination",
+        "source_seed": "03",
+        "relation_type": "reaches",
+        "changed_element_ids": [
+          "EndEvent_1",
+          "ParallelGateway_2"
+        ],
+        "added_element_ids": [
+          "SequenceFlow_25"
+        ],
+        "source_record": "ground_truth/single/M06/03.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M06/03.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/03.bpmn",
+        "source_variant": "variants/single/M06/03.bpmn",
+        "source_description": "descriptions/seeds/03.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M06-refine-31",
+      "seed_id": "31",
+      "core": "candidates/M06/31/core.bpmn",
+      "reference": "candidates/M06/31/reference.bpmn",
+      "instruction": "You get a confirmation, and some selfies of your character, as soon as a expansion is released you get another message.",
+      "d_core": "Title: Blizzard Online Character Generator\n\nBlizzard creates a cool online tool for creating characters for their new WoW expansion.\nWhen creating a World of Warcraft character, you can start doing two things: \nWhile you are setting up your account, you can already come up with good character names.\nThe setup of your account starts with checking whether you have a battle.net account.\nIf you do not have one yet, you enter the account information and click the link you receive in the confirmation mail.\nAs soon as you have a battle.net account, you can check if you have an active WoW subscription.\nIf not, you can select the payment method.\nIf you choose credit card, enter your credit card information.\nIf you choose your bank account, enter your IBAN and BIC numbers.\nAfter that you can log into the game and select realm, race and class of your character.\nUntil now, you should have come up with some good names.\nYou enter them one by one until a name is still available.",
+      "d_extra": "You get a confirmation, and some selfies of your character, as soon as a expansion is released you get another message.",
+      "source_lines": [
+        {
+          "line": 15,
+          "text": "You get a confirmation, and some selfies of your character, as soon as a expansion is released you get another message."
+        }
+      ],
+      "relation": {
+        "type": "reaches",
+        "arguments": [
+          {
+            "role": "outcome",
+            "element_ref": "ServiceTask_3",
+            "label": "Recieve confirmation"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": "a confirmation"
+      },
+      "expected_element_ids": [
+        "ServiceTask_3"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_35",
+        "SequenceFlow_36",
+        "ServiceTask_3"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ExclusiveGateway_6",
+        "ExclusiveGateway_7",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ParallelGateway_3",
+        "ParallelGateway_4",
+        "ParallelGateway_5",
+        "ParallelGateway_6",
+        "ParallelGateway_7",
+        "ParallelGateway_8",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_26",
+        "SequenceFlow_27",
+        "SequenceFlow_28",
+        "SequenceFlow_29",
+        "SequenceFlow_3",
+        "SequenceFlow_30",
+        "SequenceFlow_31",
+        "SequenceFlow_32",
+        "SequenceFlow_33",
+        "SequenceFlow_34",
+        "SequenceFlow_35",
+        "SequenceFlow_36",
+        "SequenceFlow_37",
+        "SequenceFlow_38",
+        "SequenceFlow_39",
+        "SequenceFlow_4",
+        "SequenceFlow_40",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_10",
+        "UserTask_11",
+        "UserTask_2",
+        "UserTask_3",
+        "UserTask_4",
+        "UserTask_5",
+        "UserTask_6",
+        "UserTask_7",
+        "UserTask_8",
+        "UserTask_9"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ExclusiveGateway_6",
+        "ExclusiveGateway_7",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "ParallelGateway_3",
+        "ParallelGateway_4",
+        "ParallelGateway_5",
+        "ParallelGateway_8",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "SequenceFlow_26",
+        "SequenceFlow_27",
+        "SequenceFlow_28",
+        "SequenceFlow_29",
+        "SequenceFlow_3",
+        "SequenceFlow_30",
+        "SequenceFlow_31",
+        "SequenceFlow_32",
+        "SequenceFlow_33",
+        "SequenceFlow_34",
+        "SequenceFlow_37",
+        "SequenceFlow_38",
+        "SequenceFlow_39",
+        "SequenceFlow_4",
+        "SequenceFlow_40",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_4",
+        "StartEvent_1",
+        "UserTask_1",
+        "UserTask_10",
+        "UserTask_11",
+        "UserTask_2",
+        "UserTask_3",
+        "UserTask_4",
+        "UserTask_5",
+        "UserTask_6",
+        "UserTask_7",
+        "UserTask_8",
+        "UserTask_9"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_41"
+        },
+        {
+          "op": "add_node",
+          "id": "ServiceTask_3",
+          "node_type": "serviceTask",
+          "process_id": "Process_1",
+          "name": "Recieve confirmation"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_35",
+          "source_ref": "ParallelGateway_6",
+          "target_ref": "ServiceTask_3",
+          "name": null,
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_36",
+          "source_ref": "ServiceTask_3",
+          "target_ref": "ParallelGateway_7",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M06",
+        "type": "semantic_refinement",
+        "expected_finding": "improper_termination",
+        "source_seed": "31",
+        "relation_type": "reaches",
+        "changed_element_ids": [
+          "ParallelGateway_6",
+          "ParallelGateway_7"
+        ],
+        "added_element_ids": [
+          "SequenceFlow_41"
+        ],
+        "source_record": "ground_truth/single/M06/31.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M06/31.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/31.bpmn",
+        "source_variant": "variants/single/M06/31.bpmn",
+        "source_description": "descriptions/seeds/31.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M06-refine-49",
+      "seed_id": "49",
+      "core": "candidates/M06/49/core.bpmn",
+      "reference": "candidates/M06/49/reference.bpmn",
+      "instruction": "If an error is detected another arbitrary repair activity is executed, otherwise the repair is finished.",
+      "d_core": "A customer brings in a defective computer and the CRS checks the defect and hands out a repair cost calculation back.\nIf the customer decides that the costs are acceptable, the process continues, otherwise she takes her computer home unrepaired.\nThe ongoing repair consists of two activities, which are executed, in an arbitrary order.\nThe first activity is to check and repair the hardware, whereas the second activity checks and configures the software.\nAfter each of these activities, the proper system functionality is tested.",
+      "d_extra": "If an error is detected another arbitrary repair activity is executed, otherwise the repair is finished.",
+      "source_lines": [
+        {
+          "line": 6,
+          "text": "If an error is detected another arbitrary repair activity is executed, otherwise the repair is finished."
+        }
+      ],
+      "relation": {
+        "type": "reaches",
+        "arguments": [
+          {
+            "role": "outcome",
+            "element_ref": "Task_8",
+            "label": "Repair is finished"
+          }
+        ],
+        "condition_text": "otherwise",
+        "outcome_text": "the repair is finished"
+      },
+      "expected_element_ids": [
+        "Task_8"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_20",
+        "SequenceFlow_7",
+        "Task_8"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_3",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_9"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_21"
+        },
+        {
+          "op": "add_node",
+          "id": "Task_8",
+          "node_type": "task",
+          "process_id": "Process_1",
+          "name": "Repair is finished"
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_20",
+          "source_ref": "ExclusiveGateway_2",
+          "target_ref": "Task_8",
+          "name": "no error",
+          "condition_expression": null
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_7",
+          "source_ref": "Task_8",
+          "target_ref": "ExclusiveGateway_4",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M06",
+        "type": "semantic_refinement",
+        "expected_finding": "improper_termination",
+        "source_seed": "49",
+        "relation_type": "reaches",
+        "changed_element_ids": [
+          "ExclusiveGateway_2",
+          "ExclusiveGateway_4"
+        ],
+        "added_element_ids": [
+          "SequenceFlow_21"
+        ],
+        "source_record": "ground_truth/single/M06/49.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M06/49.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/49.bpmn",
+        "source_variant": "variants/single/M06/49.bpmn",
+        "source_description": "descriptions/seeds/49.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M07-refine-13",
+      "seed_id": "13",
+      "core": "candidates/M07/13/core.bpmn",
+      "reference": "candidates/M07/13/reference.bpmn",
+      "instruction": "The complaint is marked as resolved once the customer receives the refund or directly after notifying the customer in case the refund was rejected.",
+      "d_core": "The process begins when a customer files a complaint about a product or service.\nCustomer service logs the complaint and assigns it to the relevant department for investigation.\nAfter reviewing the details, the team determines whether the complaint is valid and whether a refund is justified and notifies the customer with the decision.\nIf a refund is approved, the financial team processes the reimbursement.\nAfter resolving the case, customers can provide feedback on their satisfaction.",
+      "d_extra": "The complaint is marked as resolved once the customer receives the refund or directly after notifying the customer in case the refund was rejected.",
+      "source_lines": [
+        {
+          "line": 5,
+          "text": "The complaint is marked as resolved once the customer receives the refund or directly after notifying the customer in case the refund was rejected."
+        }
+      ],
+      "relation": {
+        "type": "additional_action",
+        "arguments": [
+          {
+            "role": "context_flow",
+            "element_ref": "SequenceFlow_8",
+            "label": null
+          },
+          {
+            "role": "action_template",
+            "element_ref": "Task_3",
+            "label": "Process reimbursement"
+          }
+        ],
+        "condition_text": "in case the refund was rejected",
+        "outcome_text": "directly after notifying the customer"
+      },
+      "expected_element_ids": [
+        "SequenceFlow_8",
+        "Task_3",
+        "Task_10"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_8"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_2",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_4",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_2",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_9"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_18"
+        },
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_17"
+        },
+        {
+          "op": "remove_node",
+          "id": "Task_10",
+          "cascade": false
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_8",
+          "source_ref": "Task_8",
+          "target_ref": "ExclusiveGateway_3",
+          "name": null,
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M07",
+        "type": "policy_or_prohibition_refinement",
+        "expected_finding": "unwanted_action",
+        "source_seed": "13",
+        "relation_type": "additional_action",
+        "changed_element_ids": [
+          "ExclusiveGateway_3",
+          "Task_8"
+        ],
+        "added_element_ids": [
+          "SequenceFlow_17",
+          "SequenceFlow_18",
+          "Task_10"
+        ],
+        "source_record": "ground_truth/single/M07/13.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M07/13.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/13.bpmn",
+        "source_variant": "variants/single/M07/13.bpmn",
+        "source_description": "descriptions/seeds/13.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M07-refine-40",
+      "seed_id": "40",
+      "core": "candidates/M07/40/core.bpmn",
+      "reference": "candidates/M07/40/reference.bpmn",
+      "instruction": "When the machine is restarted, continue measuring.\nWhen the machine is disconnected, stop the process.",
+      "d_core": "Title: OEE\n\nWrite a process, that collects relevant information from a machine, and calculated the Overall Equipment Efficiency (OEE).\nIf the OEE falls below a certain value/percentage, stop the machine and send an email to an engineer.",
+      "d_extra": "When the machine is restarted, continue measuring.\nWhen the machine is disconnected, stop the process.",
+      "source_lines": [
+        {
+          "line": 5,
+          "text": "When the machine is restarted, continue measuring."
+        },
+        {
+          "line": 6,
+          "text": "When the machine is disconnected, stop the process."
+        }
+      ],
+      "relation": {
+        "type": "additional_action",
+        "arguments": [
+          {
+            "role": "context_flow",
+            "element_ref": "SequenceFlow_24",
+            "label": "No"
+          },
+          {
+            "role": "action_template",
+            "element_ref": "ManualTask_1",
+            "label": "Continue measuring"
+          }
+        ],
+        "condition_text": "the machine is disconnected",
+        "outcome_text": "stop the process"
+      },
+      "expected_element_ids": [
+        "SequenceFlow_24",
+        "ManualTask_1",
+        "Task_1"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_24"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ExclusiveGateway_6",
+        "ManualTask_1",
+        "ManualTask_2",
+        "ManualTask_3",
+        "ManualTask_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_24",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "ServiceTask_5",
+        "ServiceTask_6",
+        "StartEvent_1"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_5",
+        "ExclusiveGateway_6",
+        "ManualTask_1",
+        "ManualTask_2",
+        "ManualTask_3",
+        "ManualTask_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "SequenceFlow_22",
+        "SequenceFlow_23",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ServiceTask_3",
+        "ServiceTask_4",
+        "ServiceTask_5",
+        "ServiceTask_6",
+        "StartEvent_1"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_26"
+        },
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_25"
+        },
+        {
+          "op": "remove_node",
+          "id": "Task_1",
+          "cascade": false
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_24",
+          "source_ref": "ExclusiveGateway_1",
+          "target_ref": "ExclusiveGateway_2",
+          "name": "No",
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M07",
+        "type": "policy_or_prohibition_refinement",
+        "expected_finding": "unwanted_action",
+        "source_seed": "40",
+        "relation_type": "additional_action",
+        "changed_element_ids": [
+          "ExclusiveGateway_1",
+          "ExclusiveGateway_2"
+        ],
+        "added_element_ids": [
+          "SequenceFlow_25",
+          "SequenceFlow_26",
+          "Task_1"
+        ],
+        "source_record": "ground_truth/single/M07/40.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M07/40.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/40.bpmn",
+        "source_variant": "variants/single/M07/40.bpmn",
+        "source_description": "descriptions/seeds/40.txt"
+      }
+    },
+    {
+      "schema_version": "enhancement-case@1",
+      "case_id": "M07-refine-49",
+      "seed_id": "49",
+      "core": "candidates/M07/49/core.bpmn",
+      "reference": "candidates/M07/49/reference.bpmn",
+      "instruction": "After each of these activities, the proper system functionality is tested.\nIf an error is detected another arbitrary repair activity is executed, otherwise the repair is finished.",
+      "d_core": "A customer brings in a defective computer and the CRS checks the defect and hands out a repair cost calculation back.\nIf the customer decides that the costs are acceptable, the process continues, otherwise she takes her computer home unrepaired.\nThe ongoing repair consists of two activities, which are executed, in an arbitrary order.\nThe first activity is to check and repair the hardware, whereas the second activity checks and configures the software.",
+      "d_extra": "After each of these activities, the proper system functionality is tested.\nIf an error is detected another arbitrary repair activity is executed, otherwise the repair is finished.",
+      "source_lines": [
+        {
+          "line": 5,
+          "text": "After each of these activities, the proper system functionality is tested."
+        },
+        {
+          "line": 6,
+          "text": "If an error is detected another arbitrary repair activity is executed, otherwise the repair is finished."
+        }
+      ],
+      "relation": {
+        "type": "additional_action",
+        "arguments": [
+          {
+            "role": "context_flow",
+            "element_ref": "SequenceFlow_20",
+            "label": "no error"
+          },
+          {
+            "role": "action_template",
+            "element_ref": "Task_9",
+            "label": "Repair the hardware"
+          }
+        ],
+        "condition_text": "otherwise",
+        "outcome_text": "the repair is finished"
+      },
+      "expected_element_ids": [
+        "SequenceFlow_20",
+        "Task_9",
+        "Task_11"
+      ],
+      "removed_element_ids": [
+        "SequenceFlow_20"
+      ],
+      "restored_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "Process_1",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_20",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_8",
+        "Task_9"
+      ],
+      "preserved_element_ids": [
+        "EndEvent_1",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4",
+        "ParallelGateway_1",
+        "ParallelGateway_2",
+        "SequenceFlow_1",
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "SequenceFlow_13",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_16",
+        "SequenceFlow_17",
+        "SequenceFlow_18",
+        "SequenceFlow_19",
+        "SequenceFlow_2",
+        "SequenceFlow_3",
+        "SequenceFlow_4",
+        "SequenceFlow_5",
+        "SequenceFlow_6",
+        "SequenceFlow_7",
+        "SequenceFlow_8",
+        "SequenceFlow_9",
+        "StartEvent_1",
+        "Task_1",
+        "Task_10",
+        "Task_2",
+        "Task_3",
+        "Task_4",
+        "Task_5",
+        "Task_6",
+        "Task_7",
+        "Task_9"
+      ],
+      "oracle_plan": [
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_22"
+        },
+        {
+          "op": "remove_flow",
+          "id": "SequenceFlow_21"
+        },
+        {
+          "op": "remove_node",
+          "id": "Task_11",
+          "cascade": false
+        },
+        {
+          "op": "add_flow",
+          "process_id": "Process_1",
+          "id": "SequenceFlow_20",
+          "source_ref": "ExclusiveGateway_2",
+          "target_ref": "Task_8",
+          "name": "no error",
+          "condition_expression": null
+        }
+      ],
+      "metadata": {
+        "operator": "M07",
+        "type": "policy_or_prohibition_refinement",
+        "expected_finding": "unwanted_action",
+        "source_seed": "49",
+        "relation_type": "additional_action",
+        "changed_element_ids": [
+          "ExclusiveGateway_2",
+          "Task_8"
+        ],
+        "added_element_ids": [
+          "SequenceFlow_21",
+          "SequenceFlow_22",
+          "Task_11"
+        ],
+        "source_record": "ground_truth/single/M07/49.json",
+        "source_human_verified": true,
+        "provenance": {
+          "dataset": "data/eval/v1.0",
+          "source_ground_truth": "ground_truth/single/M07/49.json",
+          "source_human_verified": true
+        },
+        "verification_status": {
+          "reference_round_trip": true,
+          "core_round_trip": true,
+          "reference_tier1": true,
+          "core_tier1": true,
+          "oracle_application": true,
+          "restores_reference": true,
+          "tier2_reference": "not_run",
+          "tier2_core": "not_run"
+        },
+        "source_dataset": "data/eval/v1.0",
+        "source_reference": "seeds/49.bpmn",
+        "source_variant": "variants/single/M07/49.bpmn",
+        "source_description": "descriptions/seeds/49.txt"
+      }
+    }
+  ]
+}

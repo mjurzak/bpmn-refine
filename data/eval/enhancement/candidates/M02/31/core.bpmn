@@ -1,0 +1,558 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://www.omg.org/spec/BPMN/20100524/MODEL">
+  <process id="Process_1" isExecutable="false">
+    <userTask id="UserTask_1" name="Create character names">
+      <outgoing>SequenceFlow_28</outgoing>
+      <incoming>SequenceFlow_2</incoming>
+    </userTask>
+    <userTask id="UserTask_2" name="Create battle.net account">
+      <outgoing>SequenceFlow_6</outgoing>
+      <incoming>SequenceFlow_5</incoming>
+    </userTask>
+    <userTask id="UserTask_3" name="Confirm registration via email link">
+      <outgoing>SequenceFlow_5</outgoing>
+      <incoming>SequenceFlow_4</incoming>
+    </userTask>
+    <userTask id="UserTask_4" name="Enter credit card information">
+      <outgoing>SequenceFlow_14</outgoing>
+      <incoming>SequenceFlow_18</incoming>
+    </userTask>
+    <userTask id="UserTask_5" name="Enter IBAN">
+      <outgoing>SequenceFlow_13</outgoing>
+      <incoming>SequenceFlow_11</incoming>
+    </userTask>
+    <userTask id="UserTask_6" name="Enter BIC">
+      <outgoing>SequenceFlow_17</outgoing>
+      <incoming>SequenceFlow_12</incoming>
+    </userTask>
+    <userTask id="UserTask_7" name="Log into the game">
+      <outgoing>SequenceFlow_20</outgoing>
+      <incoming>SequenceFlow_19</incoming>
+    </userTask>
+    <userTask id="UserTask_8" name="Select realm">
+      <outgoing>SequenceFlow_25</outgoing>
+      <incoming>SequenceFlow_21</incoming>
+    </userTask>
+    <userTask id="UserTask_9" name="Select race">
+      <outgoing>SequenceFlow_24</outgoing>
+      <incoming>SequenceFlow_22</incoming>
+    </userTask>
+    <userTask id="UserTask_10" name="Select class">
+      <outgoing>SequenceFlow_26</outgoing>
+      <incoming>SequenceFlow_23</incoming>
+    </userTask>
+    <userTask id="UserTask_11" name="Enter character name">
+      <outgoing>SequenceFlow_29</outgoing>
+      <incoming>SequenceFlow_31</incoming>
+    </userTask>
+    <serviceTask id="ServiceTask_1" name="Check if battle.net account exists">
+      <outgoing>SequenceFlow_3</outgoing>
+      <incoming>SequenceFlow_7</incoming>
+    </serviceTask>
+    <serviceTask id="ServiceTask_2" name="Check if active WoW subscription exists">
+      <outgoing>SequenceFlow_9</outgoing>
+      <incoming>SequenceFlow_8</incoming>
+    </serviceTask>
+    <serviceTask id="ServiceTask_3" name="Recieve confirmation">
+      <outgoing>SequenceFlow_36</outgoing>
+      <incoming>SequenceFlow_35</incoming>
+    </serviceTask>
+    <serviceTask id="ServiceTask_4" name="Recieve character selfies">
+      <outgoing>SequenceFlow_40</outgoing>
+      <incoming>SequenceFlow_34</incoming>
+    </serviceTask>
+    <exclusiveGateway id="ExclusiveGateway_1" name="Does an account exist?">
+      <outgoing>SequenceFlow_16</outgoing>
+      <outgoing>SequenceFlow_4</outgoing>
+      <incoming>SequenceFlow_3</incoming>
+    </exclusiveGateway>
+    <exclusiveGateway id="ExclusiveGateway_2">
+      <outgoing>SequenceFlow_8</outgoing>
+      <incoming>SequenceFlow_16</incoming>
+      <incoming>SequenceFlow_6</incoming>
+    </exclusiveGateway>
+    <exclusiveGateway id="ExclusiveGateway_3" name="Does a subscription exist?">
+      <outgoing>SequenceFlow_10</outgoing>
+      <outgoing>SequenceFlow_39</outgoing>
+      <incoming>SequenceFlow_9</incoming>
+    </exclusiveGateway>
+    <exclusiveGateway id="ExclusiveGateway_4" name="Select payment method">
+      <outgoing>SequenceFlow_18</outgoing>
+      <outgoing>SequenceFlow_38</outgoing>
+      <incoming>SequenceFlow_10</incoming>
+    </exclusiveGateway>
+    <exclusiveGateway id="ExclusiveGateway_5">
+      <outgoing>SequenceFlow_19</outgoing>
+      <incoming>SequenceFlow_14</incoming>
+      <incoming>SequenceFlow_15</incoming>
+      <incoming>SequenceFlow_39</incoming>
+    </exclusiveGateway>
+    <exclusiveGateway id="ExclusiveGateway_6" name="Name available?">
+      <outgoing>SequenceFlow_32</outgoing>
+      <outgoing>SequenceFlow_33</outgoing>
+      <incoming>SequenceFlow_29</incoming>
+    </exclusiveGateway>
+    <exclusiveGateway id="ExclusiveGateway_7">
+      <outgoing>SequenceFlow_31</outgoing>
+      <incoming>SequenceFlow_30</incoming>
+      <incoming>SequenceFlow_32</incoming>
+    </exclusiveGateway>
+    <parallelGateway id="ParallelGateway_1">
+      <outgoing>SequenceFlow_2</outgoing>
+      <outgoing>SequenceFlow_7</outgoing>
+      <incoming>SequenceFlow_1</incoming>
+    </parallelGateway>
+    <parallelGateway id="ParallelGateway_2">
+      <outgoing>SequenceFlow_11</outgoing>
+      <outgoing>SequenceFlow_12</outgoing>
+      <incoming>SequenceFlow_38</incoming>
+    </parallelGateway>
+    <parallelGateway id="ParallelGateway_3">
+      <outgoing>SequenceFlow_15</outgoing>
+      <incoming>SequenceFlow_13</incoming>
+      <incoming>SequenceFlow_17</incoming>
+    </parallelGateway>
+    <parallelGateway id="ParallelGateway_4">
+      <outgoing>SequenceFlow_21</outgoing>
+      <outgoing>SequenceFlow_22</outgoing>
+      <outgoing>SequenceFlow_23</outgoing>
+      <incoming>SequenceFlow_20</incoming>
+    </parallelGateway>
+    <parallelGateway id="ParallelGateway_5">
+      <outgoing>SequenceFlow_30</outgoing>
+      <incoming>SequenceFlow_27</incoming>
+      <incoming>SequenceFlow_28</incoming>
+    </parallelGateway>
+    <parallelGateway id="ParallelGateway_6">
+      <outgoing>SequenceFlow_34</outgoing>
+      <outgoing>SequenceFlow_35</outgoing>
+      <incoming>SequenceFlow_33</incoming>
+    </parallelGateway>
+    <parallelGateway id="ParallelGateway_7">
+      <outgoing>SequenceFlow_37</outgoing>
+      <incoming>SequenceFlow_36</incoming>
+      <incoming>SequenceFlow_40</incoming>
+    </parallelGateway>
+    <parallelGateway id="ParallelGateway_8">
+      <outgoing>SequenceFlow_27</outgoing>
+      <incoming>SequenceFlow_24</incoming>
+      <incoming>SequenceFlow_25</incoming>
+      <incoming>SequenceFlow_26</incoming>
+    </parallelGateway>
+    <startEvent id="StartEvent_1" name="Account is set up">
+      <outgoing>SequenceFlow_1</outgoing>
+    </startEvent>
+    <endEvent id="EndEvent_1" name="Character created">
+      <incoming>SequenceFlow_37</incoming>
+    </endEvent>
+    <sequenceFlow id="SequenceFlow_1" sourceRef="StartEvent_1" targetRef="ParallelGateway_1"/>
+    <sequenceFlow id="SequenceFlow_2" sourceRef="ParallelGateway_1" targetRef="UserTask_1"/>
+    <sequenceFlow id="SequenceFlow_3" sourceRef="ServiceTask_1" targetRef="ExclusiveGateway_1"/>
+    <sequenceFlow id="SequenceFlow_7" sourceRef="ParallelGateway_1" targetRef="ServiceTask_1"/>
+    <sequenceFlow id="SequenceFlow_8" sourceRef="ExclusiveGateway_2" targetRef="ServiceTask_2"/>
+    <sequenceFlow id="SequenceFlow_9" sourceRef="ServiceTask_2" targetRef="ExclusiveGateway_3"/>
+    <sequenceFlow id="SequenceFlow_10" sourceRef="ExclusiveGateway_3" targetRef="ExclusiveGateway_4" name="No"/>
+    <sequenceFlow id="SequenceFlow_11" sourceRef="ParallelGateway_2" targetRef="UserTask_5"/>
+    <sequenceFlow id="SequenceFlow_12" sourceRef="ParallelGateway_2" targetRef="UserTask_6"/>
+    <sequenceFlow id="SequenceFlow_13" sourceRef="UserTask_5" targetRef="ParallelGateway_3"/>
+    <sequenceFlow id="SequenceFlow_14" sourceRef="UserTask_4" targetRef="ExclusiveGateway_5"/>
+    <sequenceFlow id="SequenceFlow_15" sourceRef="ParallelGateway_3" targetRef="ExclusiveGateway_5"/>
+    <sequenceFlow id="SequenceFlow_16" sourceRef="ExclusiveGateway_1" targetRef="ExclusiveGateway_2" name="Yes"/>
+    <sequenceFlow id="SequenceFlow_17" sourceRef="UserTask_6" targetRef="ParallelGateway_3"/>
+    <sequenceFlow id="SequenceFlow_18" sourceRef="ExclusiveGateway_4" targetRef="UserTask_4" name="Credit card"/>
+    <sequenceFlow id="SequenceFlow_19" sourceRef="ExclusiveGateway_5" targetRef="UserTask_7"/>
+    <sequenceFlow id="SequenceFlow_20" sourceRef="UserTask_7" targetRef="ParallelGateway_4"/>
+    <sequenceFlow id="SequenceFlow_21" sourceRef="ParallelGateway_4" targetRef="UserTask_8"/>
+    <sequenceFlow id="SequenceFlow_22" sourceRef="ParallelGateway_4" targetRef="UserTask_9"/>
+    <sequenceFlow id="SequenceFlow_23" sourceRef="ParallelGateway_4" targetRef="UserTask_10"/>
+    <sequenceFlow id="SequenceFlow_24" sourceRef="UserTask_9" targetRef="ParallelGateway_8"/>
+    <sequenceFlow id="SequenceFlow_25" sourceRef="UserTask_8" targetRef="ParallelGateway_8"/>
+    <sequenceFlow id="SequenceFlow_26" sourceRef="UserTask_10" targetRef="ParallelGateway_8"/>
+    <sequenceFlow id="SequenceFlow_27" sourceRef="ParallelGateway_8" targetRef="ParallelGateway_5"/>
+    <sequenceFlow id="SequenceFlow_28" sourceRef="UserTask_1" targetRef="ParallelGateway_5"/>
+    <sequenceFlow id="SequenceFlow_29" sourceRef="UserTask_11" targetRef="ExclusiveGateway_6"/>
+    <sequenceFlow id="SequenceFlow_30" sourceRef="ParallelGateway_5" targetRef="ExclusiveGateway_7"/>
+    <sequenceFlow id="SequenceFlow_31" sourceRef="ExclusiveGateway_7" targetRef="UserTask_11"/>
+    <sequenceFlow id="SequenceFlow_32" sourceRef="ExclusiveGateway_6" targetRef="ExclusiveGateway_7" name="No"/>
+    <sequenceFlow id="SequenceFlow_33" sourceRef="ExclusiveGateway_6" targetRef="ParallelGateway_6" name="Yes"/>
+    <sequenceFlow id="SequenceFlow_34" sourceRef="ParallelGateway_6" targetRef="ServiceTask_4"/>
+    <sequenceFlow id="SequenceFlow_35" sourceRef="ParallelGateway_6" targetRef="ServiceTask_3"/>
+    <sequenceFlow id="SequenceFlow_36" sourceRef="ServiceTask_3" targetRef="ParallelGateway_7"/>
+    <sequenceFlow id="SequenceFlow_37" sourceRef="ParallelGateway_7" targetRef="EndEvent_1"/>
+    <sequenceFlow id="SequenceFlow_38" sourceRef="ExclusiveGateway_4" targetRef="ParallelGateway_2" name="Bank account"/>
+    <sequenceFlow id="SequenceFlow_39" sourceRef="ExclusiveGateway_3" targetRef="ExclusiveGateway_5" name="Yes"/>
+    <sequenceFlow id="SequenceFlow_40" sourceRef="ServiceTask_4" targetRef="ParallelGateway_7"/>
+    <sequenceFlow id="SequenceFlow_4" sourceRef="ExclusiveGateway_1" targetRef="UserTask_3" name="No"/>
+    <sequenceFlow id="SequenceFlow_5" sourceRef="UserTask_3" targetRef="UserTask_2"/>
+    <sequenceFlow id="SequenceFlow_6" sourceRef="UserTask_2" targetRef="ExclusiveGateway_2"/>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Process_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_Process_1" bpmnElement="Process_1">
+      <bpmndi:BPMNShape id="UserTask_1_di" bpmnElement="UserTask_1">
+        <omgdc:Bounds x="190" y="418" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="195" y="444" width="89" height="24"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_2_di" bpmnElement="UserTask_2">
+        <omgdc:Bounds x="420" y="192" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="424" y="218" width="92" height="24"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_3_di" bpmnElement="UserTask_3">
+        <omgdc:Bounds x="565" y="192" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="574" y="212" width="81" height="36"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_4_di" bpmnElement="UserTask_4">
+        <omgdc:Bounds x="1280" y="107" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="1285" y="133" width="90" height="24"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_5_di" bpmnElement="UserTask_5">
+        <omgdc:Bounds x="1280" y="202" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="1300" y="234" width="60" height="12"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_6_di" bpmnElement="UserTask_6">
+        <omgdc:Bounds x="1280" y="317" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="1304" y="349" width="52" height="12"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_7_di" bpmnElement="UserTask_7">
+        <omgdc:Bounds x="1570" y="192" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="1587" y="218" width="66" height="24"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_8_di" bpmnElement="UserTask_8">
+        <omgdc:Bounds x="1800" y="192" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="1817" y="224" width="66" height="12"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_9_di" bpmnElement="UserTask_9">
+        <omgdc:Bounds x="1800" y="107" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="1821" y="139" width="59" height="12"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_10_di" bpmnElement="UserTask_10">
+        <omgdc:Bounds x="1800" y="277" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="1819" y="309" width="62" height="12"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_11_di" bpmnElement="UserTask_11">
+        <omgdc:Bounds x="2200" y="192" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="2208" y="218" width="83" height="24"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_1_di" bpmnElement="ServiceTask_1">
+        <omgdc:Bounds x="190" y="192" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="200" y="212" width="81" height="36"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_2_di" bpmnElement="ServiceTask_2">
+        <omgdc:Bounds x="795" y="182" width="100" height="100"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="806" y="206" width="77" height="48"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_3_di" bpmnElement="ServiceTask_3">
+        <omgdc:Bounds x="2505" y="132" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="2522" y="158" width="67" height="24"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_4_di" bpmnElement="ServiceTask_4">
+        <omgdc:Bounds x="2505" y="257" width="100" height="80"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="2512" y="283" width="87" height="24"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ExclusiveGateway_1_di" bpmnElement="ExclusiveGateway_1">
+        <omgdc:Bounds x="335" y="212" width="40" height="40"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="320" y="178" width="84" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ExclusiveGateway_2_di" bpmnElement="ExclusiveGateway_2">
+        <omgdc:Bounds x="710" y="212" width="40" height="40"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ExclusiveGateway_3_di" bpmnElement="ExclusiveGateway_3">
+        <omgdc:Bounds x="940" y="212" width="40" height="40"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="931" y="172" width="59" height="40"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ExclusiveGateway_4_di" bpmnElement="ExclusiveGateway_4">
+        <omgdc:Bounds x="1055" y="213" width="40" height="40"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="1101" y="219" width="77" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ExclusiveGateway_5_di" bpmnElement="ExclusiveGateway_5">
+        <omgdc:Bounds x="1485" y="212" width="40" height="40"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ExclusiveGateway_6_di" bpmnElement="ExclusiveGateway_6">
+        <omgdc:Bounds x="2345" y="212" width="40" height="40"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="2324" y="188" width="82" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ExclusiveGateway_7_di" bpmnElement="ExclusiveGateway_7">
+        <omgdc:Bounds x="2115" y="212" width="40" height="40"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ParallelGateway_1_di" bpmnElement="ParallelGateway_1">
+        <omgdc:Bounds x="105" y="212" width="40" height="40"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ParallelGateway_2_di" bpmnElement="ParallelGateway_2">
+        <omgdc:Bounds x="1230" y="277" width="40" height="40"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ParallelGateway_3_di" bpmnElement="ParallelGateway_3">
+        <omgdc:Bounds x="1400" y="277" width="40" height="40"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ParallelGateway_4_di" bpmnElement="ParallelGateway_4">
+        <omgdc:Bounds x="1715" y="212" width="40" height="40"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ParallelGateway_5_di" bpmnElement="ParallelGateway_5">
+        <omgdc:Bounds x="2030" y="212" width="40" height="40"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ParallelGateway_6_di" bpmnElement="ParallelGateway_6">
+        <omgdc:Bounds x="2430" y="212" width="40" height="40"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ParallelGateway_7_di" bpmnElement="ParallelGateway_7">
+        <omgdc:Bounds x="2641" y="212" width="40" height="40"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ParallelGateway_8_di" bpmnElement="ParallelGateway_8">
+        <omgdc:Bounds x="1945" y="212" width="40" height="40"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <omgdc:Bounds x="30" y="217" width="30" height="30"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="17" y="259" width="87" height="11"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1">
+        <omgdc:Bounds x="2727" y="218" width="28" height="28"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="2696" y="248" width="88" height="11"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1_di" bpmnElement="SequenceFlow_1">
+        <omgdi:waypoint x="60" y="232"/>
+        <omgdi:waypoint x="105" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_2_di" bpmnElement="SequenceFlow_2">
+        <omgdi:waypoint x="126" y="252"/>
+        <omgdi:waypoint x="126" y="458"/>
+        <omgdi:waypoint x="190" y="458"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_3_di" bpmnElement="SequenceFlow_3">
+        <omgdi:waypoint x="290" y="232"/>
+        <omgdi:waypoint x="335" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_7_di" bpmnElement="SequenceFlow_7">
+        <omgdi:waypoint x="145" y="232"/>
+        <omgdi:waypoint x="190" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_8_di" bpmnElement="SequenceFlow_8">
+        <omgdi:waypoint x="750" y="232"/>
+        <omgdi:waypoint x="795" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_9_di" bpmnElement="SequenceFlow_9">
+        <omgdi:waypoint x="895" y="232"/>
+        <omgdi:waypoint x="940" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_10_di" bpmnElement="SequenceFlow_10">
+        <omgdi:waypoint x="979" y="233"/>
+        <omgdi:waypoint x="1055" y="233"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="988" y="212" width="15" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_11_di" bpmnElement="SequenceFlow_11">
+        <omgdi:waypoint x="1250" y="277"/>
+        <omgdi:waypoint x="1250" y="242"/>
+        <omgdi:waypoint x="1280" y="242"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_12_di" bpmnElement="SequenceFlow_12">
+        <omgdi:waypoint x="1250" y="317"/>
+        <omgdi:waypoint x="1250" y="357"/>
+        <omgdi:waypoint x="1280" y="357"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_13_di" bpmnElement="SequenceFlow_13">
+        <omgdi:waypoint x="1380" y="242"/>
+        <omgdi:waypoint x="1421" y="242"/>
+        <omgdi:waypoint x="1421" y="277"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_14_di" bpmnElement="SequenceFlow_14">
+        <omgdi:waypoint x="1380" y="147"/>
+        <omgdi:waypoint x="1506" y="147"/>
+        <omgdi:waypoint x="1506" y="212"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_15_di" bpmnElement="SequenceFlow_15">
+        <omgdi:waypoint x="1440" y="298"/>
+        <omgdi:waypoint x="1455" y="298"/>
+        <omgdi:waypoint x="1455" y="232"/>
+        <omgdi:waypoint x="1485" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_16_di" bpmnElement="SequenceFlow_16">
+        <omgdi:waypoint x="356" y="252"/>
+        <omgdi:waypoint x="356" y="311"/>
+        <omgdi:waypoint x="730" y="311"/>
+        <omgdi:waypoint x="730" y="252"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="329" y="273" width="18" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_17_di" bpmnElement="SequenceFlow_17">
+        <omgdi:waypoint x="1380" y="357"/>
+        <omgdi:waypoint x="1420" y="357"/>
+        <omgdi:waypoint x="1420" y="317"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_18_di" bpmnElement="SequenceFlow_18">
+        <omgdi:waypoint x="1076" y="214"/>
+        <omgdi:waypoint x="1076" y="147"/>
+        <omgdi:waypoint x="1280" y="147"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="1013" y="164" width="54" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_19_di" bpmnElement="SequenceFlow_19">
+        <omgdi:waypoint x="1525" y="232"/>
+        <omgdi:waypoint x="1570" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_20_di" bpmnElement="SequenceFlow_20">
+        <omgdi:waypoint x="1670" y="232"/>
+        <omgdi:waypoint x="1715" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_21_di" bpmnElement="SequenceFlow_21">
+        <omgdi:waypoint x="1755" y="232"/>
+        <omgdi:waypoint x="1800" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_22_di" bpmnElement="SequenceFlow_22">
+        <omgdi:waypoint x="1736" y="212"/>
+        <omgdi:waypoint x="1736" y="147"/>
+        <omgdi:waypoint x="1800" y="147"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_23_di" bpmnElement="SequenceFlow_23">
+        <omgdi:waypoint x="1736" y="252"/>
+        <omgdi:waypoint x="1736" y="317"/>
+        <omgdi:waypoint x="1800" y="317"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_24_di" bpmnElement="SequenceFlow_24">
+        <omgdi:waypoint x="1900" y="147"/>
+        <omgdi:waypoint x="1966" y="147"/>
+        <omgdi:waypoint x="1966" y="212"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_25_di" bpmnElement="SequenceFlow_25">
+        <omgdi:waypoint x="1900" y="232"/>
+        <omgdi:waypoint x="1945" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_26_di" bpmnElement="SequenceFlow_26">
+        <omgdi:waypoint x="1900" y="317"/>
+        <omgdi:waypoint x="1966" y="317"/>
+        <omgdi:waypoint x="1966" y="252"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_27_di" bpmnElement="SequenceFlow_27">
+        <omgdi:waypoint x="1985" y="232"/>
+        <omgdi:waypoint x="2030" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_28_di" bpmnElement="SequenceFlow_28">
+        <omgdi:waypoint x="290" y="458"/>
+        <omgdi:waypoint x="2050" y="458"/>
+        <omgdi:waypoint x="2050" y="252"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_29_di" bpmnElement="SequenceFlow_29">
+        <omgdi:waypoint x="2300" y="232"/>
+        <omgdi:waypoint x="2345" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_30_di" bpmnElement="SequenceFlow_30">
+        <omgdi:waypoint x="2070" y="232"/>
+        <omgdi:waypoint x="2115" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_31_di" bpmnElement="SequenceFlow_31">
+        <omgdi:waypoint x="2155" y="232"/>
+        <omgdi:waypoint x="2200" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_32_di" bpmnElement="SequenceFlow_32">
+        <omgdi:waypoint x="2366" y="251"/>
+        <omgdi:waypoint x="2366" y="300"/>
+        <omgdi:waypoint x="2136" y="300"/>
+        <omgdi:waypoint x="2136" y="251"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="2341" y="307" width="15" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_33_di" bpmnElement="SequenceFlow_33">
+        <omgdi:waypoint x="2385" y="232"/>
+        <omgdi:waypoint x="2430" y="232"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="2393" y="212" width="19" height="12"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_34_di" bpmnElement="SequenceFlow_34">
+        <omgdi:waypoint x="2451" y="252"/>
+        <omgdi:waypoint x="2451" y="297"/>
+        <omgdi:waypoint x="2505" y="297"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_35_di" bpmnElement="SequenceFlow_35">
+        <omgdi:waypoint x="2451" y="212"/>
+        <omgdi:waypoint x="2451" y="172"/>
+        <omgdi:waypoint x="2505" y="172"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_36_di" bpmnElement="SequenceFlow_36">
+        <omgdi:waypoint x="2605" y="172"/>
+        <omgdi:waypoint x="2662" y="172"/>
+        <omgdi:waypoint x="2662" y="212"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_37_di" bpmnElement="SequenceFlow_37">
+        <omgdi:waypoint x="2682" y="232"/>
+        <omgdi:waypoint x="2727" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_38_di" bpmnElement="SequenceFlow_38">
+        <omgdi:waypoint x="1076" y="252"/>
+        <omgdi:waypoint x="1076" y="298"/>
+        <omgdi:waypoint x="1231" y="298"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="998" y="286" width="68" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_39_di" bpmnElement="SequenceFlow_39">
+        <omgdi:waypoint x="960" y="252"/>
+        <omgdi:waypoint x="960" y="418"/>
+        <omgdi:waypoint x="1506" y="418"/>
+        <omgdi:waypoint x="1506" y="252"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="934" y="269" width="18" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_40_di" bpmnElement="SequenceFlow_40">
+        <omgdi:waypoint x="2605" y="297"/>
+        <omgdi:waypoint x="2662" y="297"/>
+        <omgdi:waypoint x="2662" y="252"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_4_di" bpmnElement="SequenceFlow_4">
+        <omgdi:waypoint x="375" y="232"/>
+        <omgdi:waypoint x="565" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_5_di" bpmnElement="SequenceFlow_5">
+        <omgdi:waypoint x="665" y="232"/>
+        <omgdi:waypoint x="420" y="232"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_6_di" bpmnElement="SequenceFlow_6">
+        <omgdi:waypoint x="520" y="232"/>
+        <omgdi:waypoint x="710" y="232"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
