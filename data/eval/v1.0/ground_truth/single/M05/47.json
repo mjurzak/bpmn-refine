@@ -1,0 +1,121 @@
+{
+  "variant_id": "single/M05/47",
+  "seed": "47",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "UserTask_5",
+    "UserTask_6"
+  ],
+  "injection_site": [
+    "UserTask_6"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "UserTask_5",
+        "UserTask_6"
+      ],
+      "injection_site": [
+        "UserTask_6"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 8,
+            "text": "If you are, register your account."
+          },
+          {
+            "line": 9,
+            "text": "If you are not, request an activation and wait for a response."
+          }
+        ],
+        "claim_text": "If you are, register your account.",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "UserTask_5",
+              "label": "register account"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "UserTask_6",
+              "label": "request activation"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "UserTask_6",
+      "new_name": "Register eligible student account"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "UserTask_6",
+      "new_name": "request activation"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 8,
+        "text": "If you are, register your account."
+      },
+      {
+        "line": 9,
+        "text": "If you are not, request an activation and wait for a response."
+      }
+    ],
+    "claim_text": "If you are, register your account.",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "UserTask_5",
+          "label": "register account"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "UserTask_6",
+          "label": "request activation"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

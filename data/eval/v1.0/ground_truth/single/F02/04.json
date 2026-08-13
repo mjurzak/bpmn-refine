@@ -1,0 +1,58 @@
+{
+  "variant_id": "single/F02/04",
+  "seed": "04",
+  "operators": [
+    "F02"
+  ],
+  "class": "SOUND",
+  "expected_finding": "lack_of_synchronisation",
+  "expected_findings": [
+    "lack_of_synchronisation"
+  ],
+  "expected_elements": [
+    "ParallelGateway_3",
+    "ParallelGateway_1"
+  ],
+  "injection_site": [
+    "ParallelGateway_3",
+    "ParallelGateway_1"
+  ],
+  "defects": [
+    {
+      "operator": "F02",
+      "expected_finding": "lack_of_synchronisation",
+      "expected_elements": [
+        "ParallelGateway_3",
+        "ParallelGateway_1"
+      ],
+      "injection_site": [
+        "ParallelGateway_3",
+        "ParallelGateway_1"
+      ]
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "change_gateway_type",
+      "id": "ParallelGateway_1",
+      "new_type": "exclusiveGateway"
+    }
+  ],
+  "repair": [
+    {
+      "op": "change_gateway_type",
+      "id": "ParallelGateway_1",
+      "new_type": "parallelGateway"
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

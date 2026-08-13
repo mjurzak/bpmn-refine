@@ -1,0 +1,95 @@
+{
+  "variant_id": "interacting/F04+F04/55",
+  "seed": "55",
+  "operators": [
+    "F04",
+    "F04"
+  ],
+  "class": "SOUND",
+  "expected_finding": "R007 + R007",
+  "expected_findings": [
+    "R007",
+    "R007"
+  ],
+  "expected_elements": [
+    "Task_25",
+    "Task_28"
+  ],
+  "injection_site": [
+    "SequenceFlow_37",
+    "ExclusiveGateway_7",
+    "Task_25",
+    "SequenceFlow_40",
+    "Task_27",
+    "Task_28"
+  ],
+  "defects": [
+    {
+      "operator": "F04",
+      "expected_finding": "R007",
+      "expected_elements": [
+        "Task_25"
+      ],
+      "injection_site": [
+        "SequenceFlow_37",
+        "ExclusiveGateway_7",
+        "Task_25"
+      ]
+    },
+    {
+      "operator": "F04",
+      "expected_finding": "R007",
+      "expected_elements": [
+        "Task_28"
+      ],
+      "injection_site": [
+        "SequenceFlow_40",
+        "Task_27",
+        "Task_28"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "interacting",
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_37"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_40"
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_40",
+      "source_ref": "Task_27",
+      "target_ref": "Task_28",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_37",
+      "source_ref": "ExclusiveGateway_7",
+      "target_ref": "Task_25",
+      "name": "Yes",
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R007",
+      "R008"
+    ],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

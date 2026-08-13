@@ -1,0 +1,521 @@
+{
+  "variant_id": "disjoint/M02+M04/17",
+  "seed": "17",
+  "operators": [
+    "M02",
+    "M04"
+  ],
+  "class": "SEM",
+  "expected_finding": "contradictory_flow + missing_exception_handling",
+  "expected_findings": [
+    "contradictory_flow",
+    "missing_exception_handling"
+  ],
+  "expected_elements": [
+    "Task_19",
+    "Task_7",
+    "Task_6",
+    "Task_17",
+    "Task_24",
+    "Task_12"
+  ],
+  "injection_site": [
+    "SequenceFlow_26",
+    "SequenceFlow_27",
+    "SequenceFlow_19",
+    "ExclusiveGateway_3",
+    "Task_7",
+    "Task_19",
+    "ParallelGateway_2",
+    "Task_6",
+    "Task_17",
+    "Task_24",
+    "Task_12",
+    "ExclusiveGateway_5",
+    "Task_11",
+    "Task_18",
+    "ExclusiveGateway_6"
+  ],
+  "defects": [
+    {
+      "operator": "M02",
+      "expected_finding": "contradictory_flow",
+      "expected_elements": [
+        "Task_19",
+        "Task_7"
+      ],
+      "injection_site": [
+        "SequenceFlow_26",
+        "SequenceFlow_27",
+        "SequenceFlow_19",
+        "ExclusiveGateway_3",
+        "Task_7",
+        "Task_19",
+        "ParallelGateway_2"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 8,
+            "text": "In-stock items are picked from the warehouse."
+          },
+          {
+            "line": 9,
+            "text": "Quality control checks are performed on the picked items."
+          }
+        ],
+        "claim_text": "In-stock items are picked from the warehouse.",
+        "relation": {
+          "type": "precedes",
+          "arguments": [
+            {
+              "role": "before",
+              "element_ref": "Task_19",
+              "label": "Pick items from warehouse"
+            },
+            {
+              "role": "after",
+              "element_ref": "Task_7",
+              "label": "Perform quality control checks"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    },
+    {
+      "operator": "M04",
+      "expected_finding": "missing_exception_handling",
+      "expected_elements": [
+        "Task_6",
+        "Task_17",
+        "Task_24",
+        "Task_12"
+      ],
+      "injection_site": [
+        "Task_6",
+        "Task_17",
+        "Task_24",
+        "Task_12",
+        "ExclusiveGateway_5",
+        "Task_11",
+        "Task_18",
+        "ExclusiveGateway_6"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 17,
+            "text": "If the customer reports any issues upon delivery, a returns process is initiated, which includes:"
+          },
+          {
+            "line": 18,
+            "text": "Sending a return shipping label."
+          },
+          {
+            "line": 19,
+            "text": "Receiving returned items."
+          },
+          {
+            "line": 20,
+            "text": "Inspecting returned items."
+          }
+        ],
+        "claim_text": "If the customer reports any issues upon delivery, a returns process is initiated, which includes:",
+        "relation": {
+          "type": "exists_path",
+          "arguments": [
+            {
+              "role": "path_entry",
+              "element_ref": "Task_6",
+              "label": "Customer reports issue"
+            },
+            {
+              "role": "path_step",
+              "element_ref": "Task_17",
+              "label": "Send return shipping label"
+            },
+            {
+              "role": "path_step",
+              "element_ref": "Task_24",
+              "label": "Receive returned items"
+            },
+            {
+              "role": "path_step",
+              "element_ref": "Task_12",
+              "label": "Inspect returned items"
+            }
+          ],
+          "condition_text": "If the customer reports any issues upon delivery",
+          "outcome_text": "a returns process is initiated"
+        }
+      }
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_26"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_27"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_19"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_26",
+      "source_ref": "ExclusiveGateway_3",
+      "target_ref": "Task_7",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_27",
+      "source_ref": "Task_7",
+      "target_ref": "Task_19",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_19",
+      "source_ref": "Task_19",
+      "target_ref": "ParallelGateway_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_6",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_17",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_24",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_12",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "ExclusiveGateway_5",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_11",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_18",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "ExclusiveGateway_6",
+      "cascade": true
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_node",
+      "id": "Task_6",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Customer reports issue"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_17",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Send return shipping label"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_24",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Receive returned items"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_12",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Inspect returned items"
+    },
+    {
+      "op": "add_node",
+      "id": "ExclusiveGateway_5",
+      "node_type": "exclusiveGateway",
+      "process_id": "Process_1",
+      "name": null
+    },
+    {
+      "op": "add_node",
+      "id": "Task_11",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Process refund"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_18",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Process replacement"
+    },
+    {
+      "op": "add_node",
+      "id": "ExclusiveGateway_6",
+      "node_type": "exclusiveGateway",
+      "process_id": "Process_1",
+      "name": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_12",
+      "source_ref": "ExclusiveGateway_12",
+      "target_ref": "Task_6",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_15",
+      "source_ref": "Task_6",
+      "target_ref": "Task_17",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_10",
+      "source_ref": "Task_17",
+      "target_ref": "Task_24",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_41",
+      "source_ref": "Task_24",
+      "target_ref": "Task_12",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_18",
+      "source_ref": "Task_12",
+      "target_ref": "ExclusiveGateway_5",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_1",
+      "source_ref": "ExclusiveGateway_5",
+      "target_ref": "Task_11",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_46",
+      "source_ref": "ExclusiveGateway_5",
+      "target_ref": "Task_18",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_2",
+      "source_ref": "Task_11",
+      "target_ref": "ExclusiveGateway_6",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_42",
+      "source_ref": "Task_18",
+      "target_ref": "ExclusiveGateway_6",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_3",
+      "source_ref": "ExclusiveGateway_6",
+      "target_ref": "ExclusiveGateway_10",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_26"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_27"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_19"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_26",
+      "source_ref": "ExclusiveGateway_3",
+      "target_ref": "Task_19",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_27",
+      "source_ref": "Task_19",
+      "target_ref": "Task_7",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_19",
+      "source_ref": "Task_7",
+      "target_ref": "ParallelGateway_2",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": [
+    {
+      "description_lines": [
+        {
+          "line": 8,
+          "text": "In-stock items are picked from the warehouse."
+        },
+        {
+          "line": 9,
+          "text": "Quality control checks are performed on the picked items."
+        }
+      ],
+      "claim_text": "In-stock items are picked from the warehouse.",
+      "relation": {
+        "type": "precedes",
+        "arguments": [
+          {
+            "role": "before",
+            "element_ref": "Task_19",
+            "label": "Pick items from warehouse"
+          },
+          {
+            "role": "after",
+            "element_ref": "Task_7",
+            "label": "Perform quality control checks"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      }
+    },
+    {
+      "description_lines": [
+        {
+          "line": 17,
+          "text": "If the customer reports any issues upon delivery, a returns process is initiated, which includes:"
+        },
+        {
+          "line": 18,
+          "text": "Sending a return shipping label."
+        },
+        {
+          "line": 19,
+          "text": "Receiving returned items."
+        },
+        {
+          "line": 20,
+          "text": "Inspecting returned items."
+        }
+      ],
+      "claim_text": "If the customer reports any issues upon delivery, a returns process is initiated, which includes:",
+      "relation": {
+        "type": "exists_path",
+        "arguments": [
+          {
+            "role": "path_entry",
+            "element_ref": "Task_6",
+            "label": "Customer reports issue"
+          },
+          {
+            "role": "path_step",
+            "element_ref": "Task_17",
+            "label": "Send return shipping label"
+          },
+          {
+            "role": "path_step",
+            "element_ref": "Task_24",
+            "label": "Receive returned items"
+          },
+          {
+            "role": "path_step",
+            "element_ref": "Task_12",
+            "label": "Inspect returned items"
+          }
+        ],
+        "condition_text": "If the customer reports any issues upon delivery",
+        "outcome_text": "a returns process is initiated"
+      }
+    }
+  ],
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "commutative": true,
+    "components_preserved": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

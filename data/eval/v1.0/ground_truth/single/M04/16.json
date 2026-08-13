@@ -1,0 +1,164 @@
+{
+  "variant_id": "single/M04/16",
+  "seed": "16",
+  "operators": [
+    "M04"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_exception_handling",
+  "expected_findings": [
+    "missing_exception_handling"
+  ],
+  "expected_elements": [
+    "Task_23",
+    "Task_16"
+  ],
+  "injection_site": [
+    "Task_23",
+    "Task_16"
+  ],
+  "defects": [
+    {
+      "operator": "M04",
+      "expected_finding": "missing_exception_handling",
+      "expected_elements": [
+        "Task_23",
+        "Task_16"
+      ],
+      "injection_site": [
+        "Task_23",
+        "Task_16"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 6,
+            "text": "If discrepancies are found, they request clarifications from the regional office."
+          },
+          {
+            "line": 7,
+            "text": "The regional office provides the necessary clarifications."
+          }
+        ],
+        "claim_text": "they request clarifications from the regional office",
+        "relation": {
+          "type": "exists_path",
+          "arguments": [
+            {
+              "role": "path_entry",
+              "element_ref": "Task_23",
+              "label": "Request clarifications of discrepancies"
+            },
+            {
+              "role": "path_step",
+              "element_ref": "Task_16",
+              "label": "Receive clarifications"
+            }
+          ],
+          "condition_text": "If discrepancies are found",
+          "outcome_text": "The regional office provides the necessary clarifications"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "Task_23",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_16",
+      "cascade": true
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_node",
+      "id": "Task_23",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Request clarifications of discrepancies"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_16",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Receive clarifications"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_32",
+      "source_ref": "ExclusiveGateway_6",
+      "target_ref": "Task_23",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_6",
+      "source_ref": "Task_23",
+      "target_ref": "Task_16",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_19",
+      "source_ref": "Task_16",
+      "target_ref": "ExclusiveGateway_4",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 6,
+        "text": "If discrepancies are found, they request clarifications from the regional office."
+      },
+      {
+        "line": 7,
+        "text": "The regional office provides the necessary clarifications."
+      }
+    ],
+    "claim_text": "they request clarifications from the regional office",
+    "relation": {
+      "type": "exists_path",
+      "arguments": [
+        {
+          "role": "path_entry",
+          "element_ref": "Task_23",
+          "label": "Request clarifications of discrepancies"
+        },
+        {
+          "role": "path_step",
+          "element_ref": "Task_16",
+          "label": "Receive clarifications"
+        }
+      ],
+      "condition_text": "If discrepancies are found",
+      "outcome_text": "The regional office provides the necessary clarifications"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

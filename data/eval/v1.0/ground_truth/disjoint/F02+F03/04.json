@@ -1,0 +1,145 @@
+{
+  "variant_id": "disjoint/F02+F03/04",
+  "seed": "04",
+  "operators": [
+    "F02",
+    "F03"
+  ],
+  "class": "SOUND",
+  "expected_finding": "lack_of_synchronisation + improper_completion",
+  "expected_findings": [
+    "lack_of_synchronisation",
+    "improper_completion"
+  ],
+  "expected_elements": [
+    "ParallelGateway_3",
+    "ParallelGateway_1",
+    "ParallelGateway_5",
+    "ParallelGateway_2",
+    "EndEvent_1"
+  ],
+  "injection_site": [
+    "ParallelGateway_3",
+    "ParallelGateway_1",
+    "ParallelGateway_5",
+    "ParallelGateway_2",
+    "EndEvent_1"
+  ],
+  "defects": [
+    {
+      "operator": "F02",
+      "expected_finding": "lack_of_synchronisation",
+      "expected_elements": [
+        "ParallelGateway_3",
+        "ParallelGateway_1"
+      ],
+      "injection_site": [
+        "ParallelGateway_3",
+        "ParallelGateway_1"
+      ]
+    },
+    {
+      "operator": "F03",
+      "expected_finding": "improper_completion",
+      "expected_elements": [
+        "ParallelGateway_5",
+        "ParallelGateway_2",
+        "EndEvent_1"
+      ],
+      "injection_site": [
+        "ParallelGateway_5",
+        "ParallelGateway_2",
+        "EndEvent_1"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "change_gateway_type",
+      "id": "ParallelGateway_1",
+      "new_type": "exclusiveGateway"
+    },
+    {
+      "op": "remove_node",
+      "id": "ParallelGateway_2",
+      "cascade": true
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_10",
+      "source_ref": "Task_9",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_13",
+      "source_ref": "Task_6",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_10"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_13"
+    },
+    {
+      "op": "add_node",
+      "id": "ParallelGateway_2",
+      "node_type": "parallelGateway",
+      "process_id": "Process_1",
+      "name": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_10",
+      "source_ref": "Task_9",
+      "target_ref": "ParallelGateway_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_13",
+      "source_ref": "Task_6",
+      "target_ref": "ParallelGateway_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_18",
+      "source_ref": "ParallelGateway_2",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "change_gateway_type",
+      "id": "ParallelGateway_1",
+      "new_type": "parallelGateway"
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

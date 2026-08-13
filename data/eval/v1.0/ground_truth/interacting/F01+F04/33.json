@@ -1,0 +1,92 @@
+{
+  "variant_id": "interacting/F01+F04/33",
+  "seed": "33",
+  "operators": [
+    "F01",
+    "F04"
+  ],
+  "class": "SOUND",
+  "expected_finding": "deadlock + R007",
+  "expected_findings": [
+    "deadlock",
+    "R007"
+  ],
+  "expected_elements": [
+    "ExclusiveGateway_3",
+    "ExclusiveGateway_6",
+    "ParallelGateway_1"
+  ],
+  "injection_site": [
+    "ExclusiveGateway_3",
+    "ExclusiveGateway_6",
+    "SequenceFlow_17",
+    "UserTask_6",
+    "ParallelGateway_1"
+  ],
+  "defects": [
+    {
+      "operator": "F01",
+      "expected_finding": "deadlock",
+      "expected_elements": [
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_6"
+      ],
+      "injection_site": [
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_6"
+      ]
+    },
+    {
+      "operator": "F04",
+      "expected_finding": "R007",
+      "expected_elements": [
+        "ParallelGateway_1"
+      ],
+      "injection_site": [
+        "SequenceFlow_17",
+        "UserTask_6",
+        "ParallelGateway_1"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "interacting",
+  "injection": [
+    {
+      "op": "change_gateway_type",
+      "id": "ExclusiveGateway_6",
+      "new_type": "parallelGateway"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_17"
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_17",
+      "source_ref": "UserTask_6",
+      "target_ref": "ParallelGateway_1",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "change_gateway_type",
+      "id": "ExclusiveGateway_6",
+      "new_type": "exclusiveGateway"
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R007",
+      "R008"
+    ],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

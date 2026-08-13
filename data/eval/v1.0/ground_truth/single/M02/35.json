@@ -1,0 +1,193 @@
+{
+  "variant_id": "single/M02/35",
+  "seed": "35",
+  "operators": [
+    "M02"
+  ],
+  "class": "SEM",
+  "expected_finding": "contradictory_flow",
+  "expected_findings": [
+    "contradictory_flow"
+  ],
+  "expected_elements": [
+    "UserTask_3",
+    "ServiceTask_4"
+  ],
+  "injection_site": [
+    "SequenceFlow_10",
+    "SequenceFlow_11",
+    "SequenceFlow_12",
+    "ExclusiveGateway_1",
+    "ServiceTask_4",
+    "UserTask_3",
+    "ServiceTask_5"
+  ],
+  "defects": [
+    {
+      "operator": "M02",
+      "expected_finding": "contradictory_flow",
+      "expected_elements": [
+        "UserTask_3",
+        "ServiceTask_4"
+      ],
+      "injection_site": [
+        "SequenceFlow_10",
+        "SequenceFlow_11",
+        "SequenceFlow_12",
+        "ExclusiveGateway_1",
+        "ServiceTask_4",
+        "UserTask_3",
+        "ServiceTask_5"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 6,
+            "text": "After the parts arrive you have to do a manual inspection of all parts, and then assemble the parts."
+          }
+        ],
+        "claim_text": "After the parts arrive you have to do a manual inspection of all parts, and then assemble the parts.",
+        "relation": {
+          "type": "precedes",
+          "arguments": [
+            {
+              "role": "before",
+              "element_ref": "UserTask_3",
+              "label": "Perform Inspection"
+            },
+            {
+              "role": "after",
+              "element_ref": "ServiceTask_4",
+              "label": "Assemble the parts"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_10"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_11"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_12"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_10",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "ServiceTask_4",
+      "name": "Yes",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_11",
+      "source_ref": "ServiceTask_4",
+      "target_ref": "UserTask_3",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_12",
+      "source_ref": "UserTask_3",
+      "target_ref": "ServiceTask_5",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_10"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_11"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_12"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_10",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "UserTask_3",
+      "name": "Yes",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_11",
+      "source_ref": "UserTask_3",
+      "target_ref": "ServiceTask_4",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_12",
+      "source_ref": "ServiceTask_4",
+      "target_ref": "ServiceTask_5",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 6,
+        "text": "After the parts arrive you have to do a manual inspection of all parts, and then assemble the parts."
+      }
+    ],
+    "claim_text": "After the parts arrive you have to do a manual inspection of all parts, and then assemble the parts.",
+    "relation": {
+      "type": "precedes",
+      "arguments": [
+        {
+          "role": "before",
+          "element_ref": "UserTask_3",
+          "label": "Perform Inspection"
+        },
+        {
+          "role": "after",
+          "element_ref": "ServiceTask_4",
+          "label": "Assemble the parts"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

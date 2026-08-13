@@ -1,0 +1,140 @@
+{
+  "variant_id": "single/M01/31",
+  "seed": "31",
+  "operators": [
+    "M01"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_step",
+  "expected_findings": [
+    "missing_step"
+  ],
+  "expected_elements": [
+    "ServiceTask_1"
+  ],
+  "injection_site": [
+    "ServiceTask_1",
+    "SequenceFlow_41",
+    "ParallelGateway_1",
+    "ExclusiveGateway_1"
+  ],
+  "defects": [
+    {
+      "operator": "M01",
+      "expected_finding": "missing_step",
+      "expected_elements": [
+        "ServiceTask_1"
+      ],
+      "injection_site": [
+        "ServiceTask_1",
+        "SequenceFlow_41",
+        "ParallelGateway_1",
+        "ExclusiveGateway_1"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 6,
+            "text": "The setup of your account starts with checking whether you have a battle.net account."
+          }
+        ],
+        "claim_text": "The setup of your account starts with checking whether you have a battle.net account.",
+        "relation": {
+          "type": "exists_task",
+          "arguments": [
+            {
+              "role": "task",
+              "element_ref": "ServiceTask_1",
+              "label": "Check if battle.net account exists"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "ServiceTask_1",
+      "cascade": true
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_41",
+      "source_ref": "ParallelGateway_1",
+      "target_ref": "ExclusiveGateway_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_41"
+    },
+    {
+      "op": "add_node",
+      "id": "ServiceTask_1",
+      "node_type": "serviceTask",
+      "process_id": "Process_1",
+      "name": "Check if battle.net account exists"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_7",
+      "source_ref": "ParallelGateway_1",
+      "target_ref": "ServiceTask_1",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_3",
+      "source_ref": "ServiceTask_1",
+      "target_ref": "ExclusiveGateway_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 6,
+        "text": "The setup of your account starts with checking whether you have a battle.net account."
+      }
+    ],
+    "claim_text": "The setup of your account starts with checking whether you have a battle.net account.",
+    "relation": {
+      "type": "exists_task",
+      "arguments": [
+        {
+          "role": "task",
+          "element_ref": "ServiceTask_1",
+          "label": "Check if battle.net account exists"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

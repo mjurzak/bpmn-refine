@@ -1,0 +1,174 @@
+{
+  "variant_id": "single/M07/49",
+  "seed": "49",
+  "operators": [
+    "M07"
+  ],
+  "class": "SEM",
+  "expected_finding": "unwanted_action",
+  "expected_findings": [
+    "unwanted_action"
+  ],
+  "expected_elements": [
+    "SequenceFlow_20",
+    "Task_9",
+    "Task_11"
+  ],
+  "injection_site": [
+    "Task_11",
+    "SequenceFlow_20",
+    "SequenceFlow_21",
+    "ExclusiveGateway_2",
+    "SequenceFlow_22",
+    "Task_8"
+  ],
+  "defects": [
+    {
+      "operator": "M07",
+      "expected_finding": "unwanted_action",
+      "expected_elements": [
+        "SequenceFlow_20",
+        "Task_9",
+        "Task_11"
+      ],
+      "injection_site": [
+        "Task_11",
+        "SequenceFlow_20",
+        "SequenceFlow_21",
+        "ExclusiveGateway_2",
+        "SequenceFlow_22",
+        "Task_8"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 5,
+            "text": "After each of these activities, the proper system functionality is tested."
+          },
+          {
+            "line": 6,
+            "text": "If an error is detected another arbitrary repair activity is executed, otherwise the repair is finished."
+          }
+        ],
+        "claim_text": "If an error is detected another arbitrary repair activity is executed, otherwise the repair is finished.",
+        "relation": {
+          "type": "additional_action",
+          "arguments": [
+            {
+              "role": "context_flow",
+              "element_ref": "SequenceFlow_20",
+              "label": "no error"
+            },
+            {
+              "role": "action_template",
+              "element_ref": "Task_9",
+              "label": "Repair the hardware"
+            }
+          ],
+          "condition_text": "otherwise",
+          "outcome_text": "the repair is finished"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "add_node",
+      "id": "Task_11",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Repair the hardware"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_20"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_21",
+      "source_ref": "ExclusiveGateway_2",
+      "target_ref": "Task_11",
+      "name": "no error",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_22",
+      "source_ref": "Task_11",
+      "target_ref": "Task_8",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_22"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_21"
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_11",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_20",
+      "source_ref": "ExclusiveGateway_2",
+      "target_ref": "Task_8",
+      "name": "no error",
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 5,
+        "text": "After each of these activities, the proper system functionality is tested."
+      },
+      {
+        "line": 6,
+        "text": "If an error is detected another arbitrary repair activity is executed, otherwise the repair is finished."
+      }
+    ],
+    "claim_text": "If an error is detected another arbitrary repair activity is executed, otherwise the repair is finished.",
+    "relation": {
+      "type": "additional_action",
+      "arguments": [
+        {
+          "role": "context_flow",
+          "element_ref": "SequenceFlow_20",
+          "label": "no error"
+        },
+        {
+          "role": "action_template",
+          "element_ref": "Task_9",
+          "label": "Repair the hardware"
+        }
+      ],
+      "condition_text": "otherwise",
+      "outcome_text": "the repair is finished"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

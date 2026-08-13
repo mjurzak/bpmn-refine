@@ -1,0 +1,113 @@
+{
+  "variant_id": "single/M05/16",
+  "seed": "16",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "Task_14",
+    "Task_24"
+  ],
+  "injection_site": [
+    "Task_24"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "Task_14",
+        "Task_24"
+      ],
+      "injection_site": [
+        "Task_24"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 9,
+            "text": "The risk assessment includes evaluating financial risks, operational risks, and compliance risks, which can be done in any order but must all be completed."
+          }
+        ],
+        "claim_text": "financial risks, operational risks, and compliance risks",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "Task_14",
+              "label": "Evaluate financial risks"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "Task_24",
+              "label": "Evaluate operational risks"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "Task_24",
+      "new_name": "Assess financial exposure"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "Task_24",
+      "new_name": "Evaluate operational risks"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 9,
+        "text": "The risk assessment includes evaluating financial risks, operational risks, and compliance risks, which can be done in any order but must all be completed."
+      }
+    ],
+    "claim_text": "financial risks, operational risks, and compliance risks",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "Task_14",
+          "label": "Evaluate financial risks"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "Task_24",
+          "label": "Evaluate operational risks"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

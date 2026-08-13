@@ -1,0 +1,152 @@
+{
+  "variant_id": "single/M06/05",
+  "seed": "05",
+  "operators": [
+    "M06"
+  ],
+  "class": "SEM",
+  "expected_finding": "improper_termination",
+  "expected_findings": [
+    "improper_termination"
+  ],
+  "expected_elements": [
+    "Task_3"
+  ],
+  "injection_site": [
+    "SequenceFlow_16",
+    "SequenceFlow_5",
+    "Task_3",
+    "SequenceFlow_20",
+    "Task_11",
+    "EndEvent_1"
+  ],
+  "defects": [
+    {
+      "operator": "M06",
+      "expected_finding": "improper_termination",
+      "expected_elements": [
+        "Task_3"
+      ],
+      "injection_site": [
+        "SequenceFlow_16",
+        "SequenceFlow_5",
+        "Task_3",
+        "SequenceFlow_20",
+        "Task_11",
+        "EndEvent_1"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 7,
+            "text": "The process ends when the supplier is officially onboarded, and the contract is executed."
+          }
+        ],
+        "claim_text": "the supplier is officially onboarded, and the contract is executed",
+        "relation": {
+          "type": "reaches",
+          "arguments": [
+            {
+              "role": "outcome",
+              "element_ref": "Task_3",
+              "label": "Execute contract"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": "the contract is executed"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_16"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_5"
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_3",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_20",
+      "source_ref": "Task_11",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_20"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_3",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Execute contract"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_16",
+      "source_ref": "Task_11",
+      "target_ref": "Task_3",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_5",
+      "source_ref": "Task_3",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 7,
+        "text": "The process ends when the supplier is officially onboarded, and the contract is executed."
+      }
+    ],
+    "claim_text": "the supplier is officially onboarded, and the contract is executed",
+    "relation": {
+      "type": "reaches",
+      "arguments": [
+        {
+          "role": "outcome",
+          "element_ref": "Task_3",
+          "label": "Execute contract"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": "the contract is executed"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

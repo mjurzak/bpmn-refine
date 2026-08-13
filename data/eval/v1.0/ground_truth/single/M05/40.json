@@ -1,0 +1,121 @@
+{
+  "variant_id": "single/M05/40",
+  "seed": "40",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "ServiceTask_1",
+    "ManualTask_3"
+  ],
+  "injection_site": [
+    "ManualTask_3"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "ServiceTask_1",
+        "ManualTask_3"
+      ],
+      "injection_site": [
+        "ManualTask_3"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 4,
+            "text": "If the OEE falls below a certain value/percentage, stop the machine and send an email to an engineer."
+          },
+          {
+            "line": 5,
+            "text": "When the machine is restarted, continue measuring."
+          }
+        ],
+        "claim_text": "If the OEE falls below a certain value/percentage, stop the machine and send an email to an engineer.",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "ServiceTask_1",
+              "label": "Stop the machine"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "ManualTask_3",
+              "label": "Restart the machine"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "ManualTask_3",
+      "new_name": "Notify engineer of low OEE"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "ManualTask_3",
+      "new_name": "Restart the machine"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 4,
+        "text": "If the OEE falls below a certain value/percentage, stop the machine and send an email to an engineer."
+      },
+      {
+        "line": 5,
+        "text": "When the machine is restarted, continue measuring."
+      }
+    ],
+    "claim_text": "If the OEE falls below a certain value/percentage, stop the machine and send an email to an engineer.",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "ServiceTask_1",
+          "label": "Stop the machine"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "ManualTask_3",
+          "label": "Restart the machine"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

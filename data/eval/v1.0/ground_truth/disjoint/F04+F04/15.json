@@ -1,0 +1,95 @@
+{
+  "variant_id": "disjoint/F04+F04/15",
+  "seed": "15",
+  "operators": [
+    "F04",
+    "F04"
+  ],
+  "class": "SOUND",
+  "expected_finding": "R007 + R007",
+  "expected_findings": [
+    "R007",
+    "R007"
+  ],
+  "expected_elements": [
+    "Task_7",
+    "ParallelGateway_1"
+  ],
+  "injection_site": [
+    "SequenceFlow_8",
+    "Task_4",
+    "Task_7",
+    "SequenceFlow_9",
+    "Task_6",
+    "ParallelGateway_1"
+  ],
+  "defects": [
+    {
+      "operator": "F04",
+      "expected_finding": "R007",
+      "expected_elements": [
+        "Task_7"
+      ],
+      "injection_site": [
+        "SequenceFlow_8",
+        "Task_4",
+        "Task_7"
+      ]
+    },
+    {
+      "operator": "F04",
+      "expected_finding": "R007",
+      "expected_elements": [
+        "ParallelGateway_1"
+      ],
+      "injection_site": [
+        "SequenceFlow_9",
+        "Task_6",
+        "ParallelGateway_1"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_8"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_9"
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_9",
+      "source_ref": "Task_6",
+      "target_ref": "ParallelGateway_1",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_8",
+      "source_ref": "Task_4",
+      "target_ref": "Task_7",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R007",
+      "R008"
+    ],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

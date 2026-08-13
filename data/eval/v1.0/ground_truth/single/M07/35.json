@@ -1,0 +1,166 @@
+{
+  "variant_id": "single/M07/35",
+  "seed": "35",
+  "operators": [
+    "M07"
+  ],
+  "class": "SEM",
+  "expected_finding": "unwanted_action",
+  "expected_findings": [
+    "unwanted_action"
+  ],
+  "expected_elements": [
+    "SequenceFlow_16",
+    "UserTask_6",
+    "Task_1"
+  ],
+  "injection_site": [
+    "Task_1",
+    "SequenceFlow_16",
+    "SequenceFlow_22",
+    "UserTask_5",
+    "SequenceFlow_23",
+    "EndEvent_1"
+  ],
+  "defects": [
+    {
+      "operator": "M07",
+      "expected_finding": "unwanted_action",
+      "expected_elements": [
+        "SequenceFlow_16",
+        "UserTask_6",
+        "Task_1"
+      ],
+      "injection_site": [
+        "Task_1",
+        "SequenceFlow_16",
+        "SequenceFlow_22",
+        "UserTask_5",
+        "SequenceFlow_23",
+        "EndEvent_1"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 9,
+            "text": "If he likes it, the rest of his order are produced."
+          }
+        ],
+        "claim_text": "If he likes it, the rest of his order are produced.",
+        "relation": {
+          "type": "additional_action",
+          "arguments": [
+            {
+              "role": "context_flow",
+              "element_ref": "SequenceFlow_16",
+              "label": null
+            },
+            {
+              "role": "action_template",
+              "element_ref": "UserTask_6",
+              "label": "Send the remaining order"
+            }
+          ],
+          "condition_text": "If he likes it",
+          "outcome_text": "the rest of his order are produced"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "add_node",
+      "id": "Task_1",
+      "node_type": "userTask",
+      "process_id": "Process_1",
+      "name": "Send the remaining order"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_16"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_22",
+      "source_ref": "UserTask_5",
+      "target_ref": "Task_1",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_23",
+      "source_ref": "Task_1",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_23"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_22"
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_1",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_16",
+      "source_ref": "UserTask_5",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 9,
+        "text": "If he likes it, the rest of his order are produced."
+      }
+    ],
+    "claim_text": "If he likes it, the rest of his order are produced.",
+    "relation": {
+      "type": "additional_action",
+      "arguments": [
+        {
+          "role": "context_flow",
+          "element_ref": "SequenceFlow_16",
+          "label": null
+        },
+        {
+          "role": "action_template",
+          "element_ref": "UserTask_6",
+          "label": "Send the remaining order"
+        }
+      ],
+      "condition_text": "If he likes it",
+      "outcome_text": "the rest of his order are produced"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

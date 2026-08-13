@@ -1,0 +1,113 @@
+{
+  "variant_id": "single/M05/05",
+  "seed": "05",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "Task_2",
+    "Task_9"
+  ],
+  "injection_site": [
+    "Task_9"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "Task_2",
+        "Task_9"
+      ],
+      "injection_site": [
+        "Task_9"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 4,
+            "text": "The team may also conduct site visits or interviews with suppliers."
+          }
+        ],
+        "claim_text": "site visits or interviews with suppliers",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "Task_2",
+              "label": "Conduct site visit"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "Task_9",
+              "label": "Conduct interview"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "Task_9",
+      "new_name": "Perform supplier site inspection"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "Task_9",
+      "new_name": "Conduct interview"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 4,
+        "text": "The team may also conduct site visits or interviews with suppliers."
+      }
+    ],
+    "claim_text": "site visits or interviews with suppliers",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "Task_2",
+          "label": "Conduct site visit"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "Task_9",
+          "label": "Conduct interview"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

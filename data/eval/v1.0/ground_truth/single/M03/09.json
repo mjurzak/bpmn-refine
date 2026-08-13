@@ -1,0 +1,125 @@
+{
+  "variant_id": "single/M03/09",
+  "seed": "09",
+  "operators": [
+    "M03"
+  ],
+  "class": "SEM",
+  "expected_finding": "unreachable_branch",
+  "expected_findings": [
+    "unreachable_branch"
+  ],
+  "expected_elements": [
+    "ExclusiveGateway_1",
+    "Task_5",
+    "SequenceFlow_15"
+  ],
+  "injection_site": [
+    "SequenceFlow_15"
+  ],
+  "defects": [
+    {
+      "operator": "M03",
+      "expected_finding": "unreachable_branch",
+      "expected_elements": [
+        "ExclusiveGateway_1",
+        "Task_5",
+        "SequenceFlow_15"
+      ],
+      "injection_site": [
+        "SequenceFlow_15"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 6,
+            "text": "If a refinement is needed, then the testing phase is reinitiated."
+          }
+        ],
+        "claim_text": "the testing phase is reinitiated",
+        "relation": {
+          "type": "branch_condition",
+          "arguments": [
+            {
+              "role": "condition_gateway",
+              "element_ref": "ExclusiveGateway_1",
+              "label": null
+            },
+            {
+              "role": "branch_target",
+              "element_ref": "Task_5",
+              "label": "Refine prototype"
+            },
+            {
+              "role": "branch_flow",
+              "element_ref": "SequenceFlow_15",
+              "label": null
+            }
+          ],
+          "condition_text": "If a refinement is needed",
+          "outcome_text": "the testing phase is reinitiated"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "set_condition",
+      "flow_id": "SequenceFlow_15",
+      "condition_expression": "${refinementNotRequired}"
+    }
+  ],
+  "repair": [
+    {
+      "op": "set_condition",
+      "flow_id": "SequenceFlow_15",
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 6,
+        "text": "If a refinement is needed, then the testing phase is reinitiated."
+      }
+    ],
+    "claim_text": "the testing phase is reinitiated",
+    "relation": {
+      "type": "branch_condition",
+      "arguments": [
+        {
+          "role": "condition_gateway",
+          "element_ref": "ExclusiveGateway_1",
+          "label": null
+        },
+        {
+          "role": "branch_target",
+          "element_ref": "Task_5",
+          "label": "Refine prototype"
+        },
+        {
+          "role": "branch_flow",
+          "element_ref": "SequenceFlow_15",
+          "label": null
+        }
+      ],
+      "condition_text": "If a refinement is needed",
+      "outcome_text": "the testing phase is reinitiated"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

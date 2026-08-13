@@ -1,0 +1,113 @@
+{
+  "variant_id": "single/M05/36",
+  "seed": "36",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "SendTask_2",
+    "SendTask_3"
+  ],
+  "injection_site": [
+    "SendTask_3"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "SendTask_2",
+        "SendTask_3"
+      ],
+      "injection_site": [
+        "SendTask_3"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 7,
+            "text": "E.g. manufacturing the vodka bar is done by the Russian team, the whiskey bar is manufactured by an Irish team."
+          }
+        ],
+        "claim_text": "E.g. manufacturing the vodka bar is done by the Russian team, the whiskey bar is manufactured by an Irish team.",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "SendTask_2",
+              "label": "Send requirements to the russian team"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "SendTask_3",
+              "label": "Send requirements to the irish team"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "SendTask_3",
+      "new_name": "Send whiskey-bar requirements to Russian team"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "SendTask_3",
+      "new_name": "Send requirements to the irish team"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 7,
+        "text": "E.g. manufacturing the vodka bar is done by the Russian team, the whiskey bar is manufactured by an Irish team."
+      }
+    ],
+    "claim_text": "E.g. manufacturing the vodka bar is done by the Russian team, the whiskey bar is manufactured by an Irish team.",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "SendTask_2",
+          "label": "Send requirements to the russian team"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "SendTask_3",
+          "label": "Send requirements to the irish team"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

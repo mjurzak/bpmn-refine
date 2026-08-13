@@ -1,0 +1,105 @@
+{
+  "variant_id": "disjoint/S03+S03/26",
+  "seed": "26",
+  "operators": [
+    "S03",
+    "S03"
+  ],
+  "class": "STRUCT",
+  "expected_finding": "R006 + R006",
+  "expected_findings": [
+    "R006",
+    "R006"
+  ],
+  "expected_elements": [
+    "SequenceFlow_22",
+    "SequenceFlow_8"
+  ],
+  "injection_site": [
+    "SequenceFlow_22",
+    "target_ref",
+    "Missing_SequenceFlow_22_target_ref",
+    "SequenceFlow_8",
+    "target_ref",
+    "Missing_SequenceFlow_8_target_ref"
+  ],
+  "defects": [
+    {
+      "operator": "S03",
+      "expected_finding": "R006",
+      "expected_elements": [
+        "SequenceFlow_22"
+      ],
+      "injection_site": [
+        "SequenceFlow_22",
+        "target_ref",
+        "Missing_SequenceFlow_22_target_ref"
+      ]
+    },
+    {
+      "operator": "S03",
+      "expected_finding": "R006",
+      "expected_elements": [
+        "SequenceFlow_8"
+      ],
+      "injection_site": [
+        "SequenceFlow_8",
+        "target_ref",
+        "Missing_SequenceFlow_8_target_ref"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "repoint_flow",
+      "flow_id": "SequenceFlow_22",
+      "endpoint": "target_ref",
+      "new_ref": "Missing_SequenceFlow_22_target_ref"
+    },
+    {
+      "op": "repoint_flow",
+      "flow_id": "SequenceFlow_8",
+      "endpoint": "target_ref",
+      "new_ref": "Missing_SequenceFlow_8_target_ref"
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_8"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_8",
+      "source_ref": "ParallelGateway_3",
+      "target_ref": "ServiceTask_3",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_22"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_22",
+      "source_ref": "ExclusiveGateway_4",
+      "target_ref": "ManualTask_4",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R006",
+      "R007"
+    ],
+    "woflan": []
+  },
+  "anchor": null
+}

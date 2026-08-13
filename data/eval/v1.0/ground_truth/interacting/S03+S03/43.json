@@ -1,0 +1,106 @@
+{
+  "variant_id": "interacting/S03+S03/43",
+  "seed": "43",
+  "operators": [
+    "S03",
+    "S03"
+  ],
+  "class": "STRUCT",
+  "expected_finding": "R005 + R006",
+  "expected_findings": [
+    "R005",
+    "R006"
+  ],
+  "expected_elements": [
+    "SequenceFlow_10"
+  ],
+  "injection_site": [
+    "SequenceFlow_10",
+    "source_ref",
+    "Missing_SequenceFlow_10_source_ref",
+    "SequenceFlow_10",
+    "target_ref",
+    "Missing_SequenceFlow_10_target_ref"
+  ],
+  "defects": [
+    {
+      "operator": "S03",
+      "expected_finding": "R005",
+      "expected_elements": [
+        "SequenceFlow_10"
+      ],
+      "injection_site": [
+        "SequenceFlow_10",
+        "source_ref",
+        "Missing_SequenceFlow_10_source_ref"
+      ]
+    },
+    {
+      "operator": "S03",
+      "expected_finding": "R006",
+      "expected_elements": [
+        "SequenceFlow_10"
+      ],
+      "injection_site": [
+        "SequenceFlow_10",
+        "target_ref",
+        "Missing_SequenceFlow_10_target_ref"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "interacting",
+  "injection": [
+    {
+      "op": "repoint_flow",
+      "flow_id": "SequenceFlow_10",
+      "endpoint": "source_ref",
+      "new_ref": "Missing_SequenceFlow_10_source_ref"
+    },
+    {
+      "op": "repoint_flow",
+      "flow_id": "SequenceFlow_10",
+      "endpoint": "target_ref",
+      "new_ref": "Missing_SequenceFlow_10_target_ref"
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_10"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_10",
+      "source_ref": "ExclusiveGateway_4",
+      "target_ref": "UserTask_2",
+      "name": "yes",
+      "condition_expression": null
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_10"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_10",
+      "source_ref": "ExclusiveGateway_4",
+      "target_ref": "UserTask_2",
+      "name": "yes",
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R005",
+      "R006",
+      "R007",
+      "R008"
+    ],
+    "woflan": []
+  },
+  "anchor": null
+}

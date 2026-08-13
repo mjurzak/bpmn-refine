@@ -1,0 +1,184 @@
+{
+  "variant_id": "single/M04/15",
+  "seed": "15",
+  "operators": [
+    "M04"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_exception_handling",
+  "expected_findings": [
+    "missing_exception_handling"
+  ],
+  "expected_elements": [
+    "Task_7",
+    "Task_2",
+    "Task_10"
+  ],
+  "injection_site": [
+    "SequenceFlow_7",
+    "SequenceFlow_14",
+    "Task_2",
+    "SequenceFlow_19",
+    "Task_7",
+    "Task_10"
+  ],
+  "defects": [
+    {
+      "operator": "M04",
+      "expected_finding": "missing_exception_handling",
+      "expected_elements": [
+        "Task_7",
+        "Task_2",
+        "Task_10"
+      ],
+      "injection_site": [
+        "SequenceFlow_7",
+        "SequenceFlow_14",
+        "Task_2",
+        "SequenceFlow_19",
+        "Task_7",
+        "Task_10"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 3,
+            "text": "Auditors review the company's processes and identify any gaps or issues."
+          },
+          {
+            "line": 4,
+            "text": "After making the necessary corrections or improvements, the company undergoes a final audit."
+          }
+        ],
+        "claim_text": "identify any gaps or issues",
+        "relation": {
+          "type": "exists_path",
+          "arguments": [
+            {
+              "role": "path_entry",
+              "element_ref": "Task_7",
+              "label": "Identify gaps or issues"
+            },
+            {
+              "role": "path_step",
+              "element_ref": "Task_2",
+              "label": "Make necessary corrections or improvements"
+            },
+            {
+              "role": "path_exit",
+              "element_ref": "Task_10",
+              "label": "Conduct final audit"
+            }
+          ],
+          "condition_text": "identify any gaps or issues",
+          "outcome_text": "the company undergoes a final audit"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_7"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_14"
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_2",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_19",
+      "source_ref": "Task_7",
+      "target_ref": "Task_10",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_19"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_2",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Make necessary corrections or improvements"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_7",
+      "source_ref": "Task_7",
+      "target_ref": "Task_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_14",
+      "source_ref": "Task_2",
+      "target_ref": "Task_10",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 3,
+        "text": "Auditors review the company's processes and identify any gaps or issues."
+      },
+      {
+        "line": 4,
+        "text": "After making the necessary corrections or improvements, the company undergoes a final audit."
+      }
+    ],
+    "claim_text": "identify any gaps or issues",
+    "relation": {
+      "type": "exists_path",
+      "arguments": [
+        {
+          "role": "path_entry",
+          "element_ref": "Task_7",
+          "label": "Identify gaps or issues"
+        },
+        {
+          "role": "path_step",
+          "element_ref": "Task_2",
+          "label": "Make necessary corrections or improvements"
+        },
+        {
+          "role": "path_exit",
+          "element_ref": "Task_10",
+          "label": "Conduct final audit"
+        }
+      ],
+      "condition_text": "identify any gaps or issues",
+      "outcome_text": "the company undergoes a final audit"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

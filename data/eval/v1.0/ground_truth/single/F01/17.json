@@ -1,0 +1,58 @@
+{
+  "variant_id": "single/F01/17",
+  "seed": "17",
+  "operators": [
+    "F01"
+  ],
+  "class": "SOUND",
+  "expected_finding": "deadlock",
+  "expected_findings": [
+    "deadlock"
+  ],
+  "expected_elements": [
+    "ExclusiveGateway_11",
+    "ExclusiveGateway_1"
+  ],
+  "injection_site": [
+    "ExclusiveGateway_11",
+    "ExclusiveGateway_1"
+  ],
+  "defects": [
+    {
+      "operator": "F01",
+      "expected_finding": "deadlock",
+      "expected_elements": [
+        "ExclusiveGateway_11",
+        "ExclusiveGateway_1"
+      ],
+      "injection_site": [
+        "ExclusiveGateway_11",
+        "ExclusiveGateway_1"
+      ]
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "change_gateway_type",
+      "id": "ExclusiveGateway_1",
+      "new_type": "parallelGateway"
+    }
+  ],
+  "repair": [
+    {
+      "op": "change_gateway_type",
+      "id": "ExclusiveGateway_1",
+      "new_type": "exclusiveGateway"
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

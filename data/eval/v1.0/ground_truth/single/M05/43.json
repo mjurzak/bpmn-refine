@@ -1,0 +1,121 @@
+{
+  "variant_id": "single/M05/43",
+  "seed": "43",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "ServiceTask_4",
+    "UserTask_4"
+  ],
+  "injection_site": [
+    "UserTask_4"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "ServiceTask_4",
+        "UserTask_4"
+      ],
+      "injection_site": [
+        "UserTask_4"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 11,
+            "text": "The mechanic enters that the repair was successful and you got your \"Pickerl\"."
+          },
+          {
+            "line": 12,
+            "text": "The mechanic enters the time for you next service."
+          }
+        ],
+        "claim_text": "The mechanic enters that the repair was successful and you got your \"Pickerl\".",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "ServiceTask_4",
+              "label": "Send 'Pickerl'"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "UserTask_4",
+              "label": "Make appointment for next service"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "UserTask_4",
+      "new_name": "Record successful repair"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "UserTask_4",
+      "new_name": "Make appointment for next service"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 11,
+        "text": "The mechanic enters that the repair was successful and you got your \"Pickerl\"."
+      },
+      {
+        "line": 12,
+        "text": "The mechanic enters the time for you next service."
+      }
+    ],
+    "claim_text": "The mechanic enters that the repair was successful and you got your \"Pickerl\".",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "ServiceTask_4",
+          "label": "Send 'Pickerl'"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "UserTask_4",
+          "label": "Make appointment for next service"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "variant_id": "single/M05/17",
+  "seed": "17",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "Task_10",
+    "Task_4"
+  ],
+  "injection_site": [
+    "Task_4"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "Task_10",
+        "Task_4"
+      ],
+      "injection_site": [
+        "Task_4"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 11,
+            "text": "Meanwhile, the shipping department prepares shipping documents and labels."
+          },
+          {
+            "line": 12,
+            "text": "If the order is international, customs documentation is prepared."
+          }
+        ],
+        "claim_text": "Meanwhile, the shipping department prepares shipping documents and labels.",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "Task_10",
+              "label": "Prepare shipping documents and labels"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "Task_4",
+              "label": "Prepare documentation for international orders"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "Task_4",
+      "new_name": "Prepare domestic shipping documents"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "Task_4",
+      "new_name": "Prepare documentation for international orders"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 11,
+        "text": "Meanwhile, the shipping department prepares shipping documents and labels."
+      },
+      {
+        "line": 12,
+        "text": "If the order is international, customs documentation is prepared."
+      }
+    ],
+    "claim_text": "Meanwhile, the shipping department prepares shipping documents and labels.",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "Task_10",
+          "label": "Prepare shipping documents and labels"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "Task_4",
+          "label": "Prepare documentation for international orders"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "variant_id": "single/M06/34",
+  "seed": "34",
+  "operators": [
+    "M06"
+  ],
+  "class": "SEM",
+  "expected_finding": "improper_termination",
+  "expected_findings": [
+    "improper_termination"
+  ],
+  "expected_elements": [
+    "ManualTask_5"
+  ],
+  "injection_site": [
+    "SequenceFlow_21",
+    "SequenceFlow_17",
+    "ManualTask_5",
+    "SequenceFlow_30",
+    "ExclusiveGateway_5",
+    "EndEvent_1"
+  ],
+  "defects": [
+    {
+      "operator": "M06",
+      "expected_finding": "improper_termination",
+      "expected_elements": [
+        "ManualTask_5"
+      ],
+      "injection_site": [
+        "SequenceFlow_21",
+        "SequenceFlow_17",
+        "ManualTask_5",
+        "SequenceFlow_30",
+        "ExclusiveGateway_5",
+        "EndEvent_1"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 9,
+            "text": "After building each subcomponent, you have to test them individually and (if each test is successful) assemble them."
+          }
+        ],
+        "claim_text": "After building each subcomponent, you have to test them individually and (if each test is successful) assemble them.",
+        "relation": {
+          "type": "reaches",
+          "arguments": [
+            {
+              "role": "outcome",
+              "element_ref": "ManualTask_5",
+              "label": "Assemble subcomponents"
+            }
+          ],
+          "condition_text": "if each test is successful",
+          "outcome_text": "assemble them"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_21"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_17"
+    },
+    {
+      "op": "remove_node",
+      "id": "ManualTask_5",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_30",
+      "source_ref": "ExclusiveGateway_5",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_30"
+    },
+    {
+      "op": "add_node",
+      "id": "ManualTask_5",
+      "node_type": "manualTask",
+      "process_id": "Process_1",
+      "name": "Assemble subcomponents"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_21",
+      "source_ref": "ExclusiveGateway_5",
+      "target_ref": "ManualTask_5",
+      "name": "Yes",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_17",
+      "source_ref": "ManualTask_5",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 9,
+        "text": "After building each subcomponent, you have to test them individually and (if each test is successful) assemble them."
+      }
+    ],
+    "claim_text": "After building each subcomponent, you have to test them individually and (if each test is successful) assemble them.",
+    "relation": {
+      "type": "reaches",
+      "arguments": [
+        {
+          "role": "outcome",
+          "element_ref": "ManualTask_5",
+          "label": "Assemble subcomponents"
+        }
+      ],
+      "condition_text": "if each test is successful",
+      "outcome_text": "assemble them"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

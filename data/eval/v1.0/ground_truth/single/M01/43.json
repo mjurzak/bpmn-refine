@@ -1,0 +1,140 @@
+{
+  "variant_id": "single/M01/43",
+  "seed": "43",
+  "operators": [
+    "M01"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_step",
+  "expected_findings": [
+    "missing_step"
+  ],
+  "expected_elements": [
+    "UserTask_1"
+  ],
+  "injection_site": [
+    "UserTask_1",
+    "SequenceFlow_26",
+    "ExclusiveGateway_2",
+    "ServiceTask_3"
+  ],
+  "defects": [
+    {
+      "operator": "M01",
+      "expected_finding": "missing_step",
+      "expected_elements": [
+        "UserTask_1"
+      ],
+      "injection_site": [
+        "UserTask_1",
+        "SequenceFlow_26",
+        "ExclusiveGateway_2",
+        "ServiceTask_3"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 8,
+            "text": "At the car service facility the mechanic enters the problems of your car for reference."
+          }
+        ],
+        "claim_text": "At the car service facility the mechanic enters the problems of your car for reference.",
+        "relation": {
+          "type": "exists_task",
+          "arguments": [
+            {
+              "role": "task",
+              "element_ref": "UserTask_1",
+              "label": "Mechanic check a car and enter problems"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "UserTask_1",
+      "cascade": true
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_26",
+      "source_ref": "ExclusiveGateway_2",
+      "target_ref": "ServiceTask_3",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_26"
+    },
+    {
+      "op": "add_node",
+      "id": "UserTask_1",
+      "node_type": "userTask",
+      "process_id": "Process_1",
+      "name": "Mechanic check a car and enter problems"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_6",
+      "source_ref": "ExclusiveGateway_2",
+      "target_ref": "UserTask_1",
+      "name": "yes",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_8",
+      "source_ref": "UserTask_1",
+      "target_ref": "ServiceTask_3",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 8,
+        "text": "At the car service facility the mechanic enters the problems of your car for reference."
+      }
+    ],
+    "claim_text": "At the car service facility the mechanic enters the problems of your car for reference.",
+    "relation": {
+      "type": "exists_task",
+      "arguments": [
+        {
+          "role": "task",
+          "element_ref": "UserTask_1",
+          "label": "Mechanic check a car and enter problems"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

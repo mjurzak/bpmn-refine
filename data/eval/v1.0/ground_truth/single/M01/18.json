@@ -1,0 +1,140 @@
+{
+  "variant_id": "single/M01/18",
+  "seed": "18",
+  "operators": [
+    "M01"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_step",
+  "expected_findings": [
+    "missing_step"
+  ],
+  "expected_elements": [
+    "Task_25"
+  ],
+  "injection_site": [
+    "Task_25",
+    "SequenceFlow_61",
+    "ParallelGateway_6",
+    "ParallelGateway_3"
+  ],
+  "defects": [
+    {
+      "operator": "M01",
+      "expected_finding": "missing_step",
+      "expected_elements": [
+        "Task_25"
+      ],
+      "injection_site": [
+        "Task_25",
+        "SequenceFlow_61",
+        "ParallelGateway_6",
+        "ParallelGateway_3"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 12,
+            "text": "The student obtains a student ID card and starts creating their study plan, which includes:"
+          }
+        ],
+        "claim_text": "The student obtains a student ID card and starts creating their study plan, which includes:",
+        "relation": {
+          "type": "exists_task",
+          "arguments": [
+            {
+              "role": "task",
+              "element_ref": "Task_25",
+              "label": "Obtain student ID card"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "Task_25",
+      "cascade": true
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_61",
+      "source_ref": "ParallelGateway_6",
+      "target_ref": "ParallelGateway_3",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_61"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_25",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Obtain student ID card"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_50",
+      "source_ref": "ParallelGateway_6",
+      "target_ref": "Task_25",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_29",
+      "source_ref": "Task_25",
+      "target_ref": "ParallelGateway_3",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 12,
+        "text": "The student obtains a student ID card and starts creating their study plan, which includes:"
+      }
+    ],
+    "claim_text": "The student obtains a student ID card and starts creating their study plan, which includes:",
+    "relation": {
+      "type": "exists_task",
+      "arguments": [
+        {
+          "role": "task",
+          "element_ref": "Task_25",
+          "label": "Obtain student ID card"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

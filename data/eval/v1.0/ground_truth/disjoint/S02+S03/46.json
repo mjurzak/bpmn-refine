@@ -1,0 +1,104 @@
+{
+  "variant_id": "disjoint/S02+S03/46",
+  "seed": "46",
+  "operators": [
+    "S02",
+    "S03"
+  ],
+  "class": "STRUCT",
+  "expected_finding": "R002 + R006",
+  "expected_findings": [
+    "R002",
+    "R006"
+  ],
+  "expected_elements": [
+    "Process_1",
+    "SequenceFlow_4"
+  ],
+  "injection_site": [
+    "EndEvent_1",
+    "SequenceFlow_4",
+    "target_ref",
+    "Missing_SequenceFlow_4_target_ref"
+  ],
+  "defects": [
+    {
+      "operator": "S02",
+      "expected_finding": "R002",
+      "expected_elements": [
+        "Process_1"
+      ],
+      "injection_site": [
+        "EndEvent_1"
+      ]
+    },
+    {
+      "operator": "S03",
+      "expected_finding": "R006",
+      "expected_elements": [
+        "SequenceFlow_4"
+      ],
+      "injection_site": [
+        "SequenceFlow_4",
+        "target_ref",
+        "Missing_SequenceFlow_4_target_ref"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "EndEvent_1",
+      "cascade": true
+    },
+    {
+      "op": "repoint_flow",
+      "flow_id": "SequenceFlow_4",
+      "endpoint": "target_ref",
+      "new_ref": "Missing_SequenceFlow_4_target_ref"
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_4"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_4",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "ManualTask_1",
+      "name": "Yes",
+      "condition_expression": null
+    },
+    {
+      "op": "add_node",
+      "id": "EndEvent_1",
+      "node_type": "endEvent",
+      "process_id": "Process_1",
+      "name": "Order was shipped"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_13",
+      "source_ref": "ManualTask_5",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R002",
+      "R006",
+      "R007"
+    ],
+    "woflan": []
+  },
+  "anchor": null
+}

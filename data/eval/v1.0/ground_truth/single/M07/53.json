@@ -1,0 +1,166 @@
+{
+  "variant_id": "single/M07/53",
+  "seed": "53",
+  "operators": [
+    "M07"
+  ],
+  "class": "SEM",
+  "expected_finding": "unwanted_action",
+  "expected_findings": [
+    "unwanted_action"
+  ],
+  "expected_elements": [
+    "SequenceFlow_6",
+    "Task_4",
+    "Task_5"
+  ],
+  "injection_site": [
+    "Task_5",
+    "SequenceFlow_6",
+    "SequenceFlow_9",
+    "Task_3",
+    "SequenceFlow_10",
+    "ExclusiveGateway_2"
+  ],
+  "defects": [
+    {
+      "operator": "M07",
+      "expected_finding": "unwanted_action",
+      "expected_elements": [
+        "SequenceFlow_6",
+        "Task_4",
+        "Task_5"
+      ],
+      "injection_site": [
+        "Task_5",
+        "SequenceFlow_6",
+        "SequenceFlow_9",
+        "Task_3",
+        "SequenceFlow_10",
+        "ExclusiveGateway_2"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 3,
+            "text": "The MSPO rejects the dismissal of the MSPN or The MSPO confirms the dismissal of the MSPN."
+          }
+        ],
+        "claim_text": "The MSPO rejects the dismissal of the MSPN or The MSPO confirms the dismissal of the MSPN.",
+        "relation": {
+          "type": "additional_action",
+          "arguments": [
+            {
+              "role": "context_flow",
+              "element_ref": "SequenceFlow_6",
+              "label": null
+            },
+            {
+              "role": "action_template",
+              "element_ref": "Task_4",
+              "label": "MSPO confirms the dismissal of the MSPN"
+            }
+          ],
+          "condition_text": "The MSPO rejects the dismissal of the MSPN",
+          "outcome_text": "The MSPO confirms the dismissal of the MSPN"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "add_node",
+      "id": "Task_5",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "MSPO confirms the dismissal of the MSPN"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_6"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_9",
+      "source_ref": "Task_3",
+      "target_ref": "Task_5",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_10",
+      "source_ref": "Task_5",
+      "target_ref": "ExclusiveGateway_2",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_10"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_9"
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_5",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_6",
+      "source_ref": "Task_3",
+      "target_ref": "ExclusiveGateway_2",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 3,
+        "text": "The MSPO rejects the dismissal of the MSPN or The MSPO confirms the dismissal of the MSPN."
+      }
+    ],
+    "claim_text": "The MSPO rejects the dismissal of the MSPN or The MSPO confirms the dismissal of the MSPN.",
+    "relation": {
+      "type": "additional_action",
+      "arguments": [
+        {
+          "role": "context_flow",
+          "element_ref": "SequenceFlow_6",
+          "label": null
+        },
+        {
+          "role": "action_template",
+          "element_ref": "Task_4",
+          "label": "MSPO confirms the dismissal of the MSPN"
+        }
+      ],
+      "condition_text": "The MSPO rejects the dismissal of the MSPN",
+      "outcome_text": "The MSPO confirms the dismissal of the MSPN"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

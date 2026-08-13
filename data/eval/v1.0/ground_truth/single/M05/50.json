@@ -1,0 +1,121 @@
+{
+  "variant_id": "single/M05/50",
+  "seed": "50",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "Task_3",
+    "Task_4"
+  ],
+  "injection_site": [
+    "Task_4"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "Task_3",
+        "Task_4"
+      ],
+      "injection_site": [
+        "Task_4"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 2,
+            "text": "The claims officer then writes a settlement recommendation."
+          },
+          {
+            "line": 3,
+            "text": "This recommendation is then checked by a senior claims officer who may mark the claim as OK or Not OK."
+          }
+        ],
+        "claim_text": "The claims officer then writes a settlement recommendation.",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "Task_3",
+              "label": "Claims officer writes a settlement recommendation"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "Task_4",
+              "label": "Recommendation is checked by a senior claims officer"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "Task_4",
+      "new_name": "Issue settlement recommendation"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "Task_4",
+      "new_name": "Recommendation is checked by a senior claims officer"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 2,
+        "text": "The claims officer then writes a settlement recommendation."
+      },
+      {
+        "line": 3,
+        "text": "This recommendation is then checked by a senior claims officer who may mark the claim as OK or Not OK."
+      }
+    ],
+    "claim_text": "The claims officer then writes a settlement recommendation.",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "Task_3",
+          "label": "Claims officer writes a settlement recommendation"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "Task_4",
+          "label": "Recommendation is checked by a senior claims officer"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

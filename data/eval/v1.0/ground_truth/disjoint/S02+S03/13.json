@@ -1,0 +1,104 @@
+{
+  "variant_id": "disjoint/S02+S03/13",
+  "seed": "13",
+  "operators": [
+    "S02",
+    "S03"
+  ],
+  "class": "STRUCT",
+  "expected_finding": "R002 + R005",
+  "expected_findings": [
+    "R002",
+    "R005"
+  ],
+  "expected_elements": [
+    "Process_1",
+    "SequenceFlow_10"
+  ],
+  "injection_site": [
+    "EndEvent_1",
+    "SequenceFlow_10",
+    "source_ref",
+    "Missing_SequenceFlow_10_source_ref"
+  ],
+  "defects": [
+    {
+      "operator": "S02",
+      "expected_finding": "R002",
+      "expected_elements": [
+        "Process_1"
+      ],
+      "injection_site": [
+        "EndEvent_1"
+      ]
+    },
+    {
+      "operator": "S03",
+      "expected_finding": "R005",
+      "expected_elements": [
+        "SequenceFlow_10"
+      ],
+      "injection_site": [
+        "SequenceFlow_10",
+        "source_ref",
+        "Missing_SequenceFlow_10_source_ref"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "EndEvent_1",
+      "cascade": true
+    },
+    {
+      "op": "repoint_flow",
+      "flow_id": "SequenceFlow_10",
+      "endpoint": "source_ref",
+      "new_ref": "Missing_SequenceFlow_10_source_ref"
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_10"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_10",
+      "source_ref": "Task_9",
+      "target_ref": "ExclusiveGateway_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_node",
+      "id": "EndEvent_1",
+      "node_type": "endEvent",
+      "process_id": "Process_1",
+      "name": "end"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_5",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R002",
+      "R005",
+      "R007"
+    ],
+    "woflan": []
+  },
+  "anchor": null
+}

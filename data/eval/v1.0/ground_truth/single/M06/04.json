@@ -1,0 +1,152 @@
+{
+  "variant_id": "single/M06/04",
+  "seed": "04",
+  "operators": [
+    "M06"
+  ],
+  "class": "SEM",
+  "expected_finding": "improper_termination",
+  "expected_findings": [
+    "improper_termination"
+  ],
+  "expected_elements": [
+    "Task_6"
+  ],
+  "injection_site": [
+    "SequenceFlow_1",
+    "SequenceFlow_13",
+    "Task_6",
+    "SequenceFlow_25",
+    "ParallelGateway_5",
+    "ParallelGateway_2"
+  ],
+  "defects": [
+    {
+      "operator": "M06",
+      "expected_finding": "improper_termination",
+      "expected_elements": [
+        "Task_6"
+      ],
+      "injection_site": [
+        "SequenceFlow_1",
+        "SequenceFlow_13",
+        "Task_6",
+        "SequenceFlow_25",
+        "ParallelGateway_5",
+        "ParallelGateway_2"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 5,
+            "text": "The process concludes when the campaign period ends, and performance is analyzed for future optimization."
+          }
+        ],
+        "claim_text": "performance is analyzed for future optimization",
+        "relation": {
+          "type": "reaches",
+          "arguments": [
+            {
+              "role": "outcome",
+              "element_ref": "Task_6",
+              "label": "Analyze performance for future optimization"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": "performance is analyzed for future optimization"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_1"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_13"
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_6",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_25",
+      "source_ref": "ParallelGateway_5",
+      "target_ref": "ParallelGateway_2",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_25"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_6",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Analyze performance for future optimization"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_1",
+      "source_ref": "ParallelGateway_5",
+      "target_ref": "Task_6",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_13",
+      "source_ref": "Task_6",
+      "target_ref": "ParallelGateway_2",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 5,
+        "text": "The process concludes when the campaign period ends, and performance is analyzed for future optimization."
+      }
+    ],
+    "claim_text": "performance is analyzed for future optimization",
+    "relation": {
+      "type": "reaches",
+      "arguments": [
+        {
+          "role": "outcome",
+          "element_ref": "Task_6",
+          "label": "Analyze performance for future optimization"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": "performance is analyzed for future optimization"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

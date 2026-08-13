@@ -1,0 +1,382 @@
+{
+  "variant_id": "single/M04/40",
+  "seed": "40",
+  "operators": [
+    "M04"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_exception_handling",
+  "expected_findings": [
+    "missing_exception_handling"
+  ],
+  "expected_elements": [
+    "ExclusiveGateway_1",
+    "ServiceTask_1",
+    "ServiceTask_2",
+    "ExclusiveGateway_3"
+  ],
+  "injection_site": [
+    "ServiceTask_1",
+    "ServiceTask_2",
+    "ExclusiveGateway_3",
+    "ManualTask_4",
+    "ExclusiveGateway_4",
+    "ExclusiveGateway_6",
+    "ManualTask_2",
+    "ExclusiveGateway_5",
+    "ManualTask_3",
+    "ManualTask_1"
+  ],
+  "defects": [
+    {
+      "operator": "M04",
+      "expected_finding": "missing_exception_handling",
+      "expected_elements": [
+        "ExclusiveGateway_1",
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ExclusiveGateway_3"
+      ],
+      "injection_site": [
+        "ServiceTask_1",
+        "ServiceTask_2",
+        "ExclusiveGateway_3",
+        "ManualTask_4",
+        "ExclusiveGateway_4",
+        "ExclusiveGateway_6",
+        "ManualTask_2",
+        "ExclusiveGateway_5",
+        "ManualTask_3",
+        "ManualTask_1"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 4,
+            "text": "If the OEE falls below a certain value/percentage, stop the machine and send an email to an engineer."
+          }
+        ],
+        "claim_text": "If the OEE falls below a certain value/percentage, stop the machine and send an email to an engineer.",
+        "relation": {
+          "type": "exists_path",
+          "arguments": [
+            {
+              "role": "path_entry",
+              "element_ref": "ExclusiveGateway_1",
+              "label": "OEE below 50%?"
+            },
+            {
+              "role": "path_step",
+              "element_ref": "ServiceTask_1",
+              "label": "Stop the machine"
+            },
+            {
+              "role": "path_step",
+              "element_ref": "ServiceTask_2",
+              "label": "Send email to an engineer"
+            },
+            {
+              "role": "path_exit",
+              "element_ref": "ExclusiveGateway_3",
+              "label": "Machine worth repairing?"
+            }
+          ],
+          "condition_text": "If the OEE falls below a certain value/percentage",
+          "outcome_text": "stop the machine and send an email to an engineer"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "ServiceTask_1",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "ServiceTask_2",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "ExclusiveGateway_3",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "ManualTask_4",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "ExclusiveGateway_4",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "ExclusiveGateway_6",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "ManualTask_2",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "ExclusiveGateway_5",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "ManualTask_3",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "ManualTask_1",
+      "cascade": true
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_node",
+      "id": "ServiceTask_1",
+      "node_type": "serviceTask",
+      "process_id": "Process_1",
+      "name": "Stop the machine"
+    },
+    {
+      "op": "add_node",
+      "id": "ServiceTask_2",
+      "node_type": "serviceTask",
+      "process_id": "Process_1",
+      "name": "Send email to an engineer"
+    },
+    {
+      "op": "add_node",
+      "id": "ExclusiveGateway_3",
+      "node_type": "exclusiveGateway",
+      "process_id": "Process_1",
+      "name": "Machine worth repairing?"
+    },
+    {
+      "op": "add_node",
+      "id": "ManualTask_4",
+      "node_type": "manualTask",
+      "process_id": "Process_1",
+      "name": "Disconnect the machine"
+    },
+    {
+      "op": "add_node",
+      "id": "ExclusiveGateway_4",
+      "node_type": "exclusiveGateway",
+      "process_id": "Process_1",
+      "name": null
+    },
+    {
+      "op": "add_node",
+      "id": "ExclusiveGateway_6",
+      "node_type": "exclusiveGateway",
+      "process_id": "Process_1",
+      "name": null
+    },
+    {
+      "op": "add_node",
+      "id": "ManualTask_2",
+      "node_type": "manualTask",
+      "process_id": "Process_1",
+      "name": "Repair the issue"
+    },
+    {
+      "op": "add_node",
+      "id": "ExclusiveGateway_5",
+      "node_type": "exclusiveGateway",
+      "process_id": "Process_1",
+      "name": "Remaining issues?"
+    },
+    {
+      "op": "add_node",
+      "id": "ManualTask_3",
+      "node_type": "manualTask",
+      "process_id": "Process_1",
+      "name": "Restart the machine"
+    },
+    {
+      "op": "add_node",
+      "id": "ManualTask_1",
+      "node_type": "manualTask",
+      "process_id": "Process_1",
+      "name": "Continue measuring"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_8",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "ServiceTask_1",
+      "name": "Yes",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_9",
+      "source_ref": "ServiceTask_1",
+      "target_ref": "ServiceTask_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_11",
+      "source_ref": "ServiceTask_2",
+      "target_ref": "ExclusiveGateway_3",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_16",
+      "source_ref": "ExclusiveGateway_3",
+      "target_ref": "ManualTask_4",
+      "name": "No",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_20",
+      "source_ref": "ExclusiveGateway_3",
+      "target_ref": "ExclusiveGateway_6",
+      "name": "Yes",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_18",
+      "source_ref": "ManualTask_4",
+      "target_ref": "ExclusiveGateway_4",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_17",
+      "source_ref": "ExclusiveGateway_4",
+      "target_ref": "ExclusiveGateway_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_19",
+      "source_ref": "ManualTask_1",
+      "target_ref": "ExclusiveGateway_4",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_23",
+      "source_ref": "ExclusiveGateway_5",
+      "target_ref": "ExclusiveGateway_6",
+      "name": "Yes",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_22",
+      "source_ref": "ExclusiveGateway_6",
+      "target_ref": "ManualTask_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_12",
+      "source_ref": "ManualTask_2",
+      "target_ref": "ExclusiveGateway_5",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_21",
+      "source_ref": "ExclusiveGateway_5",
+      "target_ref": "ManualTask_3",
+      "name": "No",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_13",
+      "source_ref": "ManualTask_3",
+      "target_ref": "ManualTask_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 4,
+        "text": "If the OEE falls below a certain value/percentage, stop the machine and send an email to an engineer."
+      }
+    ],
+    "claim_text": "If the OEE falls below a certain value/percentage, stop the machine and send an email to an engineer.",
+    "relation": {
+      "type": "exists_path",
+      "arguments": [
+        {
+          "role": "path_entry",
+          "element_ref": "ExclusiveGateway_1",
+          "label": "OEE below 50%?"
+        },
+        {
+          "role": "path_step",
+          "element_ref": "ServiceTask_1",
+          "label": "Stop the machine"
+        },
+        {
+          "role": "path_step",
+          "element_ref": "ServiceTask_2",
+          "label": "Send email to an engineer"
+        },
+        {
+          "role": "path_exit",
+          "element_ref": "ExclusiveGateway_3",
+          "label": "Machine worth repairing?"
+        }
+      ],
+      "condition_text": "If the OEE falls below a certain value/percentage",
+      "outcome_text": "stop the machine and send an email to an engineer"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

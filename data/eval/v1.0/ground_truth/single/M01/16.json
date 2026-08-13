@@ -1,0 +1,140 @@
+{
+  "variant_id": "single/M01/16",
+  "seed": "16",
+  "operators": [
+    "M01"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_step",
+  "expected_findings": [
+    "missing_step"
+  ],
+  "expected_elements": [
+    "Task_9"
+  ],
+  "injection_site": [
+    "Task_9",
+    "SequenceFlow_50",
+    "Task_18",
+    "ExclusiveGateway_2"
+  ],
+  "defects": [
+    {
+      "operator": "M01",
+      "expected_finding": "missing_step",
+      "expected_elements": [
+        "Task_9"
+      ],
+      "injection_site": [
+        "Task_9",
+        "SequenceFlow_50",
+        "Task_18",
+        "ExclusiveGateway_2"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 12,
+            "text": "After all risks are addressed, the audit team compiles the audit report."
+          }
+        ],
+        "claim_text": "the audit team compiles the audit report",
+        "relation": {
+          "type": "exists_task",
+          "arguments": [
+            {
+              "role": "task",
+              "element_ref": "Task_9",
+              "label": "Compile audit report"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "Task_9",
+      "cascade": true
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_50",
+      "source_ref": "Task_18",
+      "target_ref": "ExclusiveGateway_2",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_50"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_9",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Compile audit report"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_44",
+      "source_ref": "Task_18",
+      "target_ref": "Task_9",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_48",
+      "source_ref": "Task_9",
+      "target_ref": "ExclusiveGateway_2",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 12,
+        "text": "After all risks are addressed, the audit team compiles the audit report."
+      }
+    ],
+    "claim_text": "the audit team compiles the audit report",
+    "relation": {
+      "type": "exists_task",
+      "arguments": [
+        {
+          "role": "task",
+          "element_ref": "Task_9",
+          "label": "Compile audit report"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

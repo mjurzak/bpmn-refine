@@ -1,0 +1,121 @@
+{
+  "variant_id": "single/M05/33",
+  "seed": "33",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "ManualTask_1",
+    "UserTask_5"
+  ],
+  "injection_site": [
+    "UserTask_5"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "ManualTask_1",
+        "UserTask_5"
+      ],
+      "injection_site": [
+        "UserTask_5"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 7,
+            "text": "If it's under 100 grams, you put it on your shopping list."
+          },
+          {
+            "line": 8,
+            "text": "If you do not have the color at home, you order it."
+          }
+        ],
+        "claim_text": "If it's under 100 grams, you put it on your shopping list.",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "ManualTask_1",
+              "label": "Put it on shopping list"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "UserTask_5",
+              "label": "Order color"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "UserTask_5",
+      "new_name": "Prepare printer gcode"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "UserTask_5",
+      "new_name": "Order color"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 7,
+        "text": "If it's under 100 grams, you put it on your shopping list."
+      },
+      {
+        "line": 8,
+        "text": "If you do not have the color at home, you order it."
+      }
+    ],
+    "claim_text": "If it's under 100 grams, you put it on your shopping list.",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "ManualTask_1",
+          "label": "Put it on shopping list"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "UserTask_5",
+          "label": "Order color"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

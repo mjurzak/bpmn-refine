@@ -1,0 +1,140 @@
+{
+  "variant_id": "single/M01/33",
+  "seed": "33",
+  "operators": [
+    "M01"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_step",
+  "expected_findings": [
+    "missing_step"
+  ],
+  "expected_elements": [
+    "UserTask_3"
+  ],
+  "injection_site": [
+    "UserTask_3",
+    "SequenceFlow_30",
+    "ExclusiveGateway_1",
+    "ExclusiveGateway_3"
+  ],
+  "defects": [
+    {
+      "operator": "M01",
+      "expected_finding": "missing_step",
+      "expected_elements": [
+        "UserTask_3"
+      ],
+      "injection_site": [
+        "UserTask_3",
+        "SequenceFlow_30",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_3"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 5,
+            "text": "After that, you choose a plastic color you want to use for 3D printing."
+          }
+        ],
+        "claim_text": "After that, you choose a plastic color you want to use for 3D printing.",
+        "relation": {
+          "type": "exists_task",
+          "arguments": [
+            {
+              "role": "task",
+              "element_ref": "UserTask_3",
+              "label": "Choose the color"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "UserTask_3",
+      "cascade": true
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_30",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "ExclusiveGateway_3",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_30"
+    },
+    {
+      "op": "add_node",
+      "id": "UserTask_3",
+      "node_type": "userTask",
+      "process_id": "Process_1",
+      "name": "Choose the color"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_6",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "UserTask_3",
+      "name": "Yes",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_7",
+      "source_ref": "UserTask_3",
+      "target_ref": "ExclusiveGateway_3",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 5,
+        "text": "After that, you choose a plastic color you want to use for 3D printing."
+      }
+    ],
+    "claim_text": "After that, you choose a plastic color you want to use for 3D printing.",
+    "relation": {
+      "type": "exists_task",
+      "arguments": [
+        {
+          "role": "task",
+          "element_ref": "UserTask_3",
+          "label": "Choose the color"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

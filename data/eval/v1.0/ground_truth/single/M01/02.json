@@ -1,0 +1,140 @@
+{
+  "variant_id": "single/M01/02",
+  "seed": "02",
+  "operators": [
+    "M01"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_step",
+  "expected_findings": [
+    "missing_step"
+  ],
+  "expected_elements": [
+    "Task_12"
+  ],
+  "injection_site": [
+    "Task_12",
+    "SequenceFlow_32",
+    "Task_13",
+    "Task_7"
+  ],
+  "defects": [
+    {
+      "operator": "M01",
+      "expected_finding": "missing_step",
+      "expected_elements": [
+        "Task_12"
+      ],
+      "injection_site": [
+        "Task_12",
+        "SequenceFlow_32",
+        "Task_13",
+        "Task_7"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 2,
+            "text": "HR creates a job description and posts it on job boards."
+          }
+        ],
+        "claim_text": "posts it on job boards",
+        "relation": {
+          "type": "exists_task",
+          "arguments": [
+            {
+              "role": "task",
+              "element_ref": "Task_12",
+              "label": "Post job description"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "Task_12",
+      "cascade": true
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_32",
+      "source_ref": "Task_13",
+      "target_ref": "Task_7",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_32"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_12",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Post job description"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_22",
+      "source_ref": "Task_13",
+      "target_ref": "Task_12",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_1",
+      "source_ref": "Task_12",
+      "target_ref": "Task_7",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 2,
+        "text": "HR creates a job description and posts it on job boards."
+      }
+    ],
+    "claim_text": "posts it on job boards",
+    "relation": {
+      "type": "exists_task",
+      "arguments": [
+        {
+          "role": "task",
+          "element_ref": "Task_12",
+          "label": "Post job description"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "variant_id": "single/M03/55",
+  "seed": "55",
+  "operators": [
+    "M03"
+  ],
+  "class": "SEM",
+  "expected_finding": "unreachable_branch",
+  "expected_findings": [
+    "unreachable_branch"
+  ],
+  "expected_elements": [
+    "ExclusiveGateway_6",
+    "Task_18",
+    "SequenceFlow_36"
+  ],
+  "injection_site": [
+    "SequenceFlow_36"
+  ],
+  "defects": [
+    {
+      "operator": "M03",
+      "expected_finding": "unreachable_branch",
+      "expected_elements": [
+        "ExclusiveGateway_6",
+        "Task_18",
+        "SequenceFlow_36"
+      ],
+      "injection_site": [
+        "SequenceFlow_36"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 10,
+            "text": "If the blood return is correct, the probe is dropped and the syringe is removed."
+          }
+        ],
+        "claim_text": "the blood return is correct",
+        "relation": {
+          "type": "branch_condition",
+          "arguments": [
+            {
+              "role": "condition_gateway",
+              "element_ref": "ExclusiveGateway_6",
+              "label": "Blood return correct ?"
+            },
+            {
+              "role": "branch_target",
+              "element_ref": "Task_18",
+              "label": "Drop probe"
+            },
+            {
+              "role": "branch_flow",
+              "element_ref": "SequenceFlow_36",
+              "label": "Yes"
+            }
+          ],
+          "condition_text": "the blood return is correct",
+          "outcome_text": "the probe is dropped"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "set_condition",
+      "flow_id": "SequenceFlow_36",
+      "condition_expression": "${bloodReturnIncorrect}"
+    }
+  ],
+  "repair": [
+    {
+      "op": "set_condition",
+      "flow_id": "SequenceFlow_36",
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 10,
+        "text": "If the blood return is correct, the probe is dropped and the syringe is removed."
+      }
+    ],
+    "claim_text": "the blood return is correct",
+    "relation": {
+      "type": "branch_condition",
+      "arguments": [
+        {
+          "role": "condition_gateway",
+          "element_ref": "ExclusiveGateway_6",
+          "label": "Blood return correct ?"
+        },
+        {
+          "role": "branch_target",
+          "element_ref": "Task_18",
+          "label": "Drop probe"
+        },
+        {
+          "role": "branch_flow",
+          "element_ref": "SequenceFlow_36",
+          "label": "Yes"
+        }
+      ],
+      "condition_text": "the blood return is correct",
+      "outcome_text": "the probe is dropped"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

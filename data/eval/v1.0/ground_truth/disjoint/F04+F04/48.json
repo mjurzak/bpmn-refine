@@ -1,0 +1,95 @@
+{
+  "variant_id": "disjoint/F04+F04/48",
+  "seed": "48",
+  "operators": [
+    "F04",
+    "F04"
+  ],
+  "class": "SOUND",
+  "expected_finding": "R007 + R007",
+  "expected_findings": [
+    "R007",
+    "R007"
+  ],
+  "expected_elements": [
+    "ExclusiveGateway_3",
+    "ExclusiveGateway_2"
+  ],
+  "injection_site": [
+    "SequenceFlow_15",
+    "ServiceTask_3",
+    "ExclusiveGateway_3",
+    "SequenceFlow_19",
+    "UserTask_1",
+    "ExclusiveGateway_2"
+  ],
+  "defects": [
+    {
+      "operator": "F04",
+      "expected_finding": "R007",
+      "expected_elements": [
+        "ExclusiveGateway_3"
+      ],
+      "injection_site": [
+        "SequenceFlow_15",
+        "ServiceTask_3",
+        "ExclusiveGateway_3"
+      ]
+    },
+    {
+      "operator": "F04",
+      "expected_finding": "R007",
+      "expected_elements": [
+        "ExclusiveGateway_2"
+      ],
+      "injection_site": [
+        "SequenceFlow_19",
+        "UserTask_1",
+        "ExclusiveGateway_2"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_15"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_19"
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_19",
+      "source_ref": "UserTask_1",
+      "target_ref": "ExclusiveGateway_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_15",
+      "source_ref": "ServiceTask_3",
+      "target_ref": "ExclusiveGateway_3",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R007",
+      "R008"
+    ],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

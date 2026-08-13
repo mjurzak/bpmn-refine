@@ -1,0 +1,256 @@
+{
+  "variant_id": "disjoint/M05+M07/39",
+  "seed": "39",
+  "operators": [
+    "M05",
+    "M07"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming + unwanted_action",
+  "expected_findings": [
+    "inconsistent_naming",
+    "unwanted_action"
+  ],
+  "expected_elements": [
+    "ServiceTask_1",
+    "ServiceTask_2",
+    "SequenceFlow_39",
+    "ManualTask_2",
+    "Task_1"
+  ],
+  "injection_site": [
+    "ServiceTask_2",
+    "Task_1",
+    "SequenceFlow_39",
+    "SequenceFlow_45",
+    "ExclusiveGateway_1",
+    "SequenceFlow_46",
+    "ExclusiveGateway_5"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "ServiceTask_1",
+        "ServiceTask_2"
+      ],
+      "injection_site": [
+        "ServiceTask_2"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 5,
+            "text": "The tool gives you the list of materials, the list of tools, and (for each part) several ordering choices."
+          }
+        ],
+        "claim_text": "The tool gives you the list of materials, the list of tools, and (for each part) several ordering choices.",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "ServiceTask_1",
+              "label": "List required materials"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "ServiceTask_2",
+              "label": "List required tools"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    },
+    {
+      "operator": "M07",
+      "expected_finding": "unwanted_action",
+      "expected_elements": [
+        "SequenceFlow_39",
+        "ManualTask_2",
+        "Task_1"
+      ],
+      "injection_site": [
+        "Task_1",
+        "SequenceFlow_39",
+        "SequenceFlow_45",
+        "ExclusiveGateway_1",
+        "SequenceFlow_46",
+        "ExclusiveGateway_5"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 10,
+            "text": "If it worked, send a review and/or video of you fixing it."
+          },
+          {
+            "line": 11,
+            "text": "If it hasn't worked out, you can send it to an expert."
+          }
+        ],
+        "claim_text": "If it hasn't worked out, you can send it to an expert.",
+        "relation": {
+          "type": "additional_action",
+          "arguments": [
+            {
+              "role": "context_flow",
+              "element_ref": "SequenceFlow_39",
+              "label": "Yes"
+            },
+            {
+              "role": "action_template",
+              "element_ref": "ManualTask_2",
+              "label": "Send device to an expert"
+            }
+          ],
+          "condition_text": "If it hasn't worked out",
+          "outcome_text": "you can send it to an expert"
+        }
+      }
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "ServiceTask_2",
+      "new_name": "Order repair parts"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_1",
+      "node_type": "manualTask",
+      "process_id": "Process_1",
+      "name": "Send device to an expert"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_39"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_45",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "Task_1",
+      "name": "Yes",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_46",
+      "source_ref": "Task_1",
+      "target_ref": "ExclusiveGateway_5",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_46"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_45"
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_1",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_39",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "ExclusiveGateway_5",
+      "name": "Yes",
+      "condition_expression": null
+    },
+    {
+      "op": "rename_node",
+      "id": "ServiceTask_2",
+      "new_name": "List required tools"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": [
+    {
+      "description_lines": [
+        {
+          "line": 5,
+          "text": "The tool gives you the list of materials, the list of tools, and (for each part) several ordering choices."
+        }
+      ],
+      "claim_text": "The tool gives you the list of materials, the list of tools, and (for each part) several ordering choices.",
+      "relation": {
+        "type": "distinct_labels",
+        "arguments": [
+          {
+            "role": "first_task",
+            "element_ref": "ServiceTask_1",
+            "label": "List required materials"
+          },
+          {
+            "role": "second_task",
+            "element_ref": "ServiceTask_2",
+            "label": "List required tools"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      }
+    },
+    {
+      "description_lines": [
+        {
+          "line": 10,
+          "text": "If it worked, send a review and/or video of you fixing it."
+        },
+        {
+          "line": 11,
+          "text": "If it hasn't worked out, you can send it to an expert."
+        }
+      ],
+      "claim_text": "If it hasn't worked out, you can send it to an expert.",
+      "relation": {
+        "type": "additional_action",
+        "arguments": [
+          {
+            "role": "context_flow",
+            "element_ref": "SequenceFlow_39",
+            "label": "Yes"
+          },
+          {
+            "role": "action_template",
+            "element_ref": "ManualTask_2",
+            "label": "Send device to an expert"
+          }
+        ],
+        "condition_text": "If it hasn't worked out",
+        "outcome_text": "you can send it to an expert"
+      }
+    }
+  ],
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "commutative": true,
+    "components_preserved": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

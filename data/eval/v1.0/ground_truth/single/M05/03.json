@@ -1,0 +1,113 @@
+{
+  "variant_id": "single/M05/03",
+  "seed": "03",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "Task_9",
+    "Task_7"
+  ],
+  "injection_site": [
+    "Task_7"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "Task_9",
+        "Task_7"
+      ],
+      "injection_site": [
+        "Task_7"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 2,
+            "text": "When stock reaches a predefined threshold, an automated alert or manual check signals the need to reorder."
+          }
+        ],
+        "claim_text": "an automated alert or manual check",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "Task_9",
+              "label": "Send an automated alert"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "Task_7",
+              "label": "Check current inventory level"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "Task_7",
+      "new_name": "Perform automated stock alert"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "Task_7",
+      "new_name": "Check current inventory level"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 2,
+        "text": "When stock reaches a predefined threshold, an automated alert or manual check signals the need to reorder."
+      }
+    ],
+    "claim_text": "an automated alert or manual check",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "Task_9",
+          "label": "Send an automated alert"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "Task_7",
+          "label": "Check current inventory level"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "variant_id": "single/M07/40",
+  "seed": "40",
+  "operators": [
+    "M07"
+  ],
+  "class": "SEM",
+  "expected_finding": "unwanted_action",
+  "expected_findings": [
+    "unwanted_action"
+  ],
+  "expected_elements": [
+    "SequenceFlow_24",
+    "ManualTask_1",
+    "Task_1"
+  ],
+  "injection_site": [
+    "Task_1",
+    "SequenceFlow_24",
+    "SequenceFlow_25",
+    "ExclusiveGateway_1",
+    "SequenceFlow_26",
+    "ExclusiveGateway_2"
+  ],
+  "defects": [
+    {
+      "operator": "M07",
+      "expected_finding": "unwanted_action",
+      "expected_elements": [
+        "SequenceFlow_24",
+        "ManualTask_1",
+        "Task_1"
+      ],
+      "injection_site": [
+        "Task_1",
+        "SequenceFlow_24",
+        "SequenceFlow_25",
+        "ExclusiveGateway_1",
+        "SequenceFlow_26",
+        "ExclusiveGateway_2"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 5,
+            "text": "When the machine is restarted, continue measuring."
+          },
+          {
+            "line": 6,
+            "text": "When the machine is disconnected, stop the process."
+          }
+        ],
+        "claim_text": "When the machine is disconnected, stop the process.",
+        "relation": {
+          "type": "additional_action",
+          "arguments": [
+            {
+              "role": "context_flow",
+              "element_ref": "SequenceFlow_24",
+              "label": "No"
+            },
+            {
+              "role": "action_template",
+              "element_ref": "ManualTask_1",
+              "label": "Continue measuring"
+            }
+          ],
+          "condition_text": "the machine is disconnected",
+          "outcome_text": "stop the process"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "add_node",
+      "id": "Task_1",
+      "node_type": "manualTask",
+      "process_id": "Process_1",
+      "name": "Continue measuring"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_24"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_25",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "Task_1",
+      "name": "No",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_26",
+      "source_ref": "Task_1",
+      "target_ref": "ExclusiveGateway_2",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_26"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_25"
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_1",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_24",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "ExclusiveGateway_2",
+      "name": "No",
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 5,
+        "text": "When the machine is restarted, continue measuring."
+      },
+      {
+        "line": 6,
+        "text": "When the machine is disconnected, stop the process."
+      }
+    ],
+    "claim_text": "When the machine is disconnected, stop the process.",
+    "relation": {
+      "type": "additional_action",
+      "arguments": [
+        {
+          "role": "context_flow",
+          "element_ref": "SequenceFlow_24",
+          "label": "No"
+        },
+        {
+          "role": "action_template",
+          "element_ref": "ManualTask_1",
+          "label": "Continue measuring"
+        }
+      ],
+      "condition_text": "the machine is disconnected",
+      "outcome_text": "stop the process"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

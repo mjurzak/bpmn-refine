@@ -1,0 +1,172 @@
+{
+  "variant_id": "single/M04/09",
+  "seed": "09",
+  "operators": [
+    "M04"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_exception_handling",
+  "expected_findings": [
+    "missing_exception_handling"
+  ],
+  "expected_elements": [
+    "Task_5",
+    "Task_6",
+    "Task_3"
+  ],
+  "injection_site": [
+    "Task_5",
+    "SequenceFlow_28",
+    "ExclusiveGateway_1",
+    "ExclusiveGateway_4"
+  ],
+  "defects": [
+    {
+      "operator": "M04",
+      "expected_finding": "missing_exception_handling",
+      "expected_elements": [
+        "Task_5",
+        "Task_6",
+        "Task_3"
+      ],
+      "injection_site": [
+        "Task_5",
+        "SequenceFlow_28",
+        "ExclusiveGateway_1",
+        "ExclusiveGateway_4"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 5,
+            "text": "Feedback from the testing phase is collected, and the prototype may be refined accordingly."
+          },
+          {
+            "line": 6,
+            "text": "If a refinement is needed, then the testing phase is reinitiated."
+          }
+        ],
+        "claim_text": "If a refinement is needed, then the testing phase is reinitiated",
+        "relation": {
+          "type": "exists_path",
+          "arguments": [
+            {
+              "role": "path_entry",
+              "element_ref": "Task_5",
+              "label": "Refine prototype"
+            },
+            {
+              "role": "path_step",
+              "element_ref": "Task_6",
+              "label": "Test functionality"
+            },
+            {
+              "role": "path_exit",
+              "element_ref": "Task_3",
+              "label": "Collect feedback from testing phase"
+            }
+          ],
+          "condition_text": "If a refinement is needed",
+          "outcome_text": "the testing phase is reinitiated"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "Task_5",
+      "cascade": true
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_28",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "ExclusiveGateway_4",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_28"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_5",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Refine prototype"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_15",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "Task_5",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_4",
+      "source_ref": "Task_5",
+      "target_ref": "ExclusiveGateway_4",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 5,
+        "text": "Feedback from the testing phase is collected, and the prototype may be refined accordingly."
+      },
+      {
+        "line": 6,
+        "text": "If a refinement is needed, then the testing phase is reinitiated."
+      }
+    ],
+    "claim_text": "If a refinement is needed, then the testing phase is reinitiated",
+    "relation": {
+      "type": "exists_path",
+      "arguments": [
+        {
+          "role": "path_entry",
+          "element_ref": "Task_5",
+          "label": "Refine prototype"
+        },
+        {
+          "role": "path_step",
+          "element_ref": "Task_6",
+          "label": "Test functionality"
+        },
+        {
+          "role": "path_exit",
+          "element_ref": "Task_3",
+          "label": "Collect feedback from testing phase"
+        }
+      ],
+      "condition_text": "If a refinement is needed",
+      "outcome_text": "the testing phase is reinitiated"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

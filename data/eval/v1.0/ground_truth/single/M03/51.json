@@ -1,0 +1,125 @@
+{
+  "variant_id": "single/M03/51",
+  "seed": "51",
+  "operators": [
+    "M03"
+  ],
+  "class": "SEM",
+  "expected_finding": "unreachable_branch",
+  "expected_findings": [
+    "unreachable_branch"
+  ],
+  "expected_elements": [
+    "ExclusiveGateway_1",
+    "Task_6",
+    "SequenceFlow_10"
+  ],
+  "injection_site": [
+    "SequenceFlow_10"
+  ],
+  "defects": [
+    {
+      "operator": "M03",
+      "expected_finding": "unreachable_branch",
+      "expected_elements": [
+        "ExclusiveGateway_1",
+        "Task_6",
+        "SequenceFlow_10"
+      ],
+      "injection_site": [
+        "SequenceFlow_10"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 5,
+            "text": "If the request is approved a notification is generated to the Human Resources Representative, who must complete the respective management procedures."
+          }
+        ],
+        "claim_text": "the request is approved",
+        "relation": {
+          "type": "branch_condition",
+          "arguments": [
+            {
+              "role": "condition_gateway",
+              "element_ref": "ExclusiveGateway_1",
+              "label": null
+            },
+            {
+              "role": "branch_target",
+              "element_ref": "Task_6",
+              "label": "Notification is generated to the HR Representative"
+            },
+            {
+              "role": "branch_flow",
+              "element_ref": "SequenceFlow_10",
+              "label": "approved"
+            }
+          ],
+          "condition_text": "the request is approved",
+          "outcome_text": "a notification is generated to the Human Resources Representative"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "set_condition",
+      "flow_id": "SequenceFlow_10",
+      "condition_expression": "${requestRejected}"
+    }
+  ],
+  "repair": [
+    {
+      "op": "set_condition",
+      "flow_id": "SequenceFlow_10",
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 5,
+        "text": "If the request is approved a notification is generated to the Human Resources Representative, who must complete the respective management procedures."
+      }
+    ],
+    "claim_text": "the request is approved",
+    "relation": {
+      "type": "branch_condition",
+      "arguments": [
+        {
+          "role": "condition_gateway",
+          "element_ref": "ExclusiveGateway_1",
+          "label": null
+        },
+        {
+          "role": "branch_target",
+          "element_ref": "Task_6",
+          "label": "Notification is generated to the HR Representative"
+        },
+        {
+          "role": "branch_flow",
+          "element_ref": "SequenceFlow_10",
+          "label": "approved"
+        }
+      ],
+      "condition_text": "the request is approved",
+      "outcome_text": "a notification is generated to the Human Resources Representative"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

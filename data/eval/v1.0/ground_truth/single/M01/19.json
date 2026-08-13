@@ -1,0 +1,140 @@
+{
+  "variant_id": "single/M01/19",
+  "seed": "19",
+  "operators": [
+    "M01"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_step",
+  "expected_findings": [
+    "missing_step"
+  ],
+  "expected_elements": [
+    "Task_6"
+  ],
+  "injection_site": [
+    "Task_6",
+    "SequenceFlow_22",
+    "StartEvent_1",
+    "ParallelGateway_4"
+  ],
+  "defects": [
+    {
+      "operator": "M01",
+      "expected_finding": "missing_step",
+      "expected_elements": [
+        "Task_6"
+      ],
+      "injection_site": [
+        "Task_6",
+        "SequenceFlow_22",
+        "StartEvent_1",
+        "ParallelGateway_4"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 2,
+            "text": "The user starts an order by logging in to their account."
+          }
+        ],
+        "claim_text": "The user starts an order by logging in to their account.",
+        "relation": {
+          "type": "exists_task",
+          "arguments": [
+            {
+              "role": "task",
+              "element_ref": "Task_6",
+              "label": "Login"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "Task_6",
+      "cascade": true
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_22",
+      "source_ref": "StartEvent_1",
+      "target_ref": "ParallelGateway_4",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_22"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_6",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Login"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_2",
+      "source_ref": "StartEvent_1",
+      "target_ref": "Task_6",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_14",
+      "source_ref": "Task_6",
+      "target_ref": "ParallelGateway_4",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 2,
+        "text": "The user starts an order by logging in to their account."
+      }
+    ],
+    "claim_text": "The user starts an order by logging in to their account.",
+    "relation": {
+      "type": "exists_task",
+      "arguments": [
+        {
+          "role": "task",
+          "element_ref": "Task_6",
+          "label": "Login"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

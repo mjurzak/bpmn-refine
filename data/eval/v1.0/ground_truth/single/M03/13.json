@@ -1,0 +1,125 @@
+{
+  "variant_id": "single/M03/13",
+  "seed": "13",
+  "operators": [
+    "M03"
+  ],
+  "class": "SEM",
+  "expected_finding": "unreachable_branch",
+  "expected_findings": [
+    "unreachable_branch"
+  ],
+  "expected_elements": [
+    "ExclusiveGateway_2",
+    "Task_2",
+    "SequenceFlow_7"
+  ],
+  "injection_site": [
+    "SequenceFlow_7"
+  ],
+  "defects": [
+    {
+      "operator": "M03",
+      "expected_finding": "unreachable_branch",
+      "expected_elements": [
+        "ExclusiveGateway_2",
+        "Task_2",
+        "SequenceFlow_7"
+      ],
+      "injection_site": [
+        "SequenceFlow_7"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 4,
+            "text": "If a refund is approved, the financial team processes the reimbursement."
+          }
+        ],
+        "claim_text": "the financial team processes the reimbursement",
+        "relation": {
+          "type": "branch_condition",
+          "arguments": [
+            {
+              "role": "condition_gateway",
+              "element_ref": "ExclusiveGateway_2",
+              "label": null
+            },
+            {
+              "role": "branch_target",
+              "element_ref": "Task_2",
+              "label": "Approve and notify customer"
+            },
+            {
+              "role": "branch_flow",
+              "element_ref": "SequenceFlow_7",
+              "label": null
+            }
+          ],
+          "condition_text": "If a refund is approved",
+          "outcome_text": "the financial team processes the reimbursement"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "set_condition",
+      "flow_id": "SequenceFlow_7",
+      "condition_expression": "${refundNotApproved}"
+    }
+  ],
+  "repair": [
+    {
+      "op": "set_condition",
+      "flow_id": "SequenceFlow_7",
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 4,
+        "text": "If a refund is approved, the financial team processes the reimbursement."
+      }
+    ],
+    "claim_text": "the financial team processes the reimbursement",
+    "relation": {
+      "type": "branch_condition",
+      "arguments": [
+        {
+          "role": "condition_gateway",
+          "element_ref": "ExclusiveGateway_2",
+          "label": null
+        },
+        {
+          "role": "branch_target",
+          "element_ref": "Task_2",
+          "label": "Approve and notify customer"
+        },
+        {
+          "role": "branch_flow",
+          "element_ref": "SequenceFlow_7",
+          "label": null
+        }
+      ],
+      "condition_text": "If a refund is approved",
+      "outcome_text": "the financial team processes the reimbursement"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

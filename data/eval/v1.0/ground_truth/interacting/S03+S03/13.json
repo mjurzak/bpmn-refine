@@ -1,0 +1,106 @@
+{
+  "variant_id": "interacting/S03+S03/13",
+  "seed": "13",
+  "operators": [
+    "S03",
+    "S03"
+  ],
+  "class": "STRUCT",
+  "expected_finding": "R005 + R005",
+  "expected_findings": [
+    "R005",
+    "R005"
+  ],
+  "expected_elements": [
+    "SequenceFlow_14",
+    "SequenceFlow_3"
+  ],
+  "injection_site": [
+    "SequenceFlow_14",
+    "source_ref",
+    "Missing_SequenceFlow_14_source_ref",
+    "SequenceFlow_3",
+    "source_ref",
+    "Missing_SequenceFlow_3_source_ref"
+  ],
+  "defects": [
+    {
+      "operator": "S03",
+      "expected_finding": "R005",
+      "expected_elements": [
+        "SequenceFlow_14"
+      ],
+      "injection_site": [
+        "SequenceFlow_14",
+        "source_ref",
+        "Missing_SequenceFlow_14_source_ref"
+      ]
+    },
+    {
+      "operator": "S03",
+      "expected_finding": "R005",
+      "expected_elements": [
+        "SequenceFlow_3"
+      ],
+      "injection_site": [
+        "SequenceFlow_3",
+        "source_ref",
+        "Missing_SequenceFlow_3_source_ref"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "interacting",
+  "injection": [
+    {
+      "op": "repoint_flow",
+      "flow_id": "SequenceFlow_14",
+      "endpoint": "source_ref",
+      "new_ref": "Missing_SequenceFlow_14_source_ref"
+    },
+    {
+      "op": "repoint_flow",
+      "flow_id": "SequenceFlow_3",
+      "endpoint": "source_ref",
+      "new_ref": "Missing_SequenceFlow_3_source_ref"
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_3"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_3",
+      "source_ref": "Task_1",
+      "target_ref": "ExclusiveGateway_4",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_14"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_14",
+      "source_ref": "Task_3",
+      "target_ref": "ExclusiveGateway_3",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R005",
+      "R007",
+      "R008"
+    ],
+    "woflan": []
+  },
+  "anchor": null
+}

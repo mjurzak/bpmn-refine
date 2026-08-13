@@ -1,0 +1,113 @@
+{
+  "variant_id": "single/M05/04",
+  "seed": "04",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "Task_1",
+    "Task_10"
+  ],
+  "injection_site": [
+    "Task_10"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "Task_1",
+        "Task_10"
+      ],
+      "injection_site": [
+        "Task_10"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 2,
+            "text": "The marketing team creates the content, designs the visuals, and selects channels for promotion, whether digital ads, emails, or social media posts."
+          }
+        ],
+        "claim_text": "creates the content, designs the visuals",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "Task_1",
+              "label": "Create content"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "Task_10",
+              "label": "Design visuals"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "Task_10",
+      "new_name": "Draft campaign copy"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "Task_10",
+      "new_name": "Design visuals"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 2,
+        "text": "The marketing team creates the content, designs the visuals, and selects channels for promotion, whether digital ads, emails, or social media posts."
+      }
+    ],
+    "claim_text": "creates the content, designs the visuals",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "Task_1",
+          "label": "Create content"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "Task_10",
+          "label": "Design visuals"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

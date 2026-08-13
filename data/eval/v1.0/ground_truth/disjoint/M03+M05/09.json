@@ -1,0 +1,207 @@
+{
+  "variant_id": "disjoint/M03+M05/09",
+  "seed": "09",
+  "operators": [
+    "M03",
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "unreachable_branch + inconsistent_naming",
+  "expected_findings": [
+    "unreachable_branch",
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "ExclusiveGateway_1",
+    "Task_5",
+    "SequenceFlow_15",
+    "Task_6",
+    "Task_11"
+  ],
+  "injection_site": [
+    "SequenceFlow_15",
+    "Task_11"
+  ],
+  "defects": [
+    {
+      "operator": "M03",
+      "expected_finding": "unreachable_branch",
+      "expected_elements": [
+        "ExclusiveGateway_1",
+        "Task_5",
+        "SequenceFlow_15"
+      ],
+      "injection_site": [
+        "SequenceFlow_15"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 6,
+            "text": "If a refinement is needed, then the testing phase is reinitiated."
+          }
+        ],
+        "claim_text": "the testing phase is reinitiated",
+        "relation": {
+          "type": "branch_condition",
+          "arguments": [
+            {
+              "role": "condition_gateway",
+              "element_ref": "ExclusiveGateway_1",
+              "label": null
+            },
+            {
+              "role": "branch_target",
+              "element_ref": "Task_5",
+              "label": "Refine prototype"
+            },
+            {
+              "role": "branch_flow",
+              "element_ref": "SequenceFlow_15",
+              "label": null
+            }
+          ],
+          "condition_text": "If a refinement is needed",
+          "outcome_text": "the testing phase is reinitiated"
+        }
+      }
+    },
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "Task_6",
+        "Task_11"
+      ],
+      "injection_site": [
+        "Task_11"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 4,
+            "text": "The prototype undergoes various tests to assess its functionality, safety, and market potential."
+          }
+        ],
+        "claim_text": "functionality, safety, and market potential",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "Task_6",
+              "label": "Test functionality"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "Task_11",
+              "label": "Test safety"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "set_condition",
+      "flow_id": "SequenceFlow_15",
+      "condition_expression": "${refinementNotRequired}"
+    },
+    {
+      "op": "rename_node",
+      "id": "Task_11",
+      "new_name": "Evaluate product functionality"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "Task_11",
+      "new_name": "Test safety"
+    },
+    {
+      "op": "set_condition",
+      "flow_id": "SequenceFlow_15",
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": [
+    {
+      "description_lines": [
+        {
+          "line": 6,
+          "text": "If a refinement is needed, then the testing phase is reinitiated."
+        }
+      ],
+      "claim_text": "the testing phase is reinitiated",
+      "relation": {
+        "type": "branch_condition",
+        "arguments": [
+          {
+            "role": "condition_gateway",
+            "element_ref": "ExclusiveGateway_1",
+            "label": null
+          },
+          {
+            "role": "branch_target",
+            "element_ref": "Task_5",
+            "label": "Refine prototype"
+          },
+          {
+            "role": "branch_flow",
+            "element_ref": "SequenceFlow_15",
+            "label": null
+          }
+        ],
+        "condition_text": "If a refinement is needed",
+        "outcome_text": "the testing phase is reinitiated"
+      }
+    },
+    {
+      "description_lines": [
+        {
+          "line": 4,
+          "text": "The prototype undergoes various tests to assess its functionality, safety, and market potential."
+        }
+      ],
+      "claim_text": "functionality, safety, and market potential",
+      "relation": {
+        "type": "distinct_labels",
+        "arguments": [
+          {
+            "role": "first_task",
+            "element_ref": "Task_6",
+            "label": "Test functionality"
+          },
+          {
+            "role": "second_task",
+            "element_ref": "Task_11",
+            "label": "Test safety"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      }
+    }
+  ],
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "commutative": true,
+    "components_preserved": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

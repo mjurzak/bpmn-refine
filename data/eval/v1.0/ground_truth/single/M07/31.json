@@ -1,0 +1,166 @@
+{
+  "variant_id": "single/M07/31",
+  "seed": "31",
+  "operators": [
+    "M07"
+  ],
+  "class": "SEM",
+  "expected_finding": "unwanted_action",
+  "expected_findings": [
+    "unwanted_action"
+  ],
+  "expected_elements": [
+    "SequenceFlow_33",
+    "UserTask_11",
+    "Task_1"
+  ],
+  "injection_site": [
+    "Task_1",
+    "SequenceFlow_33",
+    "SequenceFlow_41",
+    "ExclusiveGateway_6",
+    "SequenceFlow_42",
+    "ParallelGateway_6"
+  ],
+  "defects": [
+    {
+      "operator": "M07",
+      "expected_finding": "unwanted_action",
+      "expected_elements": [
+        "SequenceFlow_33",
+        "UserTask_11",
+        "Task_1"
+      ],
+      "injection_site": [
+        "Task_1",
+        "SequenceFlow_33",
+        "SequenceFlow_41",
+        "ExclusiveGateway_6",
+        "SequenceFlow_42",
+        "ParallelGateway_6"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 14,
+            "text": "You enter them one by one until a name is still available."
+          }
+        ],
+        "claim_text": "You enter them one by one until a name is still available.",
+        "relation": {
+          "type": "additional_action",
+          "arguments": [
+            {
+              "role": "context_flow",
+              "element_ref": "SequenceFlow_33",
+              "label": "Yes"
+            },
+            {
+              "role": "action_template",
+              "element_ref": "UserTask_11",
+              "label": "Enter character name"
+            }
+          ],
+          "condition_text": "a name is still available",
+          "outcome_text": "until a name is still available"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "add_node",
+      "id": "Task_1",
+      "node_type": "userTask",
+      "process_id": "Process_1",
+      "name": "Enter character name"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_33"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_41",
+      "source_ref": "ExclusiveGateway_6",
+      "target_ref": "Task_1",
+      "name": "Yes",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_42",
+      "source_ref": "Task_1",
+      "target_ref": "ParallelGateway_6",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_42"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_41"
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_1",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_33",
+      "source_ref": "ExclusiveGateway_6",
+      "target_ref": "ParallelGateway_6",
+      "name": "Yes",
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 14,
+        "text": "You enter them one by one until a name is still available."
+      }
+    ],
+    "claim_text": "You enter them one by one until a name is still available.",
+    "relation": {
+      "type": "additional_action",
+      "arguments": [
+        {
+          "role": "context_flow",
+          "element_ref": "SequenceFlow_33",
+          "label": "Yes"
+        },
+        {
+          "role": "action_template",
+          "element_ref": "UserTask_11",
+          "label": "Enter character name"
+        }
+      ],
+      "condition_text": "a name is still available",
+      "outcome_text": "until a name is still available"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "variant_id": "single/M06/17",
+  "seed": "17",
+  "operators": [
+    "M06"
+  ],
+  "class": "SEM",
+  "expected_finding": "improper_termination",
+  "expected_findings": [
+    "improper_termination"
+  ],
+  "expected_elements": [
+    "Task_8"
+  ],
+  "injection_site": [
+    "SequenceFlow_31",
+    "SequenceFlow_28",
+    "Task_8",
+    "SequenceFlow_52",
+    "ParallelGateway_3",
+    "ParallelGateway_1"
+  ],
+  "defects": [
+    {
+      "operator": "M06",
+      "expected_finding": "improper_termination",
+      "expected_elements": [
+        "Task_8"
+      ],
+      "injection_site": [
+        "SequenceFlow_31",
+        "SequenceFlow_28",
+        "Task_8",
+        "SequenceFlow_52",
+        "ParallelGateway_3",
+        "ParallelGateway_1"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 13,
+            "text": "Once packaging and shipping documents are ready, the order is dispatched."
+          }
+        ],
+        "claim_text": "Once packaging and shipping documents are ready, the order is dispatched.",
+        "relation": {
+          "type": "reaches",
+          "arguments": [
+            {
+              "role": "outcome",
+              "element_ref": "Task_8",
+              "label": "Dispatch order"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": "the order is dispatched"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_31"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_28"
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_8",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_52",
+      "source_ref": "ParallelGateway_3",
+      "target_ref": "ParallelGateway_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_52"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_8",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Dispatch order"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_31",
+      "source_ref": "ParallelGateway_3",
+      "target_ref": "Task_8",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_28",
+      "source_ref": "Task_8",
+      "target_ref": "ParallelGateway_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 13,
+        "text": "Once packaging and shipping documents are ready, the order is dispatched."
+      }
+    ],
+    "claim_text": "Once packaging and shipping documents are ready, the order is dispatched.",
+    "relation": {
+      "type": "reaches",
+      "arguments": [
+        {
+          "role": "outcome",
+          "element_ref": "Task_8",
+          "label": "Dispatch order"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": "the order is dispatched"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

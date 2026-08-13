@@ -1,0 +1,92 @@
+{
+  "variant_id": "disjoint/F02+F04/06",
+  "seed": "06",
+  "operators": [
+    "F02",
+    "F04"
+  ],
+  "class": "SOUND",
+  "expected_finding": "lack_of_synchronisation + R007",
+  "expected_findings": [
+    "lack_of_synchronisation",
+    "R007"
+  ],
+  "expected_elements": [
+    "ParallelGateway_1",
+    "ParallelGateway_2",
+    "Task_1"
+  ],
+  "injection_site": [
+    "ParallelGateway_1",
+    "ParallelGateway_2",
+    "SequenceFlow_17",
+    "ExclusiveGateway_6",
+    "Task_1"
+  ],
+  "defects": [
+    {
+      "operator": "F02",
+      "expected_finding": "lack_of_synchronisation",
+      "expected_elements": [
+        "ParallelGateway_1",
+        "ParallelGateway_2"
+      ],
+      "injection_site": [
+        "ParallelGateway_1",
+        "ParallelGateway_2"
+      ]
+    },
+    {
+      "operator": "F04",
+      "expected_finding": "R007",
+      "expected_elements": [
+        "Task_1"
+      ],
+      "injection_site": [
+        "SequenceFlow_17",
+        "ExclusiveGateway_6",
+        "Task_1"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "change_gateway_type",
+      "id": "ParallelGateway_2",
+      "new_type": "exclusiveGateway"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_17"
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_17",
+      "source_ref": "ExclusiveGateway_6",
+      "target_ref": "Task_1",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "change_gateway_type",
+      "id": "ParallelGateway_2",
+      "new_type": "parallelGateway"
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R007",
+      "R008"
+    ],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

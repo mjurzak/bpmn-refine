@@ -1,0 +1,113 @@
+{
+  "variant_id": "single/M05/39",
+  "seed": "39",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "ServiceTask_1",
+    "ServiceTask_2"
+  ],
+  "injection_site": [
+    "ServiceTask_2"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "ServiceTask_1",
+        "ServiceTask_2"
+      ],
+      "injection_site": [
+        "ServiceTask_2"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 5,
+            "text": "The tool gives you the list of materials, the list of tools, and (for each part) several ordering choices."
+          }
+        ],
+        "claim_text": "The tool gives you the list of materials, the list of tools, and (for each part) several ordering choices.",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "ServiceTask_1",
+              "label": "List required materials"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "ServiceTask_2",
+              "label": "List required tools"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "ServiceTask_2",
+      "new_name": "Order repair parts"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "ServiceTask_2",
+      "new_name": "List required tools"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 5,
+        "text": "The tool gives you the list of materials, the list of tools, and (for each part) several ordering choices."
+      }
+    ],
+    "claim_text": "The tool gives you the list of materials, the list of tools, and (for each part) several ordering choices.",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "ServiceTask_1",
+          "label": "List required materials"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "ServiceTask_2",
+          "label": "List required tools"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "variant_id": "single/M01/08",
+  "seed": "08",
+  "operators": [
+    "M01"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_step",
+  "expected_findings": [
+    "missing_step"
+  ],
+  "expected_elements": [
+    "Task_2"
+  ],
+  "injection_site": [
+    "Task_2",
+    "SequenceFlow_21",
+    "Task_6",
+    "Task_5"
+  ],
+  "defects": [
+    {
+      "operator": "M01",
+      "expected_finding": "missing_step",
+      "expected_elements": [
+        "Task_2"
+      ],
+      "injection_site": [
+        "Task_2",
+        "SequenceFlow_21",
+        "Task_6",
+        "Task_5"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 2,
+            "text": "The report is logged into a tracking system and assigned to the appropriate team for investigation."
+          }
+        ],
+        "claim_text": "The report is logged into a tracking system",
+        "relation": {
+          "type": "exists_task",
+          "arguments": [
+            {
+              "role": "task",
+              "element_ref": "Task_2",
+              "label": "Log report into tracking system"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "Task_2",
+      "cascade": true
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_21",
+      "source_ref": "Task_6",
+      "target_ref": "Task_5",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_21"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_2",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Log report into tracking system"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_15",
+      "source_ref": "Task_6",
+      "target_ref": "Task_2",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_7",
+      "source_ref": "Task_2",
+      "target_ref": "Task_5",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 2,
+        "text": "The report is logged into a tracking system and assigned to the appropriate team for investigation."
+      }
+    ],
+    "claim_text": "The report is logged into a tracking system",
+    "relation": {
+      "type": "exists_task",
+      "arguments": [
+        {
+          "role": "task",
+          "element_ref": "Task_2",
+          "label": "Log report into tracking system"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

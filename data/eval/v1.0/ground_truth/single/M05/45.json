@@ -1,0 +1,113 @@
+{
+  "variant_id": "single/M05/45",
+  "seed": "45",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "ServiceTask_2",
+    "ServiceTask_3"
+  ],
+  "injection_site": [
+    "ServiceTask_3"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "ServiceTask_2",
+        "ServiceTask_3"
+      ],
+      "injection_site": [
+        "ServiceTask_3"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 7,
+            "text": "Then the order is finished by the shopping system and simultaneously payment and shipment for the order is prepared."
+          }
+        ],
+        "claim_text": "Then the order is finished by the shopping system and simultaneously payment and shipment for the order is prepared.",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "ServiceTask_2",
+              "label": "Payment is prepared by system"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "ServiceTask_3",
+              "label": "Shipment is prepared by system"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "ServiceTask_3",
+      "new_name": "Prepare payment details"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "ServiceTask_3",
+      "new_name": "Shipment is prepared by system"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 7,
+        "text": "Then the order is finished by the shopping system and simultaneously payment and shipment for the order is prepared."
+      }
+    ],
+    "claim_text": "Then the order is finished by the shopping system and simultaneously payment and shipment for the order is prepared.",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "ServiceTask_2",
+          "label": "Payment is prepared by system"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "ServiceTask_3",
+          "label": "Shipment is prepared by system"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

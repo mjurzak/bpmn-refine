@@ -1,0 +1,222 @@
+{
+  "variant_id": "disjoint/M01+M05/06",
+  "seed": "06",
+  "operators": [
+    "M01",
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "missing_step + inconsistent_naming",
+  "expected_findings": [
+    "missing_step",
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "Task_3",
+    "Task_2",
+    "Task_4"
+  ],
+  "injection_site": [
+    "Task_3",
+    "SequenceFlow_24",
+    "ParallelGateway_2",
+    "Task_10",
+    "Task_4"
+  ],
+  "defects": [
+    {
+      "operator": "M01",
+      "expected_finding": "missing_step",
+      "expected_elements": [
+        "Task_3"
+      ],
+      "injection_site": [
+        "Task_3",
+        "SequenceFlow_24",
+        "ParallelGateway_2",
+        "Task_10"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 4,
+            "text": "The order is then handed over to a logistics provider for delivery."
+          }
+        ],
+        "claim_text": "handed over to a logistics provider for delivery",
+        "relation": {
+          "type": "exists_task",
+          "arguments": [
+            {
+              "role": "task",
+              "element_ref": "Task_3",
+              "label": "Hand over order to logistics provider"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    },
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "Task_2",
+        "Task_4"
+      ],
+      "injection_site": [
+        "Task_4"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 1,
+            "text": "This process begins when a customer places an order through an online platform or over the phone."
+          }
+        ],
+        "claim_text": "through an online platform or over the phone",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "Task_2",
+              "label": "Customer places order online"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "Task_4",
+              "label": "Customer places order over the phone"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "Task_3",
+      "cascade": true
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_24",
+      "source_ref": "ParallelGateway_2",
+      "target_ref": "Task_10",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "rename_node",
+      "id": "Task_4",
+      "new_name": "Place order through web portal"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "Task_4",
+      "new_name": "Customer places order over the phone"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_24"
+    },
+    {
+      "op": "add_node",
+      "id": "Task_3",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Hand over order to logistics provider"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_21",
+      "source_ref": "ParallelGateway_2",
+      "target_ref": "Task_3",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_23",
+      "source_ref": "Task_3",
+      "target_ref": "Task_10",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": [
+    {
+      "description_lines": [
+        {
+          "line": 4,
+          "text": "The order is then handed over to a logistics provider for delivery."
+        }
+      ],
+      "claim_text": "handed over to a logistics provider for delivery",
+      "relation": {
+        "type": "exists_task",
+        "arguments": [
+          {
+            "role": "task",
+            "element_ref": "Task_3",
+            "label": "Hand over order to logistics provider"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      }
+    },
+    {
+      "description_lines": [
+        {
+          "line": 1,
+          "text": "This process begins when a customer places an order through an online platform or over the phone."
+        }
+      ],
+      "claim_text": "through an online platform or over the phone",
+      "relation": {
+        "type": "distinct_labels",
+        "arguments": [
+          {
+            "role": "first_task",
+            "element_ref": "Task_2",
+            "label": "Customer places order online"
+          },
+          {
+            "role": "second_task",
+            "element_ref": "Task_4",
+            "label": "Customer places order over the phone"
+          }
+        ],
+        "condition_text": null,
+        "outcome_text": null
+      }
+    }
+  ],
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "commutative": true,
+    "components_preserved": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

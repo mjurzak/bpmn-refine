@@ -1,0 +1,152 @@
+{
+  "variant_id": "single/M06/27",
+  "seed": "27",
+  "operators": [
+    "M06"
+  ],
+  "class": "SEM",
+  "expected_finding": "improper_termination",
+  "expected_findings": [
+    "improper_termination"
+  ],
+  "expected_elements": [
+    "ServiceTask_3"
+  ],
+  "injection_site": [
+    "SequenceFlow_12",
+    "SequenceFlow_8",
+    "ServiceTask_3",
+    "SequenceFlow_45",
+    "ExclusiveGateway_6",
+    "ExclusiveGateway_7"
+  ],
+  "defects": [
+    {
+      "operator": "M06",
+      "expected_finding": "improper_termination",
+      "expected_elements": [
+        "ServiceTask_3"
+      ],
+      "injection_site": [
+        "SequenceFlow_12",
+        "SequenceFlow_8",
+        "ServiceTask_3",
+        "SequenceFlow_45",
+        "ExclusiveGateway_6",
+        "ExclusiveGateway_7"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 52,
+            "text": "Independent of this, every work accident in which a person with accident insurance has been killed, or injured in such a way that they are unable to work for three days, in full or in part, must be reported to the responsible accident insurance provider within five days."
+          }
+        ],
+        "claim_text": "Independent of this, every work accident in which a person with accident insurance has been killed, or injured in such a way that they are unable to work for three days, in full or in part, must be reported to the responsible accident insurance provider within five days.",
+        "relation": {
+          "type": "reaches",
+          "arguments": [
+            {
+              "role": "outcome",
+              "element_ref": "ServiceTask_3",
+              "label": "Notify insurance"
+            }
+          ],
+          "condition_text": "every work accident in which a person with accident insurance has been killed, or injured in such a way that they are unable to work for three days, in full or in part",
+          "outcome_text": "must be reported to the responsible accident insurance provider within five days"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_12"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_8"
+    },
+    {
+      "op": "remove_node",
+      "id": "ServiceTask_3",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_45",
+      "source_ref": "ExclusiveGateway_6",
+      "target_ref": "ExclusiveGateway_7",
+      "name": "Yes",
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_45"
+    },
+    {
+      "op": "add_node",
+      "id": "ServiceTask_3",
+      "node_type": "serviceTask",
+      "process_id": "Process_1",
+      "name": "Notify insurance"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_12",
+      "source_ref": "ExclusiveGateway_6",
+      "target_ref": "ServiceTask_3",
+      "name": "Yes",
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_8",
+      "source_ref": "ServiceTask_3",
+      "target_ref": "ExclusiveGateway_7",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 52,
+        "text": "Independent of this, every work accident in which a person with accident insurance has been killed, or injured in such a way that they are unable to work for three days, in full or in part, must be reported to the responsible accident insurance provider within five days."
+      }
+    ],
+    "claim_text": "Independent of this, every work accident in which a person with accident insurance has been killed, or injured in such a way that they are unable to work for three days, in full or in part, must be reported to the responsible accident insurance provider within five days.",
+    "relation": {
+      "type": "reaches",
+      "arguments": [
+        {
+          "role": "outcome",
+          "element_ref": "ServiceTask_3",
+          "label": "Notify insurance"
+        }
+      ],
+      "condition_text": "every work accident in which a person with accident insurance has been killed, or injured in such a way that they are unable to work for three days, in full or in part",
+      "outcome_text": "must be reported to the responsible accident insurance provider within five days"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

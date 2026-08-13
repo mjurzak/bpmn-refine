@@ -1,0 +1,121 @@
+{
+  "variant_id": "single/M05/28",
+  "seed": "28",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "UserTask_10",
+    "ServiceTask_4"
+  ],
+  "injection_site": [
+    "ServiceTask_4"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "UserTask_10",
+        "ServiceTask_4"
+      ],
+      "injection_site": [
+        "ServiceTask_4"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 8,
+            "text": "You have to write at least 3 status updates about your internship (every week)."
+          },
+          {
+            "line": 9,
+            "text": "The company has to write 3 status updates about you."
+          }
+        ],
+        "claim_text": "You have to write at least 3 status updates about your internship (every week).",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "UserTask_10",
+              "label": "Write at least 3 status updates every week"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "ServiceTask_4",
+              "label": "Recieve 3 status updates from the company"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "ServiceTask_4",
+      "new_name": "Record intern weekly updates"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "ServiceTask_4",
+      "new_name": "Recieve 3 status updates from the company"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 8,
+        "text": "You have to write at least 3 status updates about your internship (every week)."
+      },
+      {
+        "line": 9,
+        "text": "The company has to write 3 status updates about you."
+      }
+    ],
+    "claim_text": "You have to write at least 3 status updates about your internship (every week).",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "UserTask_10",
+          "label": "Write at least 3 status updates every week"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "ServiceTask_4",
+          "label": "Recieve 3 status updates from the company"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

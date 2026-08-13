@@ -1,0 +1,86 @@
+{
+  "variant_id": "disjoint/F01+F02/40",
+  "seed": "40",
+  "operators": [
+    "F01",
+    "F02"
+  ],
+  "class": "SOUND",
+  "expected_finding": "deadlock + lack_of_synchronisation",
+  "expected_findings": [
+    "deadlock",
+    "lack_of_synchronisation"
+  ],
+  "expected_elements": [
+    "ExclusiveGateway_3",
+    "ExclusiveGateway_4",
+    "ParallelGateway_1",
+    "ParallelGateway_2"
+  ],
+  "injection_site": [
+    "ExclusiveGateway_3",
+    "ExclusiveGateway_4",
+    "ParallelGateway_1",
+    "ParallelGateway_2"
+  ],
+  "defects": [
+    {
+      "operator": "F01",
+      "expected_finding": "deadlock",
+      "expected_elements": [
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4"
+      ],
+      "injection_site": [
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_4"
+      ]
+    },
+    {
+      "operator": "F02",
+      "expected_finding": "lack_of_synchronisation",
+      "expected_elements": [
+        "ParallelGateway_1",
+        "ParallelGateway_2"
+      ],
+      "injection_site": [
+        "ParallelGateway_1",
+        "ParallelGateway_2"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "change_gateway_type",
+      "id": "ExclusiveGateway_4",
+      "new_type": "parallelGateway"
+    },
+    {
+      "op": "change_gateway_type",
+      "id": "ParallelGateway_2",
+      "new_type": "exclusiveGateway"
+    }
+  ],
+  "repair": [
+    {
+      "op": "change_gateway_type",
+      "id": "ParallelGateway_2",
+      "new_type": "parallelGateway"
+    },
+    {
+      "op": "change_gateway_type",
+      "id": "ExclusiveGateway_4",
+      "new_type": "exclusiveGateway"
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

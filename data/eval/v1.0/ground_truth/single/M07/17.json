@@ -1,0 +1,166 @@
+{
+  "variant_id": "single/M07/17",
+  "seed": "17",
+  "operators": [
+    "M07"
+  ],
+  "class": "SEM",
+  "expected_finding": "unwanted_action",
+  "expected_findings": [
+    "unwanted_action"
+  ],
+  "expected_elements": [
+    "SequenceFlow_25",
+    "Task_8",
+    "Task_26"
+  ],
+  "injection_site": [
+    "Task_26",
+    "SequenceFlow_25",
+    "SequenceFlow_52",
+    "Task_13",
+    "SequenceFlow_53",
+    "ExclusiveGateway_1"
+  ],
+  "defects": [
+    {
+      "operator": "M07",
+      "expected_finding": "unwanted_action",
+      "expected_elements": [
+        "SequenceFlow_25",
+        "Task_8",
+        "Task_26"
+      ],
+      "injection_site": [
+        "Task_26",
+        "SequenceFlow_25",
+        "SequenceFlow_52",
+        "Task_13",
+        "SequenceFlow_53",
+        "ExclusiveGateway_1"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 4,
+            "text": "If the payment fails, the customer is notified, and the process ends."
+          }
+        ],
+        "claim_text": "If the payment fails, the customer is notified, and the process ends.",
+        "relation": {
+          "type": "additional_action",
+          "arguments": [
+            {
+              "role": "context_flow",
+              "element_ref": "SequenceFlow_25",
+              "label": null
+            },
+            {
+              "role": "action_template",
+              "element_ref": "Task_8",
+              "label": "Dispatch order"
+            }
+          ],
+          "condition_text": "If the payment fails",
+          "outcome_text": "the process ends"
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "add_node",
+      "id": "Task_26",
+      "node_type": "task",
+      "process_id": "Process_1",
+      "name": "Dispatch order"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_25"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_52",
+      "source_ref": "Task_13",
+      "target_ref": "Task_26",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_53",
+      "source_ref": "Task_26",
+      "target_ref": "ExclusiveGateway_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_53"
+    },
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_52"
+    },
+    {
+      "op": "remove_node",
+      "id": "Task_26",
+      "cascade": false
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_25",
+      "source_ref": "Task_13",
+      "target_ref": "ExclusiveGateway_1",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 4,
+        "text": "If the payment fails, the customer is notified, and the process ends."
+      }
+    ],
+    "claim_text": "If the payment fails, the customer is notified, and the process ends.",
+    "relation": {
+      "type": "additional_action",
+      "arguments": [
+        {
+          "role": "context_flow",
+          "element_ref": "SequenceFlow_25",
+          "label": null
+        },
+        {
+          "role": "action_template",
+          "element_ref": "Task_8",
+          "label": "Dispatch order"
+        }
+      ],
+      "condition_text": "If the payment fails",
+      "outcome_text": "the process ends"
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "variant_id": "single/S01/20",
+  "seed": "20",
+  "operators": [
+    "S01"
+  ],
+  "class": "STRUCT",
+  "expected_finding": "R001",
+  "expected_findings": [
+    "R001"
+  ],
+  "expected_elements": [
+    "Process_1"
+  ],
+  "injection_site": [
+    "StartEvent_1"
+  ],
+  "defects": [
+    {
+      "operator": "S01",
+      "expected_finding": "R001",
+      "expected_elements": [
+        "Process_1"
+      ],
+      "injection_site": [
+        "StartEvent_1"
+      ]
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "StartEvent_1",
+      "cascade": true
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_node",
+      "id": "StartEvent_1",
+      "node_type": "startEvent",
+      "process_id": "Process_1",
+      "name": "start"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_18",
+      "source_ref": "StartEvent_1",
+      "target_ref": "Task_13",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R001"
+    ],
+    "woflan": []
+  },
+  "anchor": null
+}

@@ -1,0 +1,121 @@
+{
+  "variant_id": "single/M05/20",
+  "seed": "20",
+  "operators": [
+    "M05"
+  ],
+  "class": "SEM",
+  "expected_finding": "inconsistent_naming",
+  "expected_findings": [
+    "inconsistent_naming"
+  ],
+  "expected_elements": [
+    "Task_9",
+    "Task_7"
+  ],
+  "injection_site": [
+    "Task_7"
+  ],
+  "defects": [
+    {
+      "operator": "M05",
+      "expected_finding": "inconsistent_naming",
+      "expected_elements": [
+        "Task_9",
+        "Task_7"
+      ],
+      "injection_site": [
+        "Task_7"
+      ],
+      "anchor": {
+        "description_lines": [
+          {
+            "line": 3,
+            "text": "She then submits an order ticket to the kitchen to begin preparing the food."
+          },
+          {
+            "line": 4,
+            "text": "She also gives an order to the sommelier (i.e., the wine waiter) to fetch wine from the cellar and to prepare any other alcoholic beverages."
+          }
+        ],
+        "claim_text": "She then submits an order ticket to the kitchen to begin preparing the food.",
+        "relation": {
+          "type": "distinct_labels",
+          "arguments": [
+            {
+              "role": "first_task",
+              "element_ref": "Task_9",
+              "label": "Manager submits order ticket to kitchen"
+            },
+            {
+              "role": "second_task",
+              "element_ref": "Task_7",
+              "label": "Manager gives order to sommelier"
+            }
+          ],
+          "condition_text": null,
+          "outcome_text": null
+        }
+      }
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "rename_node",
+      "id": "Task_7",
+      "new_name": "Submit food order to kitchen"
+    }
+  ],
+  "repair": [
+    {
+      "op": "rename_node",
+      "id": "Task_7",
+      "new_name": "Manager gives order to sommelier"
+    }
+  ],
+  "detected_by_construction": false,
+  "detected_by": {
+    "tier1": [],
+    "woflan": [],
+    "tier3": []
+  },
+  "anchor": {
+    "description_lines": [
+      {
+        "line": 3,
+        "text": "She then submits an order ticket to the kitchen to begin preparing the food."
+      },
+      {
+        "line": 4,
+        "text": "She also gives an order to the sommelier (i.e., the wine waiter) to fetch wine from the cellar and to prepare any other alcoholic beverages."
+      }
+    ],
+    "claim_text": "She then submits an order ticket to the kitchen to begin preparing the food.",
+    "relation": {
+      "type": "distinct_labels",
+      "arguments": [
+        {
+          "role": "first_task",
+          "element_ref": "Task_9",
+          "label": "Manager submits order ticket to kitchen"
+        },
+        {
+          "role": "second_task",
+          "element_ref": "Task_7",
+          "label": "Manager gives order to sommelier"
+        }
+      ],
+      "condition_text": null,
+      "outcome_text": null
+    }
+  },
+  "human_verified": true,
+  "technical_verification": {
+    "round_trip": true,
+    "tier1": true,
+    "tier2": true,
+    "inverse": true
+  }
+}

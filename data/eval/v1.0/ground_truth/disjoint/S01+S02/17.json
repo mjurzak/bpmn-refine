@@ -1,0 +1,100 @@
+{
+  "variant_id": "disjoint/S01+S02/17",
+  "seed": "17",
+  "operators": [
+    "S01",
+    "S02"
+  ],
+  "class": "STRUCT",
+  "expected_finding": "R001 + R002",
+  "expected_findings": [
+    "R001",
+    "R002"
+  ],
+  "expected_elements": [
+    "Process_1"
+  ],
+  "injection_site": [
+    "StartEvent_1",
+    "EndEvent_1"
+  ],
+  "defects": [
+    {
+      "operator": "S01",
+      "expected_finding": "R001",
+      "expected_elements": [
+        "Process_1"
+      ],
+      "injection_site": [
+        "StartEvent_1"
+      ]
+    },
+    {
+      "operator": "S02",
+      "expected_finding": "R002",
+      "expected_elements": [
+        "Process_1"
+      ],
+      "injection_site": [
+        "EndEvent_1"
+      ]
+    }
+  ],
+  "multiplicity": 2,
+  "interaction": "disjoint",
+  "injection": [
+    {
+      "op": "remove_node",
+      "id": "StartEvent_1",
+      "cascade": true
+    },
+    {
+      "op": "remove_node",
+      "id": "EndEvent_1",
+      "cascade": true
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_node",
+      "id": "EndEvent_1",
+      "node_type": "endEvent",
+      "process_id": "Process_1",
+      "name": "end"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_29",
+      "source_ref": "ExclusiveGateway_1",
+      "target_ref": "EndEvent_1",
+      "name": null,
+      "condition_expression": null
+    },
+    {
+      "op": "add_node",
+      "id": "StartEvent_1",
+      "node_type": "startEvent",
+      "process_id": "Process_1",
+      "name": "start"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_21",
+      "source_ref": "StartEvent_1",
+      "target_ref": "Task_25",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R001",
+      "R002"
+    ],
+    "woflan": []
+  },
+  "anchor": null
+}

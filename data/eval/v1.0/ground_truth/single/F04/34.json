@@ -1,0 +1,64 @@
+{
+  "variant_id": "single/F04/34",
+  "seed": "34",
+  "operators": [
+    "F04"
+  ],
+  "class": "SOUND",
+  "expected_finding": "R007",
+  "expected_findings": [
+    "R007"
+  ],
+  "expected_elements": [
+    "ExclusiveGateway_7"
+  ],
+  "injection_site": [
+    "SequenceFlow_23",
+    "UserTask_1",
+    "ExclusiveGateway_7"
+  ],
+  "defects": [
+    {
+      "operator": "F04",
+      "expected_finding": "R007",
+      "expected_elements": [
+        "ExclusiveGateway_7"
+      ],
+      "injection_site": [
+        "SequenceFlow_23",
+        "UserTask_1",
+        "ExclusiveGateway_7"
+      ]
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_23"
+    }
+  ],
+  "repair": [
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_23",
+      "source_ref": "UserTask_1",
+      "target_ref": "ExclusiveGateway_7",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R007",
+      "R008"
+    ],
+    "woflan": [
+      "woflan:soundness"
+    ]
+  },
+  "anchor": null
+}

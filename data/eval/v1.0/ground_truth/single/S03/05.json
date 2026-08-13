@@ -1,0 +1,68 @@
+{
+  "variant_id": "single/S03/05",
+  "seed": "05",
+  "operators": [
+    "S03"
+  ],
+  "class": "STRUCT",
+  "expected_finding": "R005",
+  "expected_findings": [
+    "R005"
+  ],
+  "expected_elements": [
+    "SequenceFlow_11"
+  ],
+  "injection_site": [
+    "SequenceFlow_11",
+    "source_ref",
+    "Missing_SequenceFlow_11_source_ref"
+  ],
+  "defects": [
+    {
+      "operator": "S03",
+      "expected_finding": "R005",
+      "expected_elements": [
+        "SequenceFlow_11"
+      ],
+      "injection_site": [
+        "SequenceFlow_11",
+        "source_ref",
+        "Missing_SequenceFlow_11_source_ref"
+      ]
+    }
+  ],
+  "multiplicity": 1,
+  "interaction": "single",
+  "injection": [
+    {
+      "op": "repoint_flow",
+      "flow_id": "SequenceFlow_11",
+      "endpoint": "source_ref",
+      "new_ref": "Missing_SequenceFlow_11_source_ref"
+    }
+  ],
+  "repair": [
+    {
+      "op": "remove_flow",
+      "id": "SequenceFlow_11"
+    },
+    {
+      "op": "add_flow",
+      "process_id": "Process_1",
+      "id": "SequenceFlow_11",
+      "source_ref": "ExclusiveGateway_4",
+      "target_ref": "Task_2",
+      "name": null,
+      "condition_expression": null
+    }
+  ],
+  "detected_by_construction": true,
+  "detected_by": {
+    "tier1": [
+      "R005",
+      "R007"
+    ],
+    "woflan": []
+  },
+  "anchor": null
+}
