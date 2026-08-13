@@ -1,6 +1,6 @@
 # run — response envelope
 
-Every backend response includes a `run` block. It records what produced the response: which model, which prompts, which rules, which config. Without it, results are not reproducible and Phase 3 evaluation ([`experiments.md`](experiments.md)) cannot join a metric back to the conditions that produced it.
+Every backend response includes a `run` block. It records what produced the response: which model, which prompts, which rules, and which config. Without it, experiment analysis cannot join a metric back to the conditions that produced it.
 
 `run` is a hard contract — **no endpoint omits it**, even on error.
 
@@ -19,7 +19,7 @@ run {
   }
   converter:        str                   // canonical IR version id, e.g. "pydantic_ir@v1"
   rules_version:    str                   // e.g. "R001-R008"
-  checkers?:        { analyzer: "2.0.3", woflan: "pm4py-2.7", bpmnspector: "1.2.0" }
+  checkers?:        { woflan: "pm4py-2.7" }
   config_hash:      str                   // 12-char hex prefix of sha256(ExperimentConfig)
   timestamp:        str                   // ISO-8601 UTC
   request_id:       str                   // per-request UUID
@@ -69,7 +69,7 @@ Per-tool version strings. Formal checker findings depend on the tool binary; pin
 
 ### `config_hash`
 
-12-char hex prefix of `sha256(canonical_json(ExperimentConfig))`. The join key for Phase 3 analysis. See [`experiments.md`](experiments.md) for the canonicalisation rules.
+12-char hex prefix of `sha256(canonical_json(ExperimentConfig))`. The join key for experiment analysis. See [`experiments.md`](experiments.md) for the canonicalisation rules.
 
 ### `timestamp` and `request_id`
 
@@ -109,14 +109,8 @@ Inputs:
 - partial responses (e.g. a non-converged repair),
 - cached responses (the `run` from the original computation is replayed, not re-generated).
 
-The reason for the strictness: if `run` is optional, some code path will drop it, and that result is then unreproducible with nothing to salvage. The Phase 3 harness treats a missing `run` as a hard failure.
+The experiment harness treats a missing `run` as a hard failure.
 
 Endpoints that do not own a canonical run context — `/history/*`, `/diagrams/export` for round-trip-only transforms — do not emit `run`. The contract is per-endpoint and documented on the route.
 
 ---
-
-## retrofit history
-
-`run` is cheap to emit and expensive to add retroactively. Any experiment run before it was wired is dark: unknown model id, unknown prompt content, unknown rule set. That makes landing `run` a precondition for Phase 3 rather than a cleanup task after it.
-
-See `TODO.md` Phase 2 for the build order.

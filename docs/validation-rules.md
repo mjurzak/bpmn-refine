@@ -75,7 +75,7 @@ Several checks were considered and **cut** because they fail the class criteria:
 
 ## worked examples
 
-`data/rule_cases/` holds one minimal fixture per rule, each isolating its target so the mapping rule->example is checkable. `R000_valid_baseline.bpmn` is well formed and fires nothing (it also exercises multi-start and a matched gateway pair to prove the rules do not over-fire). `tests/test_rule_cases.py` validates the whole folder against the expected-issue table. Parser/import preconditions live under `data/import_cases/`. Note that document-scoped identifier uniqueness is no longer only a parser precondition: it is enforced by a validator on `BpmnDiagram` itself, so it holds across all five IR formats and the LLM payload paths, not just XML upload.
+`data/rule_cases/` holds one minimal fixture per rule, each isolating its target so the mapping rule->example is checkable. `R000_valid_baseline.bpmn` is well formed and fires nothing (it also exercises multi-start and a matched gateway pair to prove the rules do not over-fire). `tests/test_rule_cases.py` validates the whole folder against the expected-issue table. Parser/import preconditions live under `data/import_cases/`. Document-scoped identifier uniqueness is enforced by a validator on `BpmnDiagram`, so it holds across all five IR formats and the LLM payload paths, not just XML upload.
 
 ---
 
@@ -86,7 +86,7 @@ The class axis also drives fix routing ([`repair-loop.md`](repair-loop.md)). A d
 | Fix confidence | Applies to | Behaviour |
 |---|---|---|
 | **auto** (always safe) | remove a dangling flow (R005/R006) | may mutate without a human in the loop |
-| **suggest** (never auto-apply) | missing/disconnected start or end (R001/R002/R003/R004), unreachable node or trap (R007/R008) — the system cannot know *where* the process should begin, end, or rewire | surfaced for the user; auto-wiring here is what produced the old nonsensical `start->end` fix |
+| **suggest** (never auto-apply) | missing/disconnected start or end (R001/R002/R003/R004), unreachable node or trap (R007/R008) — the system cannot know *where* the process should begin, end, or rewire | surfaced for the user; automatic wiring would invent process semantics |
 | **llm** (route to tier 3) | anything needing a label, a condition, or a choice among rewirings | proposed by the LLM, human gate retained |
 
 Only **auto** fixes ever change the diagram without confirmation.

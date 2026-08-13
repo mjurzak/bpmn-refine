@@ -6,7 +6,7 @@ The endpoint has two orchestration modes.
 
 **Single plan** (`single_plan=true`, the default) backs manual approval: dispatcher -> apply to an isolated candidate -> re-validate -> return for review. Findings discovered on the way are reported, not repaired inside the same request.
 
-**Closed loop** (`single_plan=false`) backs unattended runs and Phase 3 evaluation: dispatcher -> apply -> re-validate -> stop or iterate. Keeping it opt-in is what stops the human review gate from ending up behind several model-generated plans.
+**Closed loop** (`single_plan=false`) backs unattended experiment runs: dispatcher -> apply -> re-validate -> stop or iterate. Keeping it opt-in is what stops the human review gate from ending up behind several model-generated plans.
 
 **Status (2026-07-20):** the loop, both repair modes, the quick-fix registry (R001–R006), the `/repair`, `/repair/xml`, and `/repair/apply` endpoints, and the `tier2_findings` prompt section are all wired. The one gap is the *content* of the counterexample: the witness structure below is populated only with a diagnosis, not a firing trace, because the wired tier-2 checker (Woflan) does not emit one. The trace fields in the examples that follow are the target shape, not current output.
 
@@ -207,10 +207,10 @@ return diagram, applied, issues, iteration, converged = no_repairable_issues(iss
 
 ### deterministic quick-fixes
 
-Come from two sources:
-
-1. **Tier 1 category map** ([`validation-rules.md`](validation-rules.md)) — e.g. R005/R006 -> remove a dangling sequence flow. Structural errors that need a human decision about *where* to wire (R001-R004, R007/R008) are surfaced as suggestions, not auto-applied.
-2. **BPMN Analyzer 2.0** ([`formal-checkers.md`](formal-checkers.md)) — bundles quick-fixes for several soundness/safeness violations (mismatched gateway types, untriggered message events, unsafe sequence flows). These are lifted into `EditOp[]` by the tier-2 adapter.
+The Tier 1 category map ([`validation-rules.md`](validation-rules.md)) supplies
+deterministic fixes such as removing a dangling sequence flow for R005/R006.
+Structural errors that need a decision about *where* to wire (R001-R004,
+R007/R008) are surfaced as suggestions and are not applied automatically.
 
 The dispatcher prefers a deterministic fix whenever one is available, even if the LLM could also do it — deterministic fixes are cheaper, verifiable, and always reproduce.
 
@@ -279,7 +279,7 @@ Until the user clicks `ApplyChanges`, nothing in the canonical IR or history cha
 
 ## metrics the loop produces
 
-For Phase 3 evaluation, each repair run contributes:
+For experiment evaluation, each repair run contributes:
 
 - `iterations` — convergence speed.
 - `len(applied_ops)` — minimality of the repair.

@@ -11,8 +11,6 @@ Four ideas shape the architecture:
 - One canonical IR drives internal logic. Candidate IRs (YAML, Mermaid, compact-JSON) are swappable I/O formats used for comparison experiments.
 - Two validation triggers: tier 1 runs on every edit, tier 2 and tier 3 on explicit user action.
 
-Items marked `(planned)` in this document are committed in the thesis architecture but not yet wired in code. As of 2026-07-20 the validation pipeline (all three tiers, with tier 2 backed by PM4Py Woflan), the repair loop and its endpoints, the five IR converters, and the `run` envelope are all wired; what remains planned is the BPMN Analyzer 2.0 / BPMNspector adapters and the counterexample *trace* they would supply. See `TODO.md` at the workspace root for per-item status.
-
 ---
 
 ## operations
@@ -59,7 +57,7 @@ FastAPI (port 8000)
        ├── model/         IR layer (canonical + candidates)
        ├── validation/    tier 1 deterministic rules
        ├── llm/           provider-agnostic client, prompts, routing
-       │                  tier 3 entry point; tier 2 = Woflan (Analyzer/BPMNspector planned)
+       │                  tier 3 entry point; tier 2 = Woflan
        └── history/       sessions and revisions
 ```
 
@@ -82,7 +80,7 @@ ExperimentConfig {
 }
 ```
 
-The config is hashed into `run.config_hash` so every result traces back to the exact parameter set that produced it. See [`experiments.md`](experiments.md) *(Phase 3, planned)*.
+The config is hashed into `run.config_hash` so every result traces back to the exact parameter set that produced it. See [`experiments.md`](experiments.md).
 
 ---
 
@@ -110,7 +108,7 @@ run {
 
 All hashes are the **first 12 hex characters of sha256(file bytes)**. Full hashes are always reconstructible from the source file; 12 chars is git's long-form abbreviation — short enough to read inline, with a collision probability of ~10⁻¹⁰ for a thousand prompt versions. The `name` mirrors the file stem so logs stay human-readable.
 
-Rationale: Phase 3 evaluation requires every metric to be replayable. `run` is cheap to emit and expensive to add retroactively — results collected without it cannot be trusted. See [`run.md`](run.md).
+The `run` envelope makes every metric traceable to the configuration that produced it. See [`run.md`](run.md).
 
 ---
 
@@ -122,13 +120,12 @@ A diagram passes through three independent validators. Each emits a uniform `Iss
 
 Pure Python, zero external dependencies, runs quickly on typical diagrams. Detects *local, structural* violations: missing start/end events, dangling references; and unreachable nodes or traps (a linear-time under-approximation of soundness). Every rule is an `error` — heuristic "might be a problem" checks are deferred to tier 2 / tier 3 rather than emitted as deterministic warnings. Eight rules today (R001–R008). Runs on the **live** trigger — on every edit. See [`validation-rules.md`](validation-rules.md).
 
-### tier 2 — formal checker stack
+### tier 2 — formal validation
 
-Checker adapters stacked under a uniform issue schema so the repair layer does not care which tool produced a finding. Wired today: **PM4Py Woflan**. Planned: BPMN Analyzer 2.0 and BPMNspector.
-
-- **PM4Py Woflan** (Python-native, **wired**) — classical Petri-net soundness via PM4Py's BPMN -> Petri-net mapping, run in-process on a worker thread under a configured timeout. Reports a boolean soundness verdict, Woflan's diagnostic messages, and dead transitions. It does **not** yet emit a firing trace, a marking at failure, or safeness as a separate finding, and its raw output names Petri-net *places*, not BPMN element ids — see [`formal-checkers.md`](formal-checkers.md).
-- **BPMN Analyzer 2.0** (Kräuter, Rust, **planned**) — soundness, safeness, deadlock, livelock, lack of synchronisation; emits counterexample traces; sub-500 ms. Wrapped as a subprocess / sidecar.
-- **BPMNspector** (uniba-dsg, Java, **planned**) — BPMN 2.0 standards compliance across 611 constraints; complements behavioural checks with structural conformance.
+**PM4Py Woflan** performs Petri-net soundness analysis through PM4Py's BPMN to
+Petri-net mapping. It runs synchronously in-process, localizes diagnostic names
+to stable BPMN element IDs, and exposes dead elements, uncovered elements, and
+locking-scenario traces through the shared formal-witness schema.
 
 Runs on the **on-demand** trigger (explicit formal-validate action). See [`formal-checkers.md`](formal-checkers.md).
 
@@ -172,8 +169,6 @@ Mode is selected per request via `ExperimentConfig.repair_mode`.
 ### counterexample context
 
 When tier 2 produces a witness, the repair prompt includes it in a structured `tier2_findings` section (`_extract_tier2_findings`), so the LLM is told *why* the diagram is broken and not only *that* it is. This is where the checker output meets the model, and the comparison the thesis is built on.
-
-The plumbing is wired, but the witness carries no firing trace yet: Woflan does not emit one, so the model works from the diagnosis rather than the failing run. Closing that gap needs a trace-producing adapter — BPMN Analyzer 2.0, or deeper extraction of Woflan's coverability graph.
 
 See [`repair-loop.md`](repair-loop.md).
 
@@ -252,7 +247,7 @@ Owns the canonical IR and the converter registry.
 
 ### validation layer — `backend/app/validation/`
 
-Houses tier 1 deterministic rules. When tier 2 is wired, this layer will also hold the adapters that normalise each tool's output into the shared `Issue` schema. Zero LLM dependency.
+Houses tier 1 deterministic rules and the Woflan adapter that normalises formal-checker output into the shared `Issue` schema. Zero LLM dependency.
 
 ### llm layer — `backend/app/llm/`
 
@@ -347,8 +342,8 @@ user types in chat
 |---|---|
 | IR protocol, canonical IR, candidate IRs, BPMN 2.0 coverage matrix | [`converter-format.md`](converter-format.md) |
 | Tier 1 deterministic rules | [`validation-rules.md`](validation-rules.md) |
-| Tier 2 formal checker stack (Woflan wired; Analyzer/BPMNspector planned) | [`formal-checkers.md`](formal-checkers.md) |
+| Tier 2 Woflan checker | [`formal-checkers.md`](formal-checkers.md) |
 | LLM client, routing, prompts, structured outputs, counterexample prompting | [`llm-integration.md`](llm-integration.md) |
 | Repair modes, dispatcher, edit ops | [`repair-loop.md`](repair-loop.md) |
-| `ExperimentConfig` schema, metrics, reproducibility, datasets | [`experiments.md`](experiments.md) *(Phase 3, planned)* |
+| `ExperimentConfig` schema, metrics, reproducibility, datasets | [`experiments.md`](experiments.md) |
 | `run` metadata contract | [`run.md`](run.md) |
