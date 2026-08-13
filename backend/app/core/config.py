@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,7 +14,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     # default provider for both tiers; must be registered in app.llm.registry
-    # options: anthropic | openai | ollama | gemini
+    # API providers remain supported; CLI providers use saved local CLI auth.
     llm_provider: str = "openai"
 
     # per-tier overrides, empty falls back to llm_provider
@@ -31,6 +32,11 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     gemini_api_key: str = ""
     ollama_base_url: str = "http://localhost:11434"
+
+    # local harnesses; registration only occurs when the executable is available
+    codex_cli_path: str = "codex"
+    claude_cli_path: str = "claude"
+    llm_cli_timeout_seconds: float = Field(default=300.0, gt=0)
 
     # diagram converter — must match a name registered in app.model.registry
     diagram_converter: str = "pydantic"

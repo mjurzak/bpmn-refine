@@ -131,3 +131,38 @@ def from_gemini(response: Any) -> TokenUsage | None:
         reasoning_tokens=_int(getattr(usage, "thoughts_token_count", None)),
         source="gemini",
     )
+
+
+def from_cli(usage: Any, source: str) -> TokenUsage | None:
+    """Read token counters from a CLI's JSON usage object when it reports them."""
+    if not isinstance(usage, dict):
+        return None
+
+    def value(*names: str) -> int | None:
+        for name in names:
+            parsed = _int(usage.get(name))
+            if parsed is not None:
+                return parsed
+        return None
+
+    cached_input = value("cached_input_tokens", "cachedInputTokens")
+    if cached_input is None:
+        cached_input = _sum_present(
+            value("cache_read_input_tokens", "cacheReadInputTokens"),
+            value("cache_creation_input_tokens", "cacheCreationInputTokens"),
+        )
+    parsed = TokenUsage(
+        input_tokens=value("input_tokens", "inputTokens", "prompt_tokens", "promptTokens"),
+        output_tokens=value(
+            "output_tokens", "outputTokens", "completion_tokens", "completionTokens"
+        ),
+        cached_input_tokens=cached_input,
+        reasoning_tokens=value(
+            "reasoning_tokens",
+            "reasoningTokens",
+            "reasoning_output_tokens",
+            "reasoningOutputTokens",
+        ),
+        source=source,
+    )
+    return parsed if parsed.total_tokens is not None else None

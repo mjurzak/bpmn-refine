@@ -67,8 +67,15 @@ Current providers (`backend/app/llm/providers/`):
 | Anthropic | `anthropic.py` | swappable via `.env` / `ExperimentConfig`; used for cross-model comparison |
 | Ollama | `ollama.py` | local/offline runs; subclasses `OpenAIProvider` (OpenAI-compatible endpoint) |
 | Gemini | `gemini.py` | Google models via `google-genai`; registered only when `GEMINI_API_KEY` is set (SDK imported lazily) |
+| Codex CLI | `codex_cli.py` | `codex exec` harness; registered only when `CODEX_CLI_PATH` is available |
+| Claude Code | `claude_cli.py` | `claude -p` harness; registered only when `CLAUDE_CLI_PATH` is available |
 
-Adding a provider: implement the protocol in a new module under `providers/` and register it via `backend/app/llm/registry.py` at startup. No other code changes.
+The CLI integrations intentionally cover only Codex CLI and Claude Code. The
+project's comparison scope is GPT/OpenAI and Claude/Anthropic because thesis
+compute and budget resources are limited; there is no Gemini CLI or
+Antigravity/agy integration.
+
+Adding a provider: implement the protocol in a new module under `providers/` and register it via `backend/app/llm/registry.py` at startup. Provider names in static settings and `ExperimentConfig.provider_override` remain open strings, so no enum change is required.
 
 ---
 
@@ -93,7 +100,28 @@ LLM_STRONG_PROVIDER=openai          # optional override for strong tasks
 LLM_FAST_PROVIDER=openai            # optional override for fast tasks
 LLM_STRONG_MODEL=gpt-5.6-sol
 LLM_FAST_MODEL=gpt-5.6-luna
+CODEX_CLI_PATH=codex             # optional; saved Codex CLI auth is reused
+CLAUDE_CLI_PATH=claude           # optional; saved Claude subscription auth is reused
+LLM_CLI_TIMEOUT_SECONDS=300
 ```
+
+CLI providers are registered only when their executable is found; startup does
+not make an account or paid-model call. Each request runs in a disposable
+temporary directory. Codex uses `exec --json --ephemeral --sandbox read-only`
+with user config/rules ignored and an explicit instruction not to invoke tools.
+Claude Code uses print mode, JSON output, safe mode, no session persistence,
+and no tools. Claude does not use `--bare`, so normal saved subscription
+authentication remains available. Registration reads `<executable> --version`
+without making a model call; every experiment call records that harness version
+alongside the provider and model.
+
+When a system prompt is supplied, the Codex adapter writes it to the isolated
+request directory and passes that file through `model_instructions_file`. This
+replaces Codex's model-specific base instructions for that invocation; it does
+not alter the user's global Codex configuration. Claude Code receives the same
+concept through its native `--system-prompt` option.
+This behavior follows OpenAI's description of the Codex agent loop:
+<https://openai.com/index/unrolling-the-codex-agent-loop/>.
 
 Per-request, `ExperimentConfig.model_tier` and `model_override` can supersede the static defaults, which is how ablation experiments (e.g. "run the same task on GPT and Claude") are driven without changing code.
 
@@ -128,7 +156,7 @@ For a deliberate A/B run, rename the parallel version `prompt_v2.txt`, register 
 ## structured outputs
 
 `complete_structured(...)` and `complete_structured_with_history(...)` constrain
-the model's reply to a JSON schema. The four providers each map the same
+the model's reply to a JSON schema. Each provider maps the same
 `schema` onto their native structured-output mechanism:
 
 | Provider | Native mechanism |
@@ -137,10 +165,28 @@ the model's reply to a JSON schema. The four providers each map the same
 | OpenAI | `response_format` json_schema with `strict: true` |
 | Ollama | same `response_format` (inherited from `OpenAIProvider`); served by Ollama's `format`/GBNF constrained decoding, so `strict` is left off |
 | Gemini | `responseSchema` + `response_mime_type="application/json"` |
+| Codex CLI | temporary schema file passed to `codex exec --output-schema` |
+| Claude Code | `--json-schema`; the adapter reads `structured_output` from the JSON envelope |
 
 The provider returns a JSON string; the client facade decodes it so call sites
 get a dict/list. Traces retain both the actual schema sent to the adapter and
 the raw structured output.
+
+The CLIs have no native messages API in this integration. History is serialized
+with explicit `[user N]` and `[assistant N]` delimiters, so role order is
+deterministic. This is a compatibility fallback, not equivalent to a native
+multi-turn conversation. CLI-reported token counters are mapped when present;
+missing usage remains missing. Temperature and seed are unsupported by both
+CLI harnesses. Codex receives reasoning effort through its per-invocation
+`model_reasoning_effort` configuration override, while Claude Code uses
+`--effort`; requested unsupported controls are recorded in
+`LlmTrace.unsupported_controls`.
+The Claude adapter removes inherited effort/thinking environment overrides for
+each call. Its `none` stratum sets `CLAUDE_CODE_DISABLE_THINKING=1`; other
+requested strata use the explicit `--effort` flag.
+The installed harnesses also do not expose the protocol's `max_tokens` cap;
+the adapter leaves that limit to the CLI/model default rather than adding an
+unverified flag and records `max_tokens` as unsupported.
 
 ### common response envelope
 
@@ -236,7 +282,10 @@ backend/app/llm/
 │   ├── anthropic.py
 │   ├── openai.py
 │   ├── ollama.py
-│   └── gemini.py
+│   ├── gemini.py
+│   ├── cli.py
+│   ├── codex_cli.py
+│   └── claude_cli.py
 └── prompts/
     ├── validate.txt
     ├── repair.txt

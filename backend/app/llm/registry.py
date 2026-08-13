@@ -10,17 +10,20 @@ Usage:
 from __future__ import annotations
 
 import logging
+import shutil
 
 from app.llm.protocol import LLMProvider
 
 logger = logging.getLogger(__name__)
 
 _registry: dict[str, LLMProvider] = {}
+_unavailable: dict[str, str] = {}
 
 
 def register(name: str, provider: LLMProvider) -> None:
     """Register a provider under a short name (e.g. "anthropic")."""
     _registry[name] = provider
+    _unavailable.pop(name, None)
 
 
 def get_provider(name: str | None = None) -> LLMProvider:
@@ -30,6 +33,8 @@ def get_provider(name: str | None = None) -> LLMProvider:
 
         name = settings.llm_provider
     if name not in _registry:
+        if name in _unavailable:
+            raise KeyError(f"LLM provider '{name}' is unavailable: {_unavailable[name]}")
         raise KeyError(
             f"No LLM provider registered under '{name}'. Available: {list(_registry)}"
         )
@@ -42,6 +47,9 @@ def _bootstrap() -> None:
     from app.llm.providers.anthropic import AnthropicProvider
     from app.llm.providers.ollama import OllamaProvider
     from app.llm.providers.openai import OpenAIProvider
+    from app.llm.providers.claude_cli import ClaudeCliProvider
+    from app.llm.providers.cli import cli_version
+    from app.llm.providers.codex_cli import CodexCliProvider
 
     logger.debug("llm bootstrap provider=%r", settings.llm_provider)
     logger.debug(
@@ -73,6 +81,37 @@ def _bootstrap() -> None:
     # ollama runs locally, no key needed
     register("ollama", OllamaProvider(settings.ollama_base_url))
     logger.debug("registered ollama provider")
+
+    _register_cli(
+        "codex_cli",
+        settings.codex_cli_path,
+        lambda: CodexCliProvider(
+            settings.codex_cli_path,
+            settings.llm_cli_timeout_seconds,
+            harness_version=cli_version(settings.codex_cli_path),
+        ),
+    )
+    _register_cli(
+        "claude_cli",
+        settings.claude_cli_path,
+        lambda: ClaudeCliProvider(
+            settings.claude_cli_path,
+            settings.llm_cli_timeout_seconds,
+            harness_version=cli_version(settings.claude_cli_path),
+        ),
+    )
+
+
+def _register_cli(name: str, executable: str, factory) -> None:
+    if shutil.which(executable):
+        register(name, factory())
+        logger.debug("registered %s provider using %r", name, executable)
+    else:
+        _unavailable[name] = (
+            f"executable {executable!r} was not found; install it or configure "
+            f"the corresponding CLI path"
+        )
+        logger.info("did not register %s: %s", name, _unavailable[name])
 
 
 _bootstrap()

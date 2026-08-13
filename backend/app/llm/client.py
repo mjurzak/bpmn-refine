@@ -33,7 +33,10 @@ async def complete(
     """
     resolved_model = model or settings.llm_fast_model
     adapter = get_provider(provider)
-    honored, unsupported = _resolve_sampling(adapter, temperature, seed)
+    resolved_provider = provider or settings.llm_provider
+    honored, unsupported, honored_reasoning = _resolve_controls(
+        adapter, max_tokens, temperature, seed, reasoning_effort
+    )
     started_at = utc_now()
     started = perf_counter()
     try:
@@ -42,14 +45,15 @@ async def complete(
             system=system,
             model=resolved_model,
             max_tokens=max_tokens,
-            reasoning_effort=reasoning_effort,
+            reasoning_effort=honored_reasoning,
             **honored,
         )
     except Exception as exc:
         _append_trace(
             kind="complete",
             task=task,
-            provider=provider,
+            provider=resolved_provider,
+            provider_version=getattr(adapter, "harness_version", None),
             model=resolved_model,
             max_tokens=max_tokens,
             reasoning_effort=reasoning_effort,
@@ -67,7 +71,8 @@ async def complete(
     _append_trace(
         kind="complete",
         task=task,
-        provider=provider,
+        provider=resolved_provider,
+        provider_version=getattr(adapter, "harness_version", None),
         model=resolved_model,
         max_tokens=max_tokens,
         reasoning_effort=reasoning_effort,
@@ -103,7 +108,10 @@ async def complete_with_history(
     """
     resolved_model = model or settings.llm_fast_model
     adapter = get_provider(provider)
-    honored, unsupported = _resolve_sampling(adapter, temperature, seed)
+    resolved_provider = provider or settings.llm_provider
+    honored, unsupported, honored_reasoning = _resolve_controls(
+        adapter, max_tokens, temperature, seed, reasoning_effort
+    )
     started_at = utc_now()
     started = perf_counter()
     try:
@@ -112,14 +120,15 @@ async def complete_with_history(
             system=system,
             model=resolved_model,
             max_tokens=max_tokens,
-            reasoning_effort=reasoning_effort,
+            reasoning_effort=honored_reasoning,
             **honored,
         )
     except Exception as exc:
         _append_trace(
             kind="complete_with_history",
             task=task,
-            provider=provider,
+            provider=resolved_provider,
+            provider_version=getattr(adapter, "harness_version", None),
             model=resolved_model,
             max_tokens=max_tokens,
             reasoning_effort=reasoning_effort,
@@ -137,7 +146,8 @@ async def complete_with_history(
     _append_trace(
         kind="complete_with_history",
         task=task,
-        provider=provider,
+        provider=resolved_provider,
+        provider_version=getattr(adapter, "harness_version", None),
         model=resolved_model,
         max_tokens=max_tokens,
         reasoning_effort=reasoning_effort,
@@ -173,7 +183,10 @@ async def complete_structured(
     """
     resolved_model = model or settings.llm_fast_model
     adapter = get_provider(provider)
-    honored, unsupported = _resolve_sampling(adapter, temperature, seed)
+    resolved_provider = provider or settings.llm_provider
+    honored, unsupported, honored_reasoning = _resolve_controls(
+        adapter, max_tokens, temperature, seed, reasoning_effort
+    )
     started_at = utc_now()
     started = perf_counter()
     try:
@@ -183,14 +196,15 @@ async def complete_structured(
             model=resolved_model,
             schema=schema,
             max_tokens=max_tokens,
-            reasoning_effort=reasoning_effort,
+            reasoning_effort=honored_reasoning,
             **honored,
         )
     except Exception as exc:
         _append_trace(
             kind="complete_structured",
             task=task,
-            provider=provider,
+            provider=resolved_provider,
+            provider_version=getattr(adapter, "harness_version", None),
             model=resolved_model,
             max_tokens=max_tokens,
             reasoning_effort=reasoning_effort,
@@ -209,7 +223,8 @@ async def complete_structured(
     _append_trace(
         kind="complete_structured",
         task=task,
-        provider=provider,
+        provider=resolved_provider,
+        provider_version=getattr(adapter, "harness_version", None),
         model=resolved_model,
         max_tokens=max_tokens,
         reasoning_effort=reasoning_effort,
@@ -242,7 +257,10 @@ async def complete_structured_with_history(
     """Schema-constrained multi-turn completion, returning parsed JSON."""
     resolved_model = model or settings.llm_fast_model
     adapter = get_provider(provider)
-    honored, unsupported = _resolve_sampling(adapter, temperature, seed)
+    resolved_provider = provider or settings.llm_provider
+    honored, unsupported, honored_reasoning = _resolve_controls(
+        adapter, max_tokens, temperature, seed, reasoning_effort
+    )
     started_at = utc_now()
     started = perf_counter()
     try:
@@ -252,14 +270,15 @@ async def complete_structured_with_history(
             model=resolved_model,
             schema=schema,
             max_tokens=max_tokens,
-            reasoning_effort=reasoning_effort,
+            reasoning_effort=honored_reasoning,
             **honored,
         )
     except Exception as exc:
         _append_trace(
             kind="complete_structured_with_history",
             task=task,
-            provider=provider,
+            provider=resolved_provider,
+            provider_version=getattr(adapter, "harness_version", None),
             model=resolved_model,
             max_tokens=max_tokens,
             reasoning_effort=reasoning_effort,
@@ -278,7 +297,8 @@ async def complete_structured_with_history(
     _append_trace(
         kind="complete_structured_with_history",
         task=task,
-        provider=provider,
+        provider=resolved_provider,
+        provider_version=getattr(adapter, "harness_version", None),
         model=resolved_model,
         max_tokens=max_tokens,
         reasoning_effort=reasoning_effort,
@@ -303,15 +323,19 @@ def _unpack(result: LlmResponse | str) -> tuple[str, TokenUsage | None]:
     return result, None
 
 
-def _resolve_sampling(
+def _resolve_controls(
     adapter: Any,
+    max_tokens: int | None,
     temperature: float | None,
     seed: int | None,
-) -> tuple[dict[str, Any], list[str]]:
-    """split the requested sampling controls into forwarded and dropped, so the trace can record which ones ran"""
+    reasoning_effort: str | None,
+) -> tuple[dict[str, Any], list[str], str | None]:
+    """Split requested controls into forwarded and unsupported controls."""
     honored: dict[str, Any] = {}
     unsupported: list[str] = []
 
+    if max_tokens is not None and not getattr(adapter, "supports_max_tokens", True):
+        unsupported.append("max_tokens")
     if temperature is not None:
         if getattr(adapter, "supports_temperature", True):
             honored["temperature"] = temperature
@@ -323,7 +347,12 @@ def _resolve_sampling(
         else:
             unsupported.append("seed")
 
-    return honored, unsupported
+    honored_reasoning = reasoning_effort
+    if reasoning_effort and not getattr(adapter, "supports_reasoning_effort", True):
+        unsupported.append("reasoning_effort")
+        honored_reasoning = None
+
+    return honored, unsupported, honored_reasoning
 
 
 def _append_trace(
@@ -336,6 +365,7 @@ def _append_trace(
     ],
     task: str | None,
     provider: str | None,
+    provider_version: str | None,
     model: str,
     max_tokens: int,
     reasoning_effort: str | None,
@@ -357,9 +387,18 @@ def _append_trace(
             kind=kind,
             task=task,
             provider=provider,
+            provider_version=provider_version,
             model=model,
             reasoning_effort=reasoning_effort,
+            effective_reasoning_effort=(
+                None
+                if "reasoning_effort" in unsupported_controls
+                else reasoning_effort
+            ),
             max_tokens=max_tokens,
+            effective_max_tokens=(
+                None if "max_tokens" in unsupported_controls else max_tokens
+            ),
             temperature=temperature,
             seed=seed,
             unsupported_controls=unsupported_controls or [],

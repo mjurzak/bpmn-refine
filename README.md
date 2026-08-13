@@ -12,6 +12,13 @@ Part of a master's thesis: *Design and Implementation of an Interactive System S
 
 Nothing is applied automatically. Every repair and refinement is a proposal until the user accepts it.
 
+The supported local harnesses are Codex CLI (`codex_cli`) and Claude Code
+(`claude_cli`), alongside the existing API providers. The thesis comparison
+deliberately focuses on GPT/OpenAI and Claude/Anthropic because compute and
+budget resources are limited; Gemini CLI and Antigravity/agy are intentionally
+out of scope. See [LLM integration](docs/llm-integration.md) for executable
+paths, authentication, isolation, and version-pinning guidance.
+
 ## Architecture
 
 ```

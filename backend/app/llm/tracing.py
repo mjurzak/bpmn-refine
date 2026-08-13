@@ -26,12 +26,16 @@ class LlmTrace(BaseModel):
     # logical task, independent of the call shape
     task: str | None = None
     provider: str | None = None
+    provider_version: str | None = None
     model: str
+    # requested value and the value actually forwarded to the provider
     reasoning_effort: str | None = None
+    effective_reasoning_effort: str | None = None
     max_tokens: int
+    effective_max_tokens: int | None = None
     temperature: float | None = None
     seed: int | None = None
-    # controls listed here were requested but never reached the provider
+    # controls listed here were requested but the selected provider cannot honor
     unsupported_controls: list[str] = Field(default_factory=list)
     started_at: datetime
     duration_ms: int
