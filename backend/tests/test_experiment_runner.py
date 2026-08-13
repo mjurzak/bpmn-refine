@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
+from app import experiment_runner
 from app.experiment_runner import (
     MANIFEST_FILENAME,
     RESULTS_FILENAME,
@@ -15,11 +16,14 @@ from app.experiment_runner import (
     execute_sweep,
     expand_configs,
     load_spec,
+    resolve_descriptions,
     resolve_inputs,
     run_trial,
     trial_id,
 )
 from app.experiments import ExperimentConfig, IrFormat, RepairMode
+from app.llm.tracing import LlmTrace, utc_now
+from app.services.validation import ValidationResult
 
 # a quick-fix rule case: repairs deterministically without reaching a provider
 QUICK_FIX_INPUT = Path("data/rule_cases/R001_no_start_event.broken.bpmn")
@@ -122,6 +126,65 @@ def test_excluding_everything_is_an_error():
         resolve_inputs(spec, Path("."))
 
 
+def test_description_tree_is_joined_by_variant_relative_path(tmp_path):
+    variant = tmp_path / "dataset" / "variants" / "single" / "M01" / "01.bpmn"
+    description = (
+        tmp_path
+        / "dataset"
+        / "descriptions"
+        / "variants"
+        / "single"
+        / "M01"
+        / "01.txt"
+    )
+    variant.parent.mkdir(parents=True)
+    description.parent.mkdir(parents=True)
+    variant.write_text("<definitions />", encoding="utf-8")
+    description.write_text("The clerk checks the request.", encoding="utf-8")
+    spec = _spec(
+        inputs=[str(variant)],
+        description_root=str(tmp_path / "dataset/descriptions/variants"),
+    )
+
+    assert resolve_descriptions(spec, [variant], Path(".")) == {
+        variant: description
+    }
+
+
+def test_shared_description_root_maps_variants_and_clean_seeds(tmp_path):
+    variant = tmp_path / "dataset" / "variants" / "single" / "M01" / "01.bpmn"
+    seed = tmp_path / "dataset" / "seeds" / "01.bpmn"
+    variant_description = (
+        tmp_path / "dataset" / "descriptions" / "variants" / "single" / "M01" / "01.txt"
+    )
+    seed_description = tmp_path / "dataset" / "descriptions" / "seeds" / "01.txt"
+    for path in (variant, seed, variant_description, seed_description):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("content", encoding="utf-8")
+    spec = _spec(
+        inputs=[str(variant), str(seed)],
+        description_root=str(tmp_path / "dataset/descriptions"),
+    )
+
+    assert resolve_descriptions(spec, [variant, seed], Path(".")) == {
+        variant: variant_description,
+        seed: seed_description,
+    }
+
+
+def test_missing_matched_description_fails_before_a_sweep(tmp_path):
+    variant = tmp_path / "variants" / "single" / "M01" / "01.bpmn"
+    variant.parent.mkdir(parents=True)
+    variant.write_text("<definitions />", encoding="utf-8")
+    spec = _spec(
+        inputs=[str(variant)],
+        description_root=str(tmp_path / "descriptions/variants"),
+    )
+
+    with pytest.raises(FileNotFoundError, match="description not found"):
+        resolve_descriptions(spec, [variant], Path("."))
+
+
 # ----- trial identity -------------------------------------------------------
 
 
@@ -152,6 +215,36 @@ def test_trial_count_is_inputs_times_configs_times_repeats():
     assert len(build_trials(spec, inputs, configs)) == len(inputs) * 2 * 3
 
 
+def test_call_record_preserves_harness_version_and_requested_controls():
+    trace = LlmTrace(
+        kind="complete",
+        provider="codex_cli",
+        provider_version="codex-cli 1.2.3",
+        model="gpt-model",
+        reasoning_effort="high",
+        effective_reasoning_effort="high",
+        max_tokens=4096,
+        effective_max_tokens=None,
+        seed=7,
+        unsupported_controls=["max_tokens", "seed"],
+        started_at=utc_now(),
+        duration_ms=12,
+        prompt="prompt",
+        output="answer",
+    )
+
+    record = experiment_runner._call_record(trace, keep_payloads=False)
+
+    assert record.provider == "codex_cli"
+    assert record.provider_version == "codex-cli 1.2.3"
+    assert record.reasoning_effort == "high"
+    assert record.effective_reasoning_effort == "high"
+    assert record.max_tokens == 4096
+    assert record.effective_max_tokens is None
+    assert record.seed == 7
+    assert record.unsupported_controls == ["max_tokens", "seed"]
+
+
 # ----- one trial ------------------------------------------------------------
 
 
@@ -168,6 +261,80 @@ async def test_a_trial_records_phases_validation_and_the_final_diagram():
     assert record.post_validation is not None
     assert record.final_diagram is not None
     assert set(record.phases) == {"validate", "repair", "revalidate"}
+
+
+async def test_validation_only_trial_skips_repair_and_revalidation():
+    spec = _spec(run_repair=False)
+    trial = build_trials(spec, [QUICK_FIX_INPUT], expand_configs(spec))[0]
+
+    record = await run_trial(trial)
+
+    assert record.error is None
+    assert record.pre_validation is not None
+    assert "R001" in record.pre_validation.issue_ids
+    assert record.repair is None
+    assert record.post_validation is None
+    assert set(record.phases) == {"validate"}
+    assert "repair" not in record.run.prompt_versions
+
+
+async def test_a_trial_threads_and_records_the_reference_description(
+    tmp_path, monkeypatch
+):
+    description = tmp_path / "01.txt"
+    description.write_text("The clerk reviews the request.", encoding="utf-8")
+    seen: list[str | None] = []
+
+    async def fake_validate(diagram, **kwargs):
+        seen.append(kwargs.get("reference_description"))
+        return ValidationResult(is_valid=True, issues=[], semantic_issues=[])
+
+    monkeypatch.setattr(experiment_runner, "validate_diagram", fake_validate)
+    spec = _spec(base={"tiers_enabled": {"t3": True}})
+    trial = build_trials(
+        spec,
+        [QUICK_FIX_INPUT],
+        expand_configs(spec),
+        {QUICK_FIX_INPUT: description},
+    )[0]
+
+    record = await run_trial(trial)
+
+    assert seen == ["The clerk reviews the request."]
+    assert record.description_path == str(description)
+    assert record.description_hash
+    assert record.description_chars == 30
+
+
+async def test_description_ablation_can_hide_the_loaded_description(
+    tmp_path, monkeypatch
+):
+    description = tmp_path / "01.txt"
+    description.write_text("The clerk reviews the request.", encoding="utf-8")
+    seen: list[str | None] = []
+
+    async def fake_validate(diagram, **kwargs):
+        seen.append(kwargs.get("reference_description"))
+        return ValidationResult(is_valid=True, issues=[], semantic_issues=[])
+
+    monkeypatch.setattr(experiment_runner, "validate_diagram", fake_validate)
+    spec = _spec(
+        base={
+            "tiers_enabled": {"t3": True},
+            "include_reference_description": False,
+        }
+    )
+    trial = build_trials(
+        spec,
+        [QUICK_FIX_INPUT],
+        expand_configs(spec),
+        {QUICK_FIX_INPUT: description},
+    )[0]
+
+    record = await run_trial(trial)
+
+    assert seen == [None]
+    assert record.description_hash
 
 
 async def test_the_run_block_names_the_config_and_the_commit():
@@ -258,7 +425,12 @@ async def test_an_input_that_disappeared_mid_sweep_is_recorded_not_raised(tmp_pa
     assert record.pre_validation is None
 
 
-async def test_payloads_are_withheld_unless_asked_for():
+async def test_payloads_are_withheld_unless_asked_for(monkeypatch):
+    from app.dry_run import MockProvider
+    from app.llm import client as llm_client
+
+    provider = MockProvider()
+    monkeypatch.setattr(llm_client, "get_provider", lambda name=None: provider)
     spec = _spec(base={"tiers_enabled": {"t1": True}, "repair_mode": "regen"})
     trial = build_trials(spec, [QUICK_FIX_INPUT], expand_configs(spec))[0]
 
@@ -315,7 +487,7 @@ async def test_no_resume_reruns_everything(tmp_path):
     again = await execute_sweep(spec, out_dir=tmp_path, mock=True, resume=False)
 
     assert again.executed == 1
-    assert len((tmp_path / RESULTS_FILENAME).read_text().strip().splitlines()) == 2
+    assert len((tmp_path / RESULTS_FILENAME).read_text().strip().splitlines()) == 1
 
 
 async def test_limit_caps_the_pending_trials(tmp_path):
@@ -375,7 +547,9 @@ def test_completed_ids_are_empty_when_nothing_has_run(tmp_path):
 
 def test_the_shipped_specs_load_and_expand():
     """A spec that only fails when the sweep starts wastes the setup."""
-    for path in sorted(Path("experiments/specs").glob("*.yaml")):
+    paths = sorted(Path("experiments/specs").rglob("*.yaml"))
+    assert paths
+    for path in paths:
         spec = load_spec(path)
         assert spec.experiment_id
         assert expand_configs(spec)

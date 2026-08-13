@@ -1,8 +1,7 @@
 # experiments
 
-Phase 3 of the thesis evaluates the system on held-out BPMN corpora.
-
-> **Status.** Delivered: the runner, the reproducibility contract, and the efficiency capture — see [running a sweep](#running-a-sweep). Still planned: the metric catalogue, the corpora, and the ablation results. What exists is the machinery that records the data the metrics are computed from, not the analysis scripts. Sections below say which side they fall on.
+The experiment pipeline evaluates fixed system configurations on the complete
+versioned BPMN benchmark.
 
 This doc owns:
 
@@ -26,14 +25,13 @@ ExperimentConfig {
   // model selection
   model_tier:         "strong" | "fast" | "custom"
   model_override?:    str                 // explicit model id when tier = custom
-  provider_override?: str                 // "anthropic" | "openai" | "ollama"
+  provider_override?: str                 // built-in or custom registered provider name
 
   // IR surface
   ir_format:          "pydantic" | "pydantic_json" | "yaml" | "mermaid" | "compact_json"
 
   // validation
   tiers_enabled:      { t1: bool, t2: bool, t3: bool }
-  t2_tools?:          ["bpmn_analyzer", "woflan", "bpmnspector"]  // default: all enabled
   include_formal_evidence: bool           // default true; false withholds counterexamples
 
   // repair
@@ -54,17 +52,19 @@ ExperimentConfig {
 ### notes on individual fields
 
 - `model_tier` + `model_override` are resolved by [`llm-integration.md`](llm-integration.md) routing. `custom` requires `model_override`.
-- `provider_override` lets a single experiment force e.g. Claude vs GPT without touching `.env`.
-- `t2_tools` is the ablation lever for [`formal-checkers.md`](formal-checkers.md). **As delivered, tier 2 is Woflan alone**, so this field currently has no subset to vary — see the ablation plan below.
+- `provider_override` lets a single experiment force e.g. Claude vs GPT without touching `.env`; custom names remain valid when their adapter is registered.
+- The deliberate CLI comparison scope is `codex_cli` and `claude_cli`: GPT/OpenAI
+  and Claude/Anthropic are the thesis focus because compute and budget are
+  limited. Gemini CLI and Antigravity/agy are intentionally out of scope.
 - `include_formal_evidence` withholds the counterexample traces, dead elements, and uncovered places from every prompt, while the checker still runs and its verdict still travels. That separates what the *evidence* contributes from what the *check* contributes. Turning the checker off instead would confound the two.
-- `temperature` defaults to **`null`**, meaning "whatever the model defaults to". A fixed `0.0` was the earlier default and was wrong: several current reasoning models reject an explicitly set temperature, including `0.0`, so the configuration declared a value the run never used. Set it to request one; a model that refuses now fails the call rather than silently substituting its own.
+- `temperature` defaults to **`null`**, meaning "whatever the model defaults to". Set it explicitly only for models that support it; unsupported requested controls fail instead of being silently substituted.
 - `seed` is best-effort — not all providers honour it. Anthropic's Messages API has no sampling seed at all. A requested control the selected provider cannot forward is recorded in `LlmTrace.unsupported_controls` rather than reported as if it had applied, so a record never implies a seeded run that never happened.
 
 ### config hashing
 
 `config_hash = sha256(canonical_json(ExperimentConfig))[:12]`
 
-Canonical JSON means keys sorted, no whitespace, null fields dropped. The hash is emitted in `run.config_hash` and is the join key between a result and its configuration in Phase 3 analysis.
+Canonical JSON means keys sorted, no whitespace, null fields dropped. The hash is emitted in `run.config_hash` and is the join key between a result and its configuration.
 
 ---
 
@@ -106,11 +106,21 @@ GED / RGED implementations follow the metric definitions in the PMo Benchmark an
 | **tokens in / tokens out** | per LLM call, summed per repair |
 | **token reduction vs BPMN XML** | `1 - tokens(ir_format) / tokens(bpmn_xml)` for the same diagram |
 
-Capture is delivered. Every trial record carries `duration_ms` per phase and per call, provider-reported `usage` per call, `prompt_chars` per call, and `input_bytes` — the raw BPMN XML size the reduction is stated against. The aggregation script is still to write.
+Capture is delivered. Every trial record carries `duration_ms` per phase and per call, provider and harness version, requested and effective reasoning/token controls, unsupported controls, provider-reported `usage`, `prompt_chars`, and `input_bytes` — the raw BPMN XML size the reduction is stated against.
 
 Token counts are what the provider reported, not an estimate. The reporting conventions differ in a way that matters when summing: Anthropic excludes cache reads and writes from `input_tokens`, so the billed prompt is `input_tokens + cached_input_tokens`, while OpenAI and Gemini include them, so `cached_input_tokens` is a subset rather than an addend. Each row records its convention in `usage.source`. A call whose response carried no usage block goes into `calls_missing_usage` rather than counting as zero — otherwise a total that is really a lower bound reads as complete.
 
 An Ollama token count is not comparable to a hosted one: the tokenizer is the local model's. Those rows are tagged `source: "ollama"` for that reason.
+
+CLI runs reuse normal saved CLI authentication, do not probe login state at
+startup, and should pin Codex/Claude Code versions for reproducibility. The
+adapters isolate each request and disable customizations. Claude's tools are
+disabled; Codex runs read-only and is explicitly instructed not to invoke its
+tools. Both serialize history when a native messages API is unavailable. Their
+CLI version is part of the experiment environment, not the model name, so
+registration reads it with `--version` and each call stores it as
+`provider_version`. Claude effort-related environment overrides are cleared;
+the `none` stratum explicitly disables thinking.
 
 Mermaid ~93% reduction against raw BPMN XML is the reference point (Grohs et al., 2024). YAML is the novel candidate; Mermaid is the strong-baseline candidate.
 
@@ -124,9 +134,7 @@ A separate strong-tier LLM call rates repaired diagrams on a small rubric (label
 
 **Owned by [`evaluation/METHODOLOGY.md`](../evaluation/METHODOLOGY.md), not by this file.** Where the two disagree about what the inputs are, the methodology wins; this section carries only what the runner needs to know.
 
-One corpus: the **PMo Dataset** (Brissard et al., 2025), 55 human-authored or expert-validated process models with English descriptions, vendored from Zenodo into `data/pmo-dataset/` and gitignored. It already subsumes the two sets an earlier version of this doc listed separately — PMo Benchmark is pairs 01–20 and PET-7 is pairs 49–54 — so they are not independent corpora and counting them as three overstates the coverage.
-
-~~SAP-SAM subset~~ — **dropped.** It was listed for observational metrics over a large unlabelled set. It was never fetched, no metric in the catalogue above needs an unlabelled corpus, and the token-reduction curve is measured per input against `input_bytes` on the labelled set anyway. Recorded as a scope decision.
+One corpus: the **PMo Dataset** (Brissard et al., 2025), 55 human-authored or expert-validated process models with English descriptions, vendored from Zenodo into `data/pmo-dataset/` and gitignored. PMo Benchmark pairs 01–20 and PET-7 pairs 49–54 are subsets of this corpus, not independent datasets.
 
 The benchmark the sweeps actually read is *derived* from PMo by defect injection, not by preprocessing: `evaluation/generator/` emits `data/eval/<version>/`, and the layout contract it has to keep is [`data/eval/README.md`](../data/eval/README.md). The dataset version is declared in the spec and recorded in the manifest.
 
@@ -157,12 +165,13 @@ Ablations are `ExperimentConfig` sweeps. Each row below corresponds to a plot or
 | **repair mode** | `repair_mode` (atomic vs regen) | quantify atomic's advantage under this system (not just BPMN Assistant's) |
 | **max iterations** | `max_repair_iters` (1, 2, 3, 5, 10) | does convergence actually need multiple rounds, and how many |
 | **model tier** | `model_tier` + `model_override` | strong vs fast; cross-provider (Claude vs GPT vs local Llama via Ollama) |
-| ~~**checker stack**~~ | ~~`t2_tools` (each subset)~~ | **dropped** — tier 2 ships one checker (Woflan), so there is no subset to vary. Building the Analyzer 2.0 adapter for this ablation alone is the most expensive remaining item, and the counterexample ablation below already tests the same claim. Recorded as a scope decision. |
 | **counterexample prompting** | `include_formal_evidence` | does giving the model the checker's evidence improve repair over giving it the verdict alone |
 
 Each ablation is run with **fixed** other fields and sufficient trials to get a confidence interval (N=10 default; higher where provider non-determinism is material).
 
-Specs for tier contribution, IR format, counterexample evidence, and repair budget live in [`experiments/specs/`](../experiments/specs/). **They currently resolve to development fixtures, not to the benchmark** — dataset `v1.0.0` is not generated yet, and each spec declares `dataset_version: dev-fixtures` so a manifest cannot hide that. [`experiments/README.md`](../experiments/README.md) records the two-line migration.
+Executable `v1.0` benchmark specs live in `experiments/specs/benchmark/`; regenerate them after
+each model/IR/pipeline selection as described in
+[`experiments/README.md`](../experiments/README.md).
 
 ---
 
@@ -173,7 +182,7 @@ Specs for tier contribution, IR format, counterexample evidence, and repair budg
 make experiment-rehearse SPEC=experiments/specs/smoke.yaml OUT=/tmp/rehearsal
 
 # then for real; --out is where results.jsonl and manifest.json land
-make experiment SPEC=experiments/specs/ir_format.yaml OUT=experiments/results/ir-format
+make experiment SPEC=experiments/specs/benchmark/model-selection.yaml OUT=experiments/results/model-selection
 ```
 
 Re-running the same `SPEC`/`OUT` pair **resumes**: trials already on disk are skipped. A sweep killed by a rate limit at trial 40 keeps its 40 results and picks up at 41.
@@ -182,11 +191,13 @@ Re-running the same `SPEC`/`OUT` pair **resumes**: trials already on disk are sk
 
 ```yaml
 experiment_id: ir-format
-dataset_version: v1.0.0       # names the corpus; recorded in the manifest
+dataset_version: v1.0         # names the corpus; recorded in the manifest
 inputs:                       # literal paths or globs, resolved against --root
-  - data/eval/v1.0.0/variants/*.bpmn
+  - data/eval/v1.0/variants/**/*.bpmn
+description_root: data/eval/v1.0/descriptions/variants
+                              # mirrors paths below variants/; required by semantic sweeps
 exclude:                      # curation criteria belong in the spec, where the
-  - data/eval/v1.0.0/variants/07_S03_f1.bpmn   # manifest records them
+  - data/eval/v1.0/variants/single/S03/07.bpmn   # manifest records them
 base:                         # ExperimentConfig fields shared by every trial
   model_tier: strong
 axes:                         # expanded as a full cartesian product over `base`
@@ -196,7 +207,7 @@ repeats: 3                    # identical trials, for variance across a
                               # non-deterministic model
 ```
 
-Trial count is `inputs × configs × repeats`. Each trial gets a deterministic `trial_id` derived from the experiment id, input path, canonical config, and repeat index — so adding an axis value or reordering the spec does not invalidate results already on disk. The application commit is deliberately *not* in the id: a rebuilt binary should not silently re-run a completed sweep, and the manifest records the commit so a mismatch is noticeable.
+Trial count is `inputs × configs × repeats`. Each trial gets a deterministic `trial_id` derived from the experiment id, input path, optional description path, canonical config, and repeat index — so adding an axis value or reordering the spec does not invalidate results already on disk. The application commit is deliberately *not* in the id: a rebuilt binary should not silently re-run a completed sweep, and the manifest records the commit so a mismatch is noticeable.
 
 ### how a run is stored
 
@@ -233,7 +244,7 @@ Three properties of this record matter for the analysis:
 
 Full prompts and responses are withheld unless `--keep-payloads` is passed; `prompt_chars` is recorded either way, since it is the token-reduction denominator.
 
-`manifest.json` records the spec, the application commit, resolved inputs with their hashes, every config hash, and the executed / skipped / failed counts.
+`manifest.json` records the spec, the application commit, resolved inputs and reference descriptions with their hashes, every config hash, and the executed / skipped / failed counts.
 
 Analysis scripts read the JSONL and join on `run.config_hash`. No post-hoc instrumentation is allowed — if a metric requires data not in the record, the application is changed first and the sweep is re-run.
 

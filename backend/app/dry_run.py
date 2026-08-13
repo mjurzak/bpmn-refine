@@ -17,7 +17,6 @@ from app.experiments import (
     ExperimentConfig,
     IrFormat,
     RepairMode,
-    T2Tool,
     TiersEnabled,
     app_commit,
     build_run_block,
@@ -127,6 +126,8 @@ class MockProvider:
         self.calls.append({"kind": "complete_structured", "prompt": prompt})
         definitions = schema.get("$defs", {})
         if "SemanticFindings" in definitions:
+            result = {"findings": [_canned_semantic_finding(prompt)]}
+        elif "HolisticFindings" in definitions:
             result = {"findings": [_canned_semantic_finding(prompt)]}
         elif "AtomicEditOpsResult" in definitions:
             result = {"ops": _canned_ops(prompt)}
@@ -257,7 +258,6 @@ def build_matrix() -> list[tuple[str, ExperimentConfig]]:
                 f"formal_evidence:{'on' if enabled else 'off'}",
                 ExperimentConfig(
                     tiers_enabled=TiersEnabled(t1=True, t2=True),
-                    t2_tools=[T2Tool.WOFLAN],
                     include_formal_evidence=enabled,
                 ),
             )
@@ -397,7 +397,7 @@ async def execute(input_paths: tuple[Path, ...] | list[Path]) -> dict[str, Any]:
     cases = []
     # what each fixture lost on import
     diagnostics: dict[str, Any] = {}
-    # patched here rather than via `provider_override`, which only takes real ProviderNames
+    # patched here so the dry run cannot accidentally resolve a real registered provider
     original_get_provider = llm_client.get_provider
     llm_client.get_provider = lambda name=None: provider
     try:

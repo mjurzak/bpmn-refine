@@ -70,11 +70,15 @@ class SweepSpec(BaseModel):
     experiment_id: str
     dataset_version: str | None = None
     inputs: list[str] = Field(default_factory=list)
+    # mirrored .txt tree, joined to paths below the input's `variants/` segment
+    description_root: str | None = None
     # applied after `inputs` expands, so the manifest records what was excluded
     exclude: list[str] = Field(default_factory=list)
     base: dict[str, Any] = Field(default_factory=dict)
     axes: dict[str, list[Any]] = Field(default_factory=dict)
     configs: list[dict[str, Any]] = Field(default_factory=list)
+    # validation-only sweeps skip the otherwise automatic repair/revalidation phases
+    run_repair: bool = True
     # identical trials repeated for variance; the repeat index is part of the trial id
     repeats: int = Field(default=1, ge=1)
     notes: str | None = None
@@ -126,6 +130,45 @@ def resolve_inputs(spec: SweepSpec, root: Path) -> list[Path]:
     return resolved
 
 
+def resolve_descriptions(
+    spec: SweepSpec,
+    inputs: list[Path],
+    root: Path,
+) -> dict[Path, Path]:
+    """Resolve one explicit reference description for every dataset variant."""
+    if spec.description_root is None:
+        return {}
+
+    description_root = Path(spec.description_root)
+    if not description_root.is_absolute():
+        description_root = root / description_root
+
+    descriptions: dict[Path, Path] = {}
+    for input_path in inputs:
+        marker_positions = [
+            (index, part)
+            for index, part in enumerate(input_path.parts)
+            if part in {"variants", "seeds"}
+        ]
+        if not marker_positions:
+            raise ValueError(
+                "input has no 'variants' or 'seeds' path segment for description matching: "
+                f"{input_path}"
+            )
+        marker_index, marker = marker_positions[-1]
+        relative_start = (
+            marker_index + 1 if description_root.name == marker else marker_index
+        )
+        relative = Path(*input_path.parts[relative_start:]).with_suffix(".txt")
+        description = description_root / relative
+        if not description.is_file():
+            raise FileNotFoundError(
+                f"description not found for {input_path}: {description}"
+            )
+        descriptions[input_path] = description
+    return descriptions
+
+
 def expand_configs(spec: SweepSpec) -> list[ExperimentConfig]:
     """the cartesian product of `axes` over `base`, then any explicit configs"""
     expanded: list[ExperimentConfig] = []
@@ -150,12 +193,19 @@ class Trial(BaseModel):
     trial_id: str
     experiment_id: str
     input_path: str
+    description_path: str | None = None
+    run_repair: bool = True
     repeat: int
     config: ExperimentConfig
 
 
 def trial_id(
-    experiment_id: str, input_path: Path, config: ExperimentConfig, repeat: int
+    experiment_id: str,
+    input_path: Path,
+    config: ExperimentConfig,
+    repeat: int,
+    description_path: Path | None = None,
+    run_repair: bool = True,
 ) -> str:
     """a stable identity for resumption
 
@@ -166,6 +216,8 @@ def trial_id(
         [
             experiment_id,
             str(input_path),
+            str(description_path or ""),
+            str(run_repair),
             canonical_config_json(config),
             str(repeat),
         ]
@@ -174,19 +226,33 @@ def trial_id(
 
 
 def build_trials(
-    spec: SweepSpec, inputs: list[Path], configs: list[ExperimentConfig]
+    spec: SweepSpec,
+    inputs: list[Path],
+    configs: list[ExperimentConfig],
+    descriptions: dict[Path, Path] | None = None,
 ) -> list[Trial]:
     trials: list[Trial] = []
+    matched_descriptions = descriptions or {}
     for input_path in inputs:
+        description_path = matched_descriptions.get(input_path)
         for config in configs:
             for repeat in range(spec.repeats):
                 trials.append(
                     Trial(
                         trial_id=trial_id(
-                            spec.experiment_id, input_path, config, repeat
+                            spec.experiment_id,
+                            input_path,
+                            config,
+                            repeat,
+                            description_path,
+                            spec.run_repair,
                         ),
                         experiment_id=spec.experiment_id,
                         input_path=str(input_path),
+                        description_path=(
+                            str(description_path) if description_path else None
+                        ),
+                        run_repair=spec.run_repair,
                         repeat=repeat,
                         config=config,
                     )
@@ -204,7 +270,14 @@ class CallRecord(BaseModel):
 
     kind: str
     provider: str | None = None
+    provider_version: str | None = None
     model: str
+    reasoning_effort: str | None = None
+    effective_reasoning_effort: str | None = None
+    max_tokens: int
+    effective_max_tokens: int | None = None
+    temperature: float | None = None
+    seed: int | None = None
     duration_ms: int
     # what this `ir_format` put on the wire, the baseline for token-reduction numbers
     prompt_chars: int
@@ -248,6 +321,9 @@ class TrialRecord(BaseModel):
     input_path: str
     input_hash: str
     input_bytes: int
+    description_path: str | None = None
+    description_hash: str | None = None
+    description_chars: int = 0
     repeat: int
     # what the import read past; a truncated diagram would otherwise score as clean
     unsupported_elements: list[dict[str, Any]] = Field(default_factory=list)
@@ -287,7 +363,14 @@ def _call_record(trace: LlmTrace, keep_payloads: bool) -> CallRecord:
     return CallRecord(
         kind=trace.kind,
         provider=trace.provider,
+        provider_version=trace.provider_version,
         model=trace.model,
+        reasoning_effort=trace.reasoning_effort,
+        effective_reasoning_effort=trace.effective_reasoning_effort,
+        max_tokens=trace.max_tokens,
+        effective_max_tokens=trace.effective_max_tokens,
+        temperature=trace.temperature,
+        seed=trace.seed,
         duration_ms=trace.duration_ms,
         prompt_chars=len(prompt),
         usage=trace.usage.model_dump(mode="json") if trace.usage else None,
@@ -339,6 +422,7 @@ async def run_trial(trial: Trial, keep_payloads: bool = False) -> TrialRecord:
     started_at = datetime.now(UTC)
     started = time.perf_counter()
     raw = b""
+    reference_description: str | None = None
 
     phases: dict[str, PhaseRecord] = {}
     all_traces: list[LlmTrace] = []
@@ -355,13 +439,24 @@ async def run_trial(trial: Trial, keep_payloads: bool = False) -> TrialRecord:
         # inside the try, so an input that moved since `resolve_inputs` is a
         # recorded failure rather than an aborted sweep
         raw = input_path.read_bytes()
+        if trial.description_path is not None:
+            reference_description = Path(trial.description_path).read_text(
+                encoding="utf-8"
+            )
+        validation_description = (
+            reference_description if config.include_reference_description else None
+        )
         diagram, unsupported = parse_bpmn_bytes_with_diagnostics(raw)
         final_diagram = diagram
 
         traces: list[LlmTrace] = []
         phase_started = time.perf_counter()
         async with _phase(traces):
-            validation = await validate_diagram(diagram, config=config)
+            validation = await validate_diagram(
+                diagram,
+                config=config,
+                reference_description=validation_description,
+            )
         phases["validate"] = _phase_record(
             traces, _elapsed_ms(phase_started), keep_payloads
         )
@@ -370,11 +465,16 @@ async def run_trial(trial: Trial, keep_payloads: bool = False) -> TrialRecord:
         issues = validation.issues + validation.semantic_issues
         pre_record = _validation_record(issues, validation.is_valid)
 
-        if issues:
+        if issues and trial.run_repair:
             traces = []
             phase_started = time.perf_counter()
             async with _phase(traces):
-                repair = await dispatch_repair(diagram, issues=issues, config=config)
+                repair = await dispatch_repair(
+                    diagram,
+                    issues=issues,
+                    config=config,
+                    reference_description=validation_description,
+                )
             phases["repair"] = _phase_record(
                 traces, _elapsed_ms(phase_started), keep_payloads
             )
@@ -411,7 +511,11 @@ async def run_trial(trial: Trial, keep_payloads: bool = False) -> TrialRecord:
             traces = []
             phase_started = time.perf_counter()
             async with _phase(traces):
-                post = await validate_diagram(final_diagram, config=config)
+                post = await validate_diagram(
+                    final_diagram,
+                    config=config,
+                    reference_description=validation_description,
+                )
             phases["revalidate"] = _phase_record(
                 traces, _elapsed_ms(phase_started), keep_payloads
             )
@@ -428,6 +532,13 @@ async def run_trial(trial: Trial, keep_payloads: bool = False) -> TrialRecord:
         input_path=trial.input_path,
         input_hash=hash_bytes(raw),
         input_bytes=len(raw),
+        description_path=trial.description_path,
+        description_hash=(
+            hash_bytes(reference_description.encode("utf-8"))
+            if reference_description is not None
+            else None
+        ),
+        description_chars=len(reference_description or ""),
         repeat=trial.repeat,
         started_at=started_at,
         unsupported_elements=[asdict(element) for element in unsupported],
@@ -439,9 +550,13 @@ async def run_trial(trial: Trial, keep_payloads: bool = False) -> TrialRecord:
             converter=converter_version(config),
             rules_version=RULES_VERSION,
             prompt_files={
-                "repair": repair_prompt_path(config),
                 **(
-                    {"validate": validate_prompt_path()}
+                    {"repair": repair_prompt_path(config)}
+                    if trial.run_repair
+                    else {}
+                ),
+                **(
+                    {"validate": validate_prompt_path(config)}
                     if config.tiers_enabled.t3
                     else {}
                 ),
@@ -503,6 +618,7 @@ def write_manifest(
     out_dir: Path,
     spec: SweepSpec,
     inputs: list[Path],
+    descriptions: dict[Path, Path],
     configs: list[ExperimentConfig],
     trials: list[Trial],
     executed: int,
@@ -520,6 +636,10 @@ def write_manifest(
         "inputs": [str(path) for path in inputs],
         "input_hashes": {
             str(path): hash_bytes(path.read_bytes()) for path in inputs
+        },
+        "description_hashes": {
+            str(path): hash_bytes(path.read_bytes())
+            for path in descriptions.values()
         },
         "config_count": len(configs),
         "config_hashes": [config_hash(config) for config in configs],
@@ -580,8 +700,9 @@ async def execute_sweep(
 ) -> SweepSummary:
     """run every trial in the spec, appending each result as it completes"""
     inputs = resolve_inputs(spec, root)
+    descriptions = resolve_descriptions(spec, inputs, root)
     configs = expand_configs(spec)
-    trials = build_trials(spec, inputs, configs)
+    trials = build_trials(spec, inputs, configs, descriptions)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     results_path = out_dir / RESULTS_FILENAME
@@ -598,8 +719,9 @@ async def execute_sweep(
     totals: list[UsageTotals] = []
 
     async with _mocked_providers() if mock else nullcontext():
-        # append mode, flushed per line, so a killed sweep keeps what it finished
-        with results_path.open("a", encoding="utf-8") as handle:
+        # Resume appends checkpoints; an explicit fresh run replaces stale
+        # records so deterministic trial ids are never counted twice.
+        with results_path.open("a" if resume else "w", encoding="utf-8") as handle:
             for index, trial in enumerate(pending, start=1):
                 record = await run_trial(trial, keep_payloads=keep_payloads)
                 handle.write(
@@ -617,6 +739,7 @@ async def execute_sweep(
         out_dir=out_dir,
         spec=spec,
         inputs=inputs,
+        descriptions=descriptions,
         configs=configs,
         trials=trials,
         executed=executed,
