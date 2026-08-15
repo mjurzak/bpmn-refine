@@ -9,8 +9,8 @@ Example (from the repository root; no model is contacted)::
     source .venv/bin/activate
     PYTHONPATH=backend python experiments/prepare_experiments.py \
         --output-dir /tmp/bpmn-specs \
-        --gpt-model gpt-5.6 --claude-model claude-sonnet-4-5 \
-        --winner-provider codex_cli --winner-model gpt-5.6
+        --gpt-model gpt-5.6-terra --claude-model claude-sonnet-5 \
+        --winner-provider codex_cli --winner-model gpt-5.6-terra
 
 The generated files can be checked without running a provider::
 
@@ -24,6 +24,7 @@ This module only prepares data and configuration.  It never calls an LLM.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from collections.abc import Iterable, Sequence
 from pathlib import Path
@@ -35,6 +36,12 @@ import yaml
 DATASET_VERSION = "v1.0"
 DEFAULT_DATASET_ROOT = Path("data/eval/v1.0")
 DEFAULT_REPEATS = 1
+DEFAULT_REASONING_EFFORT = "low"
+DEFAULT_SEMANTIC_PANEL_SIZE = 30
+SEMANTIC_PANEL_QUOTAS = {
+    30: {"clean": 6, "single_per_operator": 3, "disjoint": 3},
+    100: {"clean": 20, "single_per_operator": 8, "disjoint": 24},
+}
 IR_FORMATS = ["pydantic", "pydantic_json", "yaml", "mermaid", "compact_json"]
 PIPELINES = {
     "deterministic": ({"t1": True, "t2": True, "t3": False}, "semantic"),
@@ -80,39 +87,20 @@ def _multiplicity(record: dict[str, Any]) -> int:
     return 1 if str(record["variant_id"]).startswith("single/") else 2
 
 
-def _inputs(
-    records: Iterable[dict[str, Any]],
-    *,
-    dataset_root: Path,
-    seeds: set[str],
-    classes: set[str] | None = None,
-    multiplicities: set[int] | None = None,
-) -> list[str]:
-    """Build exact, stable variant paths, optionally followed by clean controls."""
-
-    selected = [
-        record
-        for record in records
-        if str(record["seed"]) in seeds
-        and (classes is None or str(record["class"]) in classes)
-        and (multiplicities is None or _multiplicity(record) in multiplicities)
-    ]
-    return sorted(
-        {
-            _variant_path(dataset_root, str(record["variant_id"]))
-            for record in selected
-        }
-    )
-
-
 def _with_clean_controls(
     variant_inputs: Sequence[str], *, dataset_root: Path, seeds: set[str]
 ) -> list[str]:
     return sorted(set(variant_inputs) | {_seed_path(dataset_root, seed) for seed in seeds})
 
 
-def _model_base(provider: str, model: str, *, scope: str) -> dict[str, Any]:
-    return {
+def _model_base(
+    provider: str,
+    model: str,
+    *,
+    scope: str,
+    reasoning_effort: str | None = DEFAULT_REASONING_EFFORT,
+) -> dict[str, Any]:
+    base = {
         "model_tier": "custom",
         "model_override": model,
         "provider_override": provider,
@@ -120,14 +108,190 @@ def _model_base(provider: str, model: str, *, scope: str) -> dict[str, Any]:
         "tiers_enabled": {"t1": False, "t2": False, "t3": True},
         "llm_validation_scope": scope,
     }
+    if reasoning_effort is not None:
+        base["reasoning_effort"] = reasoning_effort
+    return base
 
 
-def _paired_model_configs(claude_model: str) -> list[dict[str, str]]:
+def _stable_key(value: str, *, salt: str) -> str:
+    return hashlib.sha256(f"{salt}|{value}".encode()).hexdigest()
+
+
+def _stable_records(
+    records: Iterable[dict[str, Any]], *, salt: str
+) -> list[dict[str, Any]]:
+    return sorted(
+        records,
+        key=lambda record: _stable_key(str(record["variant_id"]), salt=salt),
+    )
+
+
+def _balanced_pairs(
+    records: Iterable[dict[str, Any]], *, count: int, salt: str
+) -> list[dict[str, Any]]:
+    """Choose paired defects while balancing operator and combination exposure."""
+    remaining = _stable_records(records, salt=salt)
+    selected: list[dict[str, Any]] = []
+    operator_counts: dict[str, int] = {}
+    combination_counts: dict[tuple[str, ...], int] = {}
+    while remaining and len(selected) < count:
+        def score(record: dict[str, Any]) -> tuple[int, int, str]:
+            operators = tuple(sorted(str(value) for value in record.get("operators", [])))
+            return (
+                sum(operator_counts.get(operator, 0) for operator in operators),
+                combination_counts.get(operators, 0),
+                _stable_key(str(record["variant_id"]), salt=salt),
+            )
+
+        chosen = min(remaining, key=score)
+        remaining.remove(chosen)
+        selected.append(chosen)
+        operators = tuple(sorted(str(value) for value in chosen.get("operators", [])))
+        combination_counts[operators] = combination_counts.get(operators, 0) + 1
+        for operator in operators:
+            operator_counts[operator] = operator_counts.get(operator, 0) + 1
+    return selected
+
+
+def _semantic_panel(
+    records: Sequence[dict[str, Any]],
+    *,
+    dataset_root: Path,
+    size: int,
+) -> list[str]:
+    """Build a nested, balanced 30- or 100-case paid semantic panel."""
+    if size not in SEMANTIC_PANEL_QUOTAS:
+        raise ValueError(f"semantic panel size must be one of {sorted(SEMANTIC_PANEL_QUOTAS)}")
+    quota = SEMANTIC_PANEL_QUOTAS[size]
+    selected: list[dict[str, Any]] = []
+    for operator in [f"M{index:02d}" for index in range(1, 8)]:
+        candidates = _stable_records(
+            (
+                record
+                for record in records
+                if str(record["class"]) == "SEM"
+                and _multiplicity(record) == 1
+                and operator in record.get("operators", [])
+            ),
+            salt=f"semantic-single-{operator}",
+        )
+        selected.extend(candidates[: quota["single_per_operator"]])
+
+    selected.extend(
+        _balanced_pairs(
+            (
+                record
+                for record in records
+                if str(record["class"]) == "SEM"
+                and _multiplicity(record) == 2
+                and record.get("interaction") == "disjoint"
+            ),
+            count=quota["disjoint"],
+            salt="semantic-disjoint",
+        )
+    )
+    clean_seeds = sorted(
+        {str(record["seed"]) for record in records},
+        key=lambda seed: _stable_key(seed, salt="semantic-clean"),
+    )[: quota["clean"]]
+    variant_inputs = [
+        _variant_path(dataset_root, str(record["variant_id"])) for record in selected
+    ]
+    return sorted(
+        set(variant_inputs)
+        | {_seed_path(dataset_root, seed) for seed in clean_seeds}
+    )
+
+
+def _confirmatory_panel(
+    records: Sequence[dict[str, Any]], *, dataset_root: Path
+) -> list[str]:
+    """Build the fixed 100-case final panel across clean, single and paired cases."""
+    groups = [
+        (
+            (r for r in records if str(r["class"]) == "SEM" and _multiplicity(r) == 1),
+            28,
+            "confirm-single-sem",
+        ),
+        (
+            (
+                r
+                for r in records
+                if str(r["class"]) in {"STRUCT", "SOUND"} and _multiplicity(r) == 1
+            ),
+            14,
+            "confirm-single-formal",
+        ),
+        (
+            (
+                r
+                for r in records
+                if _multiplicity(r) == 2 and r.get("interaction") == "disjoint"
+            ),
+            24,
+            "confirm-disjoint",
+        ),
+        (
+            (
+                r
+                for r in records
+                if _multiplicity(r) == 2 and r.get("interaction") == "interacting"
+            ),
+            14,
+            "confirm-interacting",
+        ),
+    ]
+    selected = [
+        record
+        for candidates, count, salt in groups
+        for record in _balanced_pairs(candidates, count=count, salt=salt)
+    ]
+    clean_seeds = sorted(
+        {str(record["seed"]) for record in records},
+        key=lambda seed: _stable_key(seed, salt="confirm-clean"),
+    )[:20]
+    return sorted(
+        {_variant_path(dataset_root, str(record["variant_id"])) for record in selected}
+        | {_seed_path(dataset_root, seed) for seed in clean_seeds}
+    )
+
+
+def _validator_panel(
+    records: Sequence[dict[str, Any]], *, dataset_root: Path
+) -> list[str]:
+    """Build a 100-case panel for comparing deterministic and LLM validators."""
+    selected = _balanced_pairs(
+        (
+            record
+            for record in records
+            if str(record["class"]) in {"STRUCT", "SOUND"}
+            and _multiplicity(record) == 1
+        ),
+        count=80,
+        salt="validator-formal",
+    )
+    clean_seeds = sorted(
+        {str(record["seed"]) for record in records},
+        key=lambda seed: _stable_key(seed, salt="validator-clean"),
+    )[:20]
+    return sorted(
+        {_variant_path(dataset_root, str(record["variant_id"])) for record in selected}
+        | {_seed_path(dataset_root, seed) for seed in clean_seeds}
+    )
+
+
+def _paired_model_configs(claude_model: str) -> list[dict[str, Any]]:
     # SweepSpec always expands ``base`` once.  The base is the explicit Codex
     # configuration; this list adds the paired Claude configuration without a
     # duplicate first trial.
     return [
-        {"provider_override": "claude_cli", "model_override": claude_model},
+        {
+            "provider_override": "claude_cli",
+            "model_override": claude_model,
+            # Preserve Claude Code's native adaptive/default thinking instead
+            # of inheriting the explicit Codex reasoning level from the base.
+            "reasoning_effort": None,
+        },
     ]
 
 
@@ -195,7 +359,7 @@ def _validator_spec(
         "run_repair": False,
         "repeats": repeats,
         "notes": (
-            "All single STRUCT/SOUND variants plus clean source-seed controls; "
+            "Balanced 100-case STRUCT/SOUND panel with clean controls; "
             "deterministic-only, holistic LLM-only, and full validation."
         ),
     }
@@ -228,18 +392,6 @@ def _small_semantic_sample(
     return _with_clean_controls(inputs, dataset_root=dataset_root, seeds=sample_seeds)
 
 
-def _confirmatory_variants(
-    records: Sequence[dict[str, Any]], *, dataset_root: Path, seeds: set[str]
-) -> list[str]:
-    """Keep every variant from every selected source seed."""
-
-    return sorted(
-        _variant_path(dataset_root, str(record["variant_id"]))
-        for record in records
-        if str(record["seed"]) in seeds
-    )
-
-
 def build_specs(
     *,
     dataset_root: Path = DEFAULT_DATASET_ROOT,
@@ -249,6 +401,7 @@ def build_specs(
     winner_model: str,
     winner_pipeline: str = "full",
     repeats: int = DEFAULT_REPEATS,
+    semantic_panel_size: int = DEFAULT_SEMANTIC_PANEL_SIZE,
 ) -> dict[str, dict[str, Any]]:
     """Build plain-Python spec payloads without writing or running them."""
 
@@ -259,37 +412,16 @@ def build_specs(
     records = read_ground_truth(dataset_root)
     all_seeds = {str(record["seed"]) for record in records}
 
-    dev_semantic = _with_clean_controls(
-        _inputs(
-            records,
-            dataset_root=dataset_root,
-            seeds=all_seeds,
-            classes={"SEM"},
-            multiplicities={1},
-        ),
-        dataset_root=dataset_root,
-        seeds=all_seeds,
-    )
-    dev_struct_sound = _inputs(
+    dev_semantic = _semantic_panel(
         records,
         dataset_root=dataset_root,
-        seeds=all_seeds,
-        classes={"STRUCT", "SOUND"},
-        multiplicities={1},
+        size=semantic_panel_size,
     )
-    validator_inputs = _with_clean_controls(
-        dev_struct_sound, dataset_root=dataset_root, seeds=all_seeds
-    )
+    validator_inputs = _validator_panel(records, dataset_root=dataset_root)
     ablation_inputs = _small_semantic_sample(
         records, dataset_root=dataset_root, seeds=all_seeds
     )
-    confirmatory_inputs = _with_clean_controls(
-        _confirmatory_variants(
-            records, dataset_root=dataset_root, seeds=all_seeds
-        ),
-        dataset_root=dataset_root,
-        seeds=all_seeds,
-    )
+    confirmatory_inputs = _confirmatory_panel(records, dataset_root=dataset_root)
     confirmatory_tiers, confirmatory_scope = PIPELINES[winner_pipeline]
 
     return {
@@ -297,10 +429,15 @@ def build_specs(
             experiment_id="model-selection",
             inputs=dev_semantic,
             description_root=_description_root(dataset_root),
-            base=_model_base("codex_cli", gpt_model, scope="semantic"),
+            base=_model_base(
+                "codex_cli", gpt_model, scope="semantic", reasoning_effort="medium"
+            ),
             configs=_paired_model_configs(claude_model),
             repeats=repeats,
-            notes="All single SEM variants and clean controls; paired Codex CLI and Claude CLI model configurations.",
+            notes=(
+                f"Balanced {semantic_panel_size}-case semantic panel; paired "
+                "GPT uses medium reasoning; Claude CLI uses default thinking."
+            ),
         ),
         "ir-selection": _semantic_spec(
             experiment_id="ir-selection",
@@ -309,7 +446,7 @@ def build_specs(
             base=_model_base(winner_provider, winner_model, scope="semantic"),
             axes={"ir_format": list(IR_FORMATS)},
             repeats=repeats,
-            notes="All single SEM variants and clean controls across all IRs.",
+            notes=f"Balanced {semantic_panel_size}-case semantic panel across all IRs.",
         ),
         "reasoning-ablation": _semantic_spec(
             experiment_id="reasoning-ablation",
@@ -349,7 +486,7 @@ def build_specs(
                 "tiers_enabled": confirmatory_tiers,
             },
             repeats=repeats,
-            notes="All single, disjoint, interacting, and clean cases with the frozen winning configuration.",
+            notes="Balanced 100-case single, disjoint, interacting, and clean panel with the frozen winning configuration.",
         ),
     }
 
@@ -383,6 +520,7 @@ def prepare_experiments(
     winner_model: str,
     winner_pipeline: str = "full",
     repeats: int = DEFAULT_REPEATS,
+    semantic_panel_size: int = DEFAULT_SEMANTIC_PANEL_SIZE,
 ) -> list[Path]:
     """Build and write specs; this is the small programmatic API for tests."""
 
@@ -395,6 +533,7 @@ def prepare_experiments(
             winner_model=winner_model,
             winner_pipeline=winner_pipeline,
             repeats=repeats,
+            semantic_panel_size=semantic_panel_size,
         ),
         output_dir,
     )
@@ -414,6 +553,12 @@ def _parser() -> argparse.ArgumentParser:
         default="full",
     )
     parser.add_argument("--repeats", type=int, default=DEFAULT_REPEATS)
+    parser.add_argument(
+        "--semantic-panel-size",
+        type=int,
+        choices=sorted(SEMANTIC_PANEL_QUOTAS),
+        default=DEFAULT_SEMANTIC_PANEL_SIZE,
+    )
     return parser
 
 
@@ -428,6 +573,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         winner_model=args.winner_model,
         winner_pipeline=args.winner_pipeline,
         repeats=args.repeats,
+        semantic_panel_size=args.semantic_panel_size,
     )
     for path in paths:
         print(path)

@@ -15,7 +15,7 @@ inputs:
 description_root: data/eval/v1.0/descriptions
 base:
   model_tier: custom
-  model_override: gpt-5.6-sol
+  model_override: gpt-5.6-terra
   provider_override: codex_cli
   ir_format: pydantic
   tiers_enabled:
@@ -23,6 +23,7 @@ base:
     t2: false
     t3: true
   llm_validation_scope: semantic
+  reasoning_effort: low
 run_repair: false
 axes:
   reasoning_effort:

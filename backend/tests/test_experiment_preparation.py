@@ -93,7 +93,7 @@ def test_generated_specs_are_native_runner_specs_and_have_expected_controls(tmp_
     assert model["inputs"]
     assert model["run_repair"] is False
     assert model["description_root"] == str(root / "descriptions")
-    assert all("/disjoint/" not in path for path in model["inputs"])
+    assert any("/disjoint/" in path for path in model["inputs"])
     assert any("/seeds/" in path for path in model["inputs"])
     assert model["base"]["ir_format"] == "pydantic"
     assert [
@@ -114,7 +114,7 @@ def test_generated_specs_are_native_runner_specs_and_have_expected_controls(tmp_
         "compact_json",
     ]
     assert ir["base"]["llm_validation_scope"] == "semantic"
-    assert all("/disjoint/" not in path for path in ir["inputs"])
+    assert any("/disjoint/" in path for path in ir["inputs"])
 
     validator = specs["validator-contribution"]
     assert validator["run_repair"] is False
@@ -226,5 +226,56 @@ def test_checked_in_benchmark_specs_resolve_against_v1_dataset():
         assert spec.dataset_version == "v1.0"
         assert resolve_inputs(spec, root)
         assert expand_configs(spec)
+        assert len(resolve_inputs(spec, root)) <= 100
+        llm_configs = [
+            config
+            for config in expand_configs(spec)
+            if config.tiers_enabled.t3
+        ]
+        if path.name == "reasoning-ablation.yaml":
+            assert {config.reasoning_effort for config in llm_configs} == {
+                "low",
+                "medium",
+                "high",
+            }
+        elif path.name == "model-selection.yaml":
+            assert {
+                (config.provider_override, config.reasoning_effort)
+                for config in llm_configs
+            } == {("codex_cli", "medium"), ("claude_cli", None)}
+        else:
+            assert all(config.reasoning_effort == "low" for config in llm_configs)
+        assert all(
+            config.model_override in {"gpt-5.6-terra", "claude-sonnet-5"}
+            for config in llm_configs
+        )
+
+    model_selection = load_spec(specs / "model-selection.yaml")
+    assert len(resolve_inputs(model_selection, root)) == 30
+    assert {
+        (config.provider_override, config.model_override)
+        for config in expand_configs(model_selection)
+    } == {
+        ("codex_cli", "gpt-5.6-terra"),
+        ("claude_cli", "claude-sonnet-5"),
+    }
     confirmatory = load_spec(specs / "confirmatory-detection.yaml")
-    assert len(resolve_inputs(confirmatory, root)) == 591
+    assert len(resolve_inputs(confirmatory, root)) == 100
+
+
+def test_semantic_panels_are_nested_and_balanced_on_the_frozen_dataset():
+    kwargs = {
+        "gpt_model": "gpt-5.6-terra",
+        "claude_model": "claude-sonnet-4-5",
+        "winner_provider": "codex_cli",
+        "winner_model": "gpt-5.6-terra",
+    }
+    pilot = build_specs(**kwargs, semantic_panel_size=30)["model-selection"]["inputs"]
+    expanded = build_specs(**kwargs, semantic_panel_size=100)["model-selection"]["inputs"]
+
+    assert len(pilot) == 30
+    assert len(expanded) == 100
+    assert set(pilot) < set(expanded)
+    assert sum("/seeds/" in path for path in pilot) == 6
+    assert sum("/variants/single/" in path for path in pilot) == 21
+    assert sum("/variants/disjoint/" in path for path in pilot) == 3

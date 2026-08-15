@@ -93,6 +93,8 @@ def test_analysis_scores_injected_and_clean_controls(tmp_path):
         _record(str(tmp_path / "seeds/01.bpmn"), ["llm:unwanted_action"]),
         _record(str(tmp_path / "seeds/02.bpmn"), []),
     ]
+    for index, row in enumerate(rows, start=1):
+        row["usage"]["cached_input_tokens"] = index
     results.write_text("\n".join(json.dumps(row) for row in rows) + "\nnot-json\n")
 
     output = analyze_results(results, tmp_path)
@@ -106,6 +108,7 @@ def test_analysis_scores_injected_and_clean_controls(tmp_path):
     assert group["clean_false_positive_rate"] == 0.5
     assert group["localization_overlap"] == 1.0
     assert group["tokens"] == 30
+    assert group["usage"]["cached_input_tokens"] == 6
 
 
 def test_analysis_keeps_ablation_arms_in_separate_groups(tmp_path):

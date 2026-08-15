@@ -300,19 +300,27 @@ def _config_key(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _usage(record: dict[str, Any]) -> tuple[int | None, int | None, int | None, int]:
+def _usage(
+    record: dict[str, Any],
+) -> tuple[int | None, int | None, int | None, int | None, int]:
     usage = record.get("usage")
     if not isinstance(usage, dict):
-        return None, None, None, 1
+        return None, None, None, None, 1
     missing = usage.get("calls_missing_usage", 0)
     missing_count = int(missing) if isinstance(missing, (int, float)) and missing >= 0 else 1
     total = usage.get("total_tokens")
     input_tokens = usage.get("input_tokens")
     output_tokens = usage.get("output_tokens")
+    cached_input_tokens = usage.get("cached_input_tokens")
     return (
         int(total) if isinstance(total, (int, float)) else None,
         int(input_tokens) if isinstance(input_tokens, (int, float)) else None,
         int(output_tokens) if isinstance(output_tokens, (int, float)) else None,
+        (
+            int(cached_input_tokens)
+            if isinstance(cached_input_tokens, (int, float))
+            else None
+        ),
         missing_count,
     )
 
@@ -533,9 +541,12 @@ def analyze_results(results_path: str | Path, dataset_root: str | Path) -> dict[
         token_values: list[int] = []
         input_values: list[int] = []
         output_values: list[int] = []
+        cached_input_values: list[int] = []
         missing_usage = 0
         for case in cases:
-            total, input_tokens, output_tokens, missing = _usage(case.record)
+            total, input_tokens, output_tokens, cached_input_tokens, missing = _usage(
+                case.record
+            )
             missing_usage += missing
             if total is not None:
                 token_values.append(total)
@@ -543,6 +554,8 @@ def analyze_results(results_path: str | Path, dataset_root: str | Path) -> dict[
                 input_values.append(input_tokens)
             if output_tokens is not None:
                 output_values.append(output_tokens)
+            if cached_input_tokens is not None:
+                cached_input_values.append(cached_input_tokens)
         errors = sum(bool(case.record.get("error")) for case in cases)
         complete_tokens = missing_usage == 0 and len(token_values) == len(cases)
         output_groups.append(
@@ -559,6 +572,9 @@ def analyze_results(results_path: str | Path, dataset_root: str | Path) -> dict[
                 "usage": {
                     "input_tokens": sum(input_values) if input_values else None,
                     "output_tokens": sum(output_values) if output_values else None,
+                    "cached_input_tokens": (
+                        sum(cached_input_values) if cached_input_values else None
+                    ),
                     "total_tokens": sum(token_values) if token_values else None,
                     "calls_missing_usage": missing_usage,
                     "complete": complete_tokens,

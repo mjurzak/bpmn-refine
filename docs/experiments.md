@@ -1,7 +1,7 @@
 # experiments
 
-The experiment pipeline evaluates fixed system configurations on the complete
-versioned BPMN benchmark.
+The experiment pipeline evaluates fixed system configurations on versioned,
+deterministic panels sampled from the complete BPMN benchmark.
 
 This doc owns:
 
@@ -167,7 +167,13 @@ Ablations are `ExperimentConfig` sweeps. Each row below corresponds to a plot or
 | **model tier** | `model_tier` + `model_override` | strong vs fast; cross-provider (Claude vs GPT vs local Llama via Ollama) |
 | **counterexample prompting** | `include_formal_evidence` | does giving the model the checker's evidence improve repair over giving it the verdict alone |
 
-Each ablation is run with **fixed** other fields and sufficient trials to get a confidence interval (N=10 default; higher where provider non-determinism is material).
+Each ablation is run with fixed other fields. Paid model and IR selection use a
+balanced 30-case semantic panel; the final confirmatory run uses 100 cases across
+clean, single, disjoint, and interacting strata. The panels are selected by a
+stable hash and declared before results are observed. The cost-quality model
+pair is `claude-sonnet-5` and `gpt-5.6-terra`. Model selection uses medium
+reasoning for GPT and Claude Code's default thinking. Full-corpus T1/T2 evaluation
+does not consume model quota.
 
 Executable `v1.0` benchmark specs live in `experiments/specs/benchmark/`; regenerate them after
 each model/IR/pipeline selection as described in
@@ -183,9 +189,13 @@ make experiment-rehearse SPEC=experiments/specs/smoke.yaml OUT=/tmp/rehearsal
 
 # then for real; --out is where results.jsonl and manifest.json land
 make experiment SPEC=experiments/specs/benchmark/model-selection.yaml OUT=experiments/results/model-selection
+
+# bounded parallel execution; the manifest records the chosen concurrency
+make experiment SPEC=experiments/specs/benchmark/model-selection.yaml \
+  OUT=experiments/results/model-selection CONCURRENCY=2
 ```
 
-Re-running the same `SPEC`/`OUT` pair **resumes**: trials already on disk are skipped. A sweep killed by a rate limit at trial 40 keeps its 40 results and picks up at 41.
+Re-running the same `SPEC`/`OUT` pair **resumes**: trials already on disk are skipped. A sweep killed by a rate limit at trial 40 keeps its 40 results and picks up at 41. Concurrency is bounded inside one runner process; multiple processes must not share an output directory.
 
 ### the spec
 
@@ -211,7 +221,14 @@ Trial count is `inputs × configs × repeats`. Each trial gets a deterministic `
 
 ### how a run is stored
 
-`results.jsonl` — one JSON object per trial, appended and flushed as it completes:
+`trials/<trial_id>.json` is the durable checkpoint. Each completed trial is written
+to a temporary file, flushed, and atomically renamed, so concurrent completions do
+not contend for one append stream and an interrupted write cannot create a partial
+record. On resume, the filenames identify completed trials without scanning a large
+log. Existing append-only `results.jsonl` runs are imported automatically.
+
+`results.jsonl` remains the analysis interface: after a run, the checkpoint files
+are exported in deterministic spec order as one JSON object per line:
 
 ```
 {
@@ -244,7 +261,7 @@ Three properties of this record matter for the analysis:
 
 Full prompts and responses are withheld unless `--keep-payloads` is passed; `prompt_chars` is recorded either way, since it is the token-reduction denominator.
 
-`manifest.json` records the spec, the application commit, resolved inputs and reference descriptions with their hashes, every config hash, and the executed / skipped / failed counts.
+`manifest.json` records the spec, the application commit, resolved inputs and reference descriptions with their hashes, every config hash, concurrency, checkpoint directory, and cumulative completed / failed counts. `executed_this_run` and `last_invocation` keep a resume-only invocation distinct from the state of the complete experiment.
 
 Analysis scripts read the JSONL and join on `run.config_hash`. No post-hoc instrumentation is allowed — if a metric requires data not in the record, the application is changed first and the sweep is re-run.
 
