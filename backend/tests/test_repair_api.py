@@ -21,6 +21,7 @@ def test_repair_response_includes_run_and_proposed_xml(monkeypatch):
         session_id=None,
         config=None,
         snapshot=True,
+        reference_description=None,
     ):
         captured["config"] = config
         captured["snapshot"] = snapshot
