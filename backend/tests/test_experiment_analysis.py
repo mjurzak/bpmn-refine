@@ -394,8 +394,8 @@ def test_analysis_reports_reference_evidence_coverage(tmp_path):
 
 
 def test_analysis_adds_deterministic_paired_macro_f1_bootstrap(tmp_path):
-    _write_truth(tmp_path, "single/M01/01.bpmn", ["R001"])
-    _write_truth(tmp_path, "single/M01/02.bpmn", ["R001"])
+    _write_truth(tmp_path, "single/M01/01.bpmn", ["R001"], ["Task_1"])
+    _write_truth(tmp_path, "single/M01/02.bpmn", ["R001"], ["Task_1"])
     rows = []
     for provider, model, issue_ids in (
         ("codex_cli", "gpt", ["R001"]),
@@ -417,9 +417,18 @@ def test_analysis_adds_deterministic_paired_macro_f1_bootstrap(tmp_path):
     assert comparison["cases"] == 2
     assert comparison["bootstrap"]["replicates"] == 2000
     assert comparison == analyze_results(results, tmp_path)["paired_macro_f1"][0]
+    target_comparison = output["paired_target_anchor_recall"][0]
+    assert target_comparison["cases"] == 2
+    assert target_comparison["difference_definition"] == (
+        "left_minus_right_per_case_target_anchor_recall"
+    )
+    assert target_comparison["bootstrap"]["replicates"] == 2000
+    assert target_comparison == analyze_results(results, tmp_path)[
+        "paired_target_anchor_recall"
+    ][0]
 
 
-def test_seed_controls_require_verified_clean_overlay_and_suppress_ranking(tmp_path):
+def test_unreviewed_seed_alerts_are_descriptive_not_false_positives(tmp_path):
     _write_truth(tmp_path, "single/M01/01.bpmn", ["R001"])
     results = tmp_path / "results.jsonl"
     rows = [
@@ -433,9 +442,106 @@ def test_seed_controls_require_verified_clean_overlay_and_suppress_ranking(tmp_p
     assert group["clean_cases"] == 0
     assert group["clean_false_positive_rate"] is None
     assert group["unadjudicated_controls"] == 1
-    assert output["ranking"][0]["eligible"] is False
-    assert "no_verified_clean_controls" in output["ranking"][0]["ineligibility_reasons"]
-    assert output["winner"] is None
+    assert group["control_alerts"] == {
+        "policy": "source_models_assumed_mutation_free_not_exhaustively_semantic_clean",
+        "cases": 1,
+        "alerted_cases": 1,
+        "alert_rate": 1.0,
+        "findings": 1,
+        "categories": {"noise": 1},
+        "false_positive_rate": None,
+        "false_positive_rate_reason": "source_controls_are_not_exhaustively_adjudicated",
+    }
+    assert output["ranking"][0]["eligible"] is True
+    assert output["winner"] is not None
+
+
+def test_partial_labels_do_not_penalize_unadjudicated_extra_finding(tmp_path):
+    _write_truth(
+        tmp_path,
+        "single/M01/01.bpmn",
+        ["missing_step"],
+        ["Anchor"],
+    )
+    record = _record(
+        str(tmp_path / "variants/single/M01/01.bpmn"),
+        ["missing_step", "unwanted_action"],
+    )
+    record["pre_validation"]["issues"][0].update(
+        {
+            "element_refs": ["Anchor"],
+            "raw": {"classification_basis": "required_activity_absent"},
+        }
+    )
+    record["pre_validation"]["issues"][1].update(
+        {
+            "element_refs": ["Other"],
+            "raw": {
+                "classification_basis": "prohibited_or_mutually_exclusive_action"
+            },
+        }
+    )
+    results = tmp_path / "results.jsonl"
+    results.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+    output = analyze_results(results, tmp_path)
+    group = output["groups"][0]
+    # The historical conservative view remains a lower bound.
+    assert group["finding"]["precision"] == 0.5
+    assert group["finding"]["f1"] == 2 / 3
+    # The primary partial-label view credits the injected target and leaves
+    # the additional semantic candidate unadjudicated.
+    assert group["partial_labels"]["target_anchor"] == {
+        "expected": 1,
+        "matched": 1,
+        "missed": 0,
+        "recall": 1.0,
+        "cases": 1,
+        "cases_detected": 1,
+        "case_recall": 1.0,
+    }
+    assert group["partial_labels"]["semantic_precision"] is None
+    assert group["partial_labels"]["unadjudicated_extra_findings"] == 1
+    assert group["partial_labels"]["unadjudicated_extra_cases"] == 1
+    assert output["ranking"][0]["target_anchor_recall"] == 1.0
+
+
+def test_control_alert_rate_is_descriptive_and_does_not_change_rank(tmp_path):
+    _write_truth(tmp_path, "single/M01/01.bpmn", ["R001"], ["Task_1"])
+    rows = []
+    for model, provider, control_issues, tokens in (
+        ("noisy-cheap", "codex_cli", ["semantic:unwanted_action"], 5),
+        ("quiet-costly", "claude_cli", [], 10),
+    ):
+        target = _record(
+            str(tmp_path / "variants/single/M01/01.bpmn"), ["R001"], tokens=tokens
+        )
+        control = _record(
+            str(tmp_path / "seeds/01.bpmn"), control_issues, tokens=tokens
+        )
+        if control_issues:
+            control["pre_validation"]["issues"][0]["raw"] = {
+                "classification_basis": "prohibited_or_mutually_exclusive_action"
+            }
+        for row in (target, control):
+            row["run"]["model_configured"] = model
+            row["run"]["config"]["provider_override"] = provider
+            row["phases"]["validate"]["calls"][0]["provider"] = provider
+            rows.append(row)
+    results = tmp_path / "results.jsonl"
+    results.write_text(
+        "\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8"
+    )
+
+    output = analyze_results(results, tmp_path)
+    by_model = {group["config"]["model"]: group for group in output["groups"]}
+    assert by_model["noisy-cheap"]["partial_labels"]["target_anchor"]["recall"] == 1.0
+    assert by_model["quiet-costly"]["partial_labels"]["target_anchor"]["recall"] == 1.0
+    assert by_model["noisy-cheap"]["control_alerts"]["alert_rate"] == 1.0
+    assert by_model["quiet-costly"]["control_alerts"]["alert_rate"] == 0.0
+    # Both quality views tie, so usage—not the descriptive alert rate—orders
+    # the diagnostic ranking.
+    assert output["ranking"][0]["config"]["model"] == "noisy-cheap"
 
 
 def test_overlay_auto_loads_schema_version_and_variant_localization_override(tmp_path):

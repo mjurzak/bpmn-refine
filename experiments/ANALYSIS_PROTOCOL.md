@@ -13,9 +13,12 @@ rewriting that dataset:
 2. surviving localization references for defects that delete their original
    target element.
 
-A seed is a clean control only when its overlay says `status: clean` and
-`human_verified: true`. `unreviewed` and `ambiguous` controls do not contribute
-to precision, false-positive rate, ranking, or a winner decision.
+Source seeds are assumed to be mutation-free because they come from the PMO
+source corpus, but they are not assumed to have exhaustive semantic-negative
+annotations. Any model output on a source seed is therefore a `control alert`,
+not an automatic false positive. A conventional clean-control false-positive
+rate is reported only when an optional overlay says `status: clean` and
+`human_verified: true`.
 
 The overlay generator derives localization from the union of each mutation's
 construction footprint and its semantic anchor elements that still exist in
@@ -37,8 +40,8 @@ PYTHONPATH=backend:. python experiments/prepare_ground_truth_overlay.py \
 
 Analysis reports distinct views instead of conflating them:
 
-- injected category detection: did the model emit the benchmark category?
-- defect-anchor detection: did a finding overlap the surviving injected
+- injected-target category recall: did the model emit the benchmark category?
+- injected-target anchor recall: did a finding overlap the surviving injected
   footprint, regardless of the chosen category?
 - category accuracy given anchor: conditional taxonomy accuracy after locating
   the correct defect;
@@ -47,16 +50,23 @@ Analysis reports distinct views instead of conflating them:
 - localization coverage and overlap: how often references were supplied and
   how well they overlap the construction footprint;
 - exact localization: a deliberately strict diagnostic, not the primary score;
-- verified-clean false-positive rate: only over adjudicated clean controls;
+- unadjudicated extra findings and source-control alert rate, neither treated
+  as semantic false positives;
+- verified-clean false-positive rate as an optional adjudicated diagnostic;
 - latency, provider-normalized usage, errors, and paired bootstrap uncertainty.
 
-Until each variant inherits an adjudicated seed baseline, injected-category
-precision/F1 are mutation-target diagnostics rather than whole-diagram semantic
-precision/F1. Extra findings can be latent baseline defects. Recall and
-anchor-localized taxonomy are the safer post-hoc quantities.
+Mutation truth is positive-unlabeled ground truth: it certifies injected targets
+but does not certify that no other semantic issue exists. Primary analysis
+therefore reports target recall without semantic precision. Extra findings are
+`unadjudicated`; the historical precision/F1 view remains a conservative lower
+bound in which every unmatched prediction is provisionally counted as false.
+It is not used for the primary ranking.
 
-No quality winner is selected when clean controls are not verified, provider
-errors occurred, or the paired confidence interval crosses zero.
+Primary ranking uses target-anchor recall, category accuracy given an anchor,
+machine-checkable response-contract completeness, and then comparable usage.
+Control alert rate and unadjudicated extras are descriptive and do not change
+quality rank. No quality winner is selected when provider errors occurred or
+the paired target-anchor-recall confidence interval crosses zero.
 
 The seven semantic labels are adjacent views of a violation, not seven natural
 classes guaranteed to be mutually exclusive. In particular, a wrong label can
@@ -68,30 +78,32 @@ taxonomy diagnostic; a correctly localized, evidence-backed relation must be
 reported separately and must not be turned into a miss solely because an
 adjacent label was selected.
 
-## Human baseline adjudication
+## Optional human baseline adjudication
 
-All 43 source seeds require review against the numbered reference description.
-Use two blinded reviewers and a tie-break reviewer. Findings need an explicit
+Human review is required only if the thesis claims exhaustive semantic
+precision or a true false-positive rate. In that optional extension, use two
+blinded reviewers and a tie-break reviewer. Findings need an explicit
 description line plus BPMN element references. Record `clean`, `defect`, or
-`ambiguous`; exclude ambiguous cases from automatic precision and ranking.
+`ambiguous`; exclude ambiguous cases from conventional precision/FPR.
 
 Model outputs may be shown to adjudicators only after their independent review.
 Agreement between models is a candidate for review, not ground truth.
 
-## Prompt-v2 rerun gate
+## Current rerun gate
 
 The original 60 outputs remain valid for rescoring after analyzer or overlay
 changes. Model calls are required only when the prompt or payload changes.
 
-Before rerunning all of E1, run `experiments/specs/pilots/prompt-v2.yaml`. The
-pilot uses the same GPT-5.6 Terra medium and Claude Sonnet 5 default-thinking
-configurations. It contains three seed candidates and one variant per semantic
-operator. A full rerun is justified only when:
+The cheap diagnostic in `experiments/specs/pilots/taxonomy-v3-luna.yaml` uses
+GPT-5.6 Luna medium, three source controls, and one variant per semantic
+operator. It is intentionally not a one-to-one model comparison. A full rerun
+is justified only when:
 
-- both providers finish without schema or transport errors;
+- the diagnostic finishes without schema or transport errors;
 - evidence fields and element references are valid;
-- M03 and M06 taxonomy improves, with broad improvement across M01-M07; and
-- unsupported findings on all three seed candidates materially decrease.
+- target-anchor detection and taxonomy are materially improved across the
+  operator panel; and
+- source-control alerts materially decrease without prompt overfitting.
 
-The seed candidates remain unadjudicated, so their outputs are diagnostic and
-must not be called false positives until review.
+Source-control outputs remain diagnostic and must not be called false positives
+without optional exhaustive review.

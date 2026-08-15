@@ -4,8 +4,10 @@ This is intentionally a small, dependency-free post-processing tool.  It does
 not import the application or contact a model provider.  The input path is
 mirrored from ``<dataset>/variants/.../*.bpmn`` to
 ``<dataset>/ground_truth/.../*.json``.  Files below ``<dataset>/seeds`` are
-controls; they contribute to clean-control metrics only when a verified
-``ground_truth_overlay.json`` marks their baseline as clean.
+source controls.  Because mutation truth is not exhaustive semantic truth,
+alerts on those controls are reported descriptively and are not automatically
+called false positives.  The legacy verified-clean view remains available
+when a ``ground_truth_overlay.json`` contains adjudicated baselines.
 
 Examples::
 
@@ -534,6 +536,34 @@ def _matching_pairs(
     return sorted(matches.items())
 
 
+def _residual_category_pairs(
+    case: _Case,
+    used_predictions: set[int],
+    used_expected: set[int],
+) -> list[tuple[int, int]]:
+    """Category-match residual findings after anchor matches claim targets.
+
+    The returned indexes refer to the original case.  Residual category
+    matches are plausible target candidates with weak or different
+    localization, not automatically false extra findings.
+    """
+
+    prediction_indexes = [
+        index for index in range(len(case.predicted)) if index not in used_predictions
+    ]
+    expected_indexes = [
+        index for index in range(len(case.expected)) if index not in used_expected
+    ]
+    pairs = _matching_pairs(
+        [case.predicted[index] for index in prediction_indexes],
+        [case.expected[index] for index in expected_indexes],
+    )
+    return [
+        (prediction_indexes[prediction_index], expected_indexes[expected_index])
+        for prediction_index, expected_index in pairs
+    ]
+
+
 def _metric(value: int, denominator: int) -> float | None:
     return value / denominator if denominator else None
 
@@ -957,6 +987,128 @@ def _classification_basis_metrics(cases: Sequence[_Case]) -> dict[str, Any]:
     }
 
 
+def _partial_label_metrics(cases: Sequence[_Case]) -> dict[str, Any]:
+    """Score injected targets without declaring every other finding false.
+
+    Mutation ground truth certifies the injected defects only.  It does not
+    exhaustively certify that no other semantic issue exists.  Anchor matches
+    are therefore primary target detections; remaining category matches are
+    retained as weak target candidates, and all other findings are explicitly
+    unadjudicated.
+    """
+
+    injected = [case for case in cases if case.scored and case.expected]
+    expected_count = sum(len(case.expected) for case in injected)
+    anchor_matches = 0
+    category_matches = 0
+    category_only_candidates = 0
+    unadjudicated_extras = 0
+    unadjudicated_extra_cases = 0
+    detected_cases = 0
+
+    for case in injected:
+        anchors = _anchor_pairs(case)
+        anchor_matches += len(anchors)
+        detected_cases += bool(anchors)
+        used_predictions = {prediction for prediction, _ in anchors}
+        used_expected = {expected for _, expected in anchors}
+        residual = _residual_category_pairs(case, used_predictions, used_expected)
+        category_only_candidates += len(residual)
+        category_matches += len(_matching_pairs(case.predicted, case.expected))
+        accounted_predictions = used_predictions | {
+            prediction for prediction, _ in residual
+        }
+        extras = len(case.predicted) - len(accounted_predictions)
+        unadjudicated_extras += extras
+        unadjudicated_extra_cases += extras > 0
+
+    taxonomy = _category_accuracy_given_anchor(cases)
+    return {
+        "policy": "positive_unlabeled_mutation_targets",
+        "semantic_precision": None,
+        "semantic_precision_reason": "non_target_findings_are_not_exhaustively_adjudicated",
+        "target_anchor": {
+            "expected": expected_count,
+            "matched": anchor_matches,
+            "missed": expected_count - anchor_matches,
+            "recall": _metric(anchor_matches, expected_count),
+            "cases": len(injected),
+            "cases_detected": detected_cases,
+            "case_recall": _metric(detected_cases, len(injected)),
+        },
+        "target_category": {
+            "expected": expected_count,
+            "matched": category_matches,
+            "missed": expected_count - category_matches,
+            "recall": _metric(category_matches, expected_count),
+        },
+        "category_given_anchor": taxonomy,
+        "category_only_target_candidates": category_only_candidates,
+        "unadjudicated_extra_findings": unadjudicated_extras,
+        "unadjudicated_extra_cases": unadjudicated_extra_cases,
+        "predicted_findings_on_injected_cases": sum(
+            len(case.predicted) for case in injected
+        ),
+    }
+
+
+def _control_alert_metrics(cases: Sequence[_Case]) -> dict[str, Any]:
+    """Describe source-seed alerts without asserting exhaustive negatives."""
+
+    controls = [case for case in cases if case.clean_control]
+    predictions = [prediction for case in controls for prediction in case.predicted]
+    categories = Counter(
+        prediction.category
+        or (sorted(prediction.aliases)[0] if prediction.aliases else "unknown")
+        for prediction in predictions
+    )
+    alerted_cases = sum(bool(case.predicted) for case in controls)
+    return {
+        "policy": "source_models_assumed_mutation_free_not_exhaustively_semantic_clean",
+        "cases": len(controls),
+        "alerted_cases": alerted_cases,
+        "alert_rate": _metric(alerted_cases, len(controls)),
+        "findings": len(predictions),
+        "categories": dict(sorted(categories.items())),
+        "false_positive_rate": None,
+        "false_positive_rate_reason": "source_controls_are_not_exhaustively_adjudicated",
+    }
+
+
+def _contract_completeness_metrics(cases: Sequence[_Case]) -> dict[str, Any]:
+    """Report machine-checkable completeness, not semantic correctness."""
+
+    predictions = [
+        (case, prediction)
+        for case in cases
+        for prediction in case.predicted
+    ]
+    missing_refs = 0
+    missing_evidence = 0
+    missing_basis = 0
+    complete = 0
+    for case, prediction in predictions:
+        semantic = prediction.category in _CATEGORY_BASIS
+        description_present = isinstance(case.record.get("description_path"), str)
+        lacks_refs = not prediction.refs
+        lacks_evidence = semantic and description_present and not prediction.reference_evidence
+        lacks_basis = semantic and not prediction.classification_basis
+        missing_refs += lacks_refs
+        missing_evidence += lacks_evidence
+        missing_basis += lacks_basis
+        complete += not (lacks_refs or lacks_evidence or lacks_basis)
+    return {
+        "predicted_findings": len(predictions),
+        "complete_findings": complete,
+        "complete_rate": _metric(complete, len(predictions)),
+        "missing_element_refs": missing_refs,
+        "missing_reference_evidence": missing_evidence,
+        "missing_classification_basis": missing_basis,
+        "semantic_invalid_findings": None,
+        "semantic_invalid_reason": "requires_adjudication_beyond_partial_ground_truth",
+    }
+
+
 def _case_metrics(cases: Sequence[_Case]) -> dict[str, Any]:
     scored = [case for case in cases if case.scored]
     injected = [case for case in scored if case.expected]
@@ -1060,6 +1212,9 @@ def _case_metrics(cases: Sequence[_Case]) -> dict[str, Any]:
         "clean_finding_categories": clean_details["categories"],
         "reference_evidence": _reference_evidence_metrics(cases),
         "classification_basis": _classification_basis_metrics(cases),
+        "partial_labels": _partial_label_metrics(cases),
+        "control_alerts": _control_alert_metrics(cases),
+        "contract_completeness": _contract_completeness_metrics(cases),
         "injected_cases": len(injected),
         "clean_cases": len(clean),
         "verified_clean_controls": len(verified_clean_controls),
@@ -1306,6 +1461,42 @@ def _paired_macro_f1_comparisons(
     return comparisons
 
 
+def _paired_target_recall_comparisons(
+    grouped_cases: Sequence[tuple[dict[str, Any], Sequence[_Case]]]
+) -> list[dict[str, Any]]:
+    """Compare configurations on per-case injected-anchor recall."""
+
+    comparisons: list[dict[str, Any]] = []
+    for left_index, (left_config, left_cases) in enumerate(grouped_cases):
+        left_by_id: dict[str, list[_Case]] = {}
+        for case in left_cases:
+            if case.scored and case.expected:
+                left_by_id.setdefault(case.case_id, []).append(case)
+        for right_config, right_cases in grouped_cases[left_index + 1 :]:
+            right_by_id: dict[str, list[_Case]] = {}
+            for case in right_cases:
+                if case.scored and case.expected:
+                    right_by_id.setdefault(case.case_id, []).append(case)
+            differences: list[float] = []
+            for case_id in sorted(set(left_by_id) & set(right_by_id)):
+                for left_case, right_case in zip(
+                    left_by_id[case_id], right_by_id[case_id], strict=False
+                ):
+                    left_recall = len(_anchor_pairs(left_case)) / len(left_case.expected)
+                    right_recall = len(_anchor_pairs(right_case)) / len(right_case.expected)
+                    differences.append(left_recall - right_recall)
+            comparisons.append(
+                {
+                    "left_config": left_config,
+                    "right_config": right_config,
+                    "cases": len(differences),
+                    "difference_definition": "left_minus_right_per_case_target_anchor_recall",
+                    "bootstrap": _bootstrap_difference(differences),
+                }
+            )
+    return comparisons
+
+
 def analyze_results(
     results_path: str | Path,
     dataset_root: str | Path,
@@ -1461,9 +1652,10 @@ def analyze_results(
         for group in [groups[key]]
     ]
     paired_macro_f1 = _paired_macro_f1_comparisons(grouped_cases)
+    paired_target_recall = _paired_target_recall_comparisons(grouped_cases)
 
     uncertain_configs: set[str] = set()
-    for comparison in paired_macro_f1:
+    for comparison in paired_target_recall:
         bootstrap = comparison.get("bootstrap")
         if not isinstance(bootstrap, dict):
             continue
@@ -1484,25 +1676,27 @@ def analyze_results(
             group["config"], sort_keys=True, separators=(",", ":")
         )
         reasons: list[str] = []
-        if group["verified_clean_controls"] == 0:
-            reasons.append("no_verified_clean_controls")
+        if group["partial_labels"]["target_anchor"]["expected"] == 0:
+            reasons.append("no_injected_targets")
         if group["error_count"] > 0:
             reasons.append("errors_present")
         if malformed_lines > 0:
             reasons.append("malformed_result_lines")
         if config_key in uncertain_configs:
-            reasons.append("paired_macro_f1_ci_crosses_zero")
+            reasons.append("paired_target_anchor_recall_ci_crosses_zero")
         group["ranking_eligible"] = not reasons
         group["ranking_ineligibility_reasons"] = reasons
 
-    def ranking_key(group: dict[str, Any]) -> tuple[float, float, float, str]:
-        macro_f1 = group["finding"]["macro_f1"]
-        fpr = group["clean_false_positive_rate"]
+    def ranking_key(group: dict[str, Any]) -> tuple[float, float, float, float, str]:
+        target_recall = group["partial_labels"]["target_anchor"]["recall"]
+        category_accuracy = group["partial_labels"]["category_given_anchor"]["accuracy"]
+        contract_complete = group["contract_completeness"]["complete_rate"]
         tokens = group["comparable_total_tokens"]
         config_json = json.dumps(group["config"], sort_keys=True, separators=(",", ":"))
         return (
-            -(macro_f1 if macro_f1 is not None else -1.0),
-            fpr if fpr is not None else 2.0,
+            -(target_recall if target_recall is not None else -1.0),
+            -(category_accuracy if category_accuracy is not None else -1.0),
+            -(contract_complete if contract_complete is not None else -1.0),
             tokens if tokens is not None else float("inf"),
             config_json,
         )
@@ -1510,6 +1704,14 @@ def analyze_results(
     ranking = [
         {
             "config": group["config"],
+            "target_anchor_recall": group["partial_labels"]["target_anchor"]["recall"],
+            "target_category_recall": group["partial_labels"]["target_category"]["recall"],
+            "category_accuracy_given_anchor": group["partial_labels"]["category_given_anchor"]["accuracy"],
+            "unadjudicated_extra_findings": group["partial_labels"]["unadjudicated_extra_findings"],
+            "control_alert_rate": group["control_alerts"]["alert_rate"],
+            "contract_complete_rate": group["contract_completeness"]["complete_rate"],
+            # Conservative legacy views remain available as lower-bound
+            # diagnostics but no longer determine the primary ranking.
             "macro_f1": group["finding"]["macro_f1"],
             "clean_false_positive_rate": group["clean_false_positive_rate"],
             "tokens": group["tokens"],
@@ -1542,6 +1744,7 @@ def analyze_results(
         "winner": winner,
         "ranking_suppressed": not bool(eligible_ranking),
         "paired_macro_f1": paired_macro_f1,
+        "paired_target_anchor_recall": paired_target_recall,
         # Descriptive alias retained for callers that do not know the shorter
         # benchmark field name.
         "macro_f1_comparisons": paired_macro_f1,
