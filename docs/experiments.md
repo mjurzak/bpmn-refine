@@ -110,6 +110,10 @@ Capture is delivered. Every trial record carries `duration_ms` per phase and per
 
 Token counts are what the provider reported, not an estimate. The reporting conventions differ in a way that matters when summing: Anthropic excludes cache reads and writes from `input_tokens`, so the billed prompt is `input_tokens + cached_input_tokens`, while OpenAI and Gemini include them, so `cached_input_tokens` is a subset rather than an addend. Each row records its convention in `usage.source`. A call whose response carried no usage block goes into `calls_missing_usage` rather than counting as zero — otherwise a total that is really a lower bound reads as complete.
 
+The analyzer preserves the raw provider total as `tokens` and adds
+`comparable_total_tokens`. The latter adds cached input only for Anthropic and
+Claude Code, and is the token field used for cross-provider ranking.
+
 An Ollama token count is not comparable to a hosted one: the tokenizer is the local model's. Those rows are tagged `source: "ollama"` for that reason.
 
 CLI runs reuse normal saved CLI authentication, do not probe login state at

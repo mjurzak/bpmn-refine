@@ -325,6 +325,23 @@ def _usage(
     )
 
 
+def _comparable_total_tokens(
+    provider: str | None, total_tokens: int, cached_input_tokens: int
+) -> int:
+    """Normalize the CLI conventions used for cross-provider comparison.
+
+    Anthropic reports cache reads/writes outside ``input_tokens``. OpenAI/Codex
+    reports cached input as a subset of input, so adding it there would count it
+    twice.
+    """
+
+    return (
+        total_tokens + cached_input_tokens
+        if provider in {"anthropic", "claude_cli"}
+        else total_tokens
+    )
+
+
 def _case_metrics(cases: Sequence[_Case]) -> dict[str, Any]:
     scored = [case for case in cases if case.scored]
     injected = [case for case in scored if case.expected]
@@ -558,6 +575,19 @@ def analyze_results(results_path: str | Path, dataset_root: str | Path) -> dict[
                 cached_input_values.append(cached_input_tokens)
         errors = sum(bool(case.record.get("error")) for case in cases)
         complete_tokens = missing_usage == 0 and len(token_values) == len(cases)
+        total_tokens = sum(token_values) if token_values else None
+        cached_input_tokens = (
+            sum(cached_input_values) if cached_input_values else 0
+        )
+        comparable_total_tokens = (
+            _comparable_total_tokens(
+                group["config"].get("provider"),
+                total_tokens,
+                cached_input_tokens,
+            )
+            if complete_tokens and total_tokens is not None
+            else None
+        )
         output_groups.append(
             {
                 "config": group["config"],
@@ -568,14 +598,16 @@ def analyze_results(results_path: str | Path, dataset_root: str | Path) -> dict[
                     sum(duration_values) / len(duration_values) if duration_values else None
                 ),
                 "latency_ms_total": sum(duration_values) if duration_values else None,
-                "tokens": sum(token_values) if complete_tokens else None,
+                "tokens": total_tokens if complete_tokens else None,
+                "comparable_total_tokens": comparable_total_tokens,
                 "usage": {
                     "input_tokens": sum(input_values) if input_values else None,
                     "output_tokens": sum(output_values) if output_values else None,
                     "cached_input_tokens": (
-                        sum(cached_input_values) if cached_input_values else None
+                        cached_input_tokens if cached_input_values else None
                     ),
-                    "total_tokens": sum(token_values) if token_values else None,
+                    "total_tokens": total_tokens,
+                    "comparable_total_tokens": comparable_total_tokens,
                     "calls_missing_usage": missing_usage,
                     "complete": complete_tokens,
                 },
@@ -589,7 +621,7 @@ def analyze_results(results_path: str | Path, dataset_root: str | Path) -> dict[
     def ranking_key(group: dict[str, Any]) -> tuple[float, float, float, str]:
         macro_f1 = group["finding"]["macro_f1"]
         fpr = group["clean_false_positive_rate"]
-        tokens = group["tokens"]
+        tokens = group["comparable_total_tokens"]
         config_json = json.dumps(group["config"], sort_keys=True, separators=(",", ":"))
         return (
             -(macro_f1 if macro_f1 is not None else -1.0),
@@ -604,6 +636,7 @@ def analyze_results(results_path: str | Path, dataset_root: str | Path) -> dict[
             "macro_f1": group["finding"]["macro_f1"],
             "clean_false_positive_rate": group["clean_false_positive_rate"],
             "tokens": group["tokens"],
+            "comparable_total_tokens": group["comparable_total_tokens"],
         }
         for group in sorted(output_groups, key=ranking_key)
     ]

@@ -108,7 +108,22 @@ def test_analysis_scores_injected_and_clean_controls(tmp_path):
     assert group["clean_false_positive_rate"] == 0.5
     assert group["localization_overlap"] == 1.0
     assert group["tokens"] == 30
+    assert group["comparable_total_tokens"] == 30
     assert group["usage"]["cached_input_tokens"] == 6
+
+
+def test_analysis_adds_anthropic_cache_only_for_comparable_usage(tmp_path):
+    results = tmp_path / "results.jsonl"
+    claude = _record(str(tmp_path / "seeds/01.bpmn"), [], tokens=10)
+    claude["run"]["config"]["provider_override"] = "claude_cli"
+    claude["phases"]["validate"]["calls"][0]["provider"] = "claude_cli"
+    claude["usage"]["cached_input_tokens"] = 7
+    results.write_text(json.dumps(claude) + "\n", encoding="utf-8")
+
+    group = analyze_results(results, tmp_path)["groups"][0]
+    assert group["tokens"] == 10
+    assert group["comparable_total_tokens"] == 17
+    assert group["usage"]["comparable_total_tokens"] == 17
 
 
 def test_analysis_keeps_ablation_arms_in_separate_groups(tmp_path):
@@ -161,6 +176,7 @@ def test_analysis_is_conservative_with_missing_usage_and_errors(tmp_path):
     assert group["error_count"] == 1
     assert group["malformed_or_error_count"] == 1
     assert output["ranking"][0]["tokens"] is None
+    assert output["ranking"][0]["comparable_total_tokens"] is None
 
 
 def test_unrelated_finding_does_not_count_as_injected_case_detection(tmp_path):
