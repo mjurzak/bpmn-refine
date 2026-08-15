@@ -32,3 +32,6 @@ frontend/dist/
 
 # generated local documentation
 project-explorer.html
+
+# generated experiment checkpoints and provider payloads
+experiments/results/
