@@ -339,6 +339,27 @@ async def test_description_ablation_can_hide_the_loaded_description(
     assert record.description_hash
 
 
+async def test_manifest_description_hash_matches_trial_for_crlf_text(tmp_path):
+    dataset = tmp_path / "dataset"
+    input_path = dataset / "variants" / "single" / "M01" / "01.bpmn"
+    description = dataset / "descriptions" / "variants" / "single" / "M01" / "01.txt"
+    input_path.parent.mkdir(parents=True)
+    description.parent.mkdir(parents=True)
+    input_path.write_bytes(QUICK_FIX_INPUT.read_bytes())
+    description.write_bytes(b"Line one.\r\nLine two.\r\n")
+    spec = _spec(
+        inputs=[str(input_path)],
+        description_root=str(dataset / "descriptions"),
+    )
+
+    out_dir = tmp_path / "out"
+    await execute_sweep(spec, out_dir=out_dir, mock=True)
+
+    trial = json.loads(next((out_dir / TRIALS_DIRNAME).glob("*.json")).read_text())
+    manifest = json.loads((out_dir / MANIFEST_FILENAME).read_text())
+    assert manifest["description_hashes"][str(description)] == trial["description_hash"]
+
+
 async def test_the_run_block_names_the_config_and_the_commit():
     spec = _spec()
     trial = build_trials(spec, [QUICK_FIX_INPUT], expand_configs(spec))[0]

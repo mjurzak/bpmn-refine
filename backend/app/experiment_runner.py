@@ -60,6 +60,18 @@ TRIALS_DIRNAME = "trials"
 _GLOB_CHARS = set("*?[")
 
 
+def _description_hash(path: Path) -> str:
+    """Hash the decoded description representation stored in trial records.
+
+    ``Path.read_text`` applies universal-newline normalization, which is also
+    what ``run_trial`` uses before hashing ``reference_description``.  Hashing
+    this same representation in the manifest keeps CRLF and LF descriptions
+    equivalent instead of making integrity checks depend on checkout mode.
+    """
+
+    return hash_bytes(path.read_text(encoding="utf-8").encode("utf-8"))
+
+
 # ---------------------------------------------------------------------------
 # the spec
 # ---------------------------------------------------------------------------
@@ -753,7 +765,7 @@ def write_manifest(
             str(path): hash_bytes(path.read_bytes()) for path in inputs
         },
         "description_hashes": {
-            str(path): hash_bytes(path.read_bytes())
+            str(path): _description_hash(path)
             for path in descriptions.values()
         },
         "config_count": len(configs),
