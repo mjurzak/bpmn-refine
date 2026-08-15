@@ -142,6 +142,7 @@ def test_manual_semantic_repair_makes_one_plan_and_labels_revalidation(monkeypat
                         "findings": [
                             {
                                 "category": "missing_exception_handling",
+                                "classification_basis": "required_scenario_path_absent",
                                 "severity": "warning",
                                 "message": "A new failure case needs review.",
                                 "element_refs": ["task_1"],

@@ -24,6 +24,7 @@ from app.services.repair import (
 )
 from app.services.validation import (
     _SEMANTIC_SCHEMA,
+    SemanticBasis,
     SemanticFinding,
     _normalise_semantic_findings,
     _sort_issues_by_severity,
@@ -61,6 +62,7 @@ def _diagram() -> BpmnDiagram:
 def _finding(**overrides) -> SemanticFinding:
     data = {
         "category": SemanticCategory.MISSING_STEP,
+        "classification_basis": SemanticBasis.REQUIRED_ACTIVITY_ABSENT,
         "severity": Severity.WARNING,
         "message": "No approval step before payment.",
         "element_refs": ["task_1"],
@@ -125,6 +127,8 @@ def test_the_response_schema_closes_the_category_set():
     assert category_field == {"$ref": "#/$defs/SemanticCategory"}
     # no free-text escape hatch that would reintroduce per-run identifiers
     assert categories["type"] == "string"
+    bases = _SEMANTIC_SCHEMA["$defs"]["SemanticBasis"]
+    assert set(bases["enum"]) == {basis.value for basis in SemanticBasis}
 
 
 def test_the_response_schema_is_strict():
@@ -133,6 +137,7 @@ def test_the_response_schema_is_strict():
     assert _SEMANTIC_SCHEMA["additionalProperties"] is False
     assert _SEMANTIC_SCHEMA["required"] == ["description", "result"]
     assert "reference_evidence" in findings["required"]
+    assert "classification_basis" in findings["required"]
 
 
 @pytest.mark.asyncio
@@ -314,7 +319,10 @@ def test_reference_evidence_is_preserved_for_posthoc_audit():
 
     issues = _normalise_semantic_findings([finding], _diagram(), [])
 
-    assert issues[0].raw == {"reference_evidence": ["L2", "L4"]}
+    assert issues[0].raw == {
+        "reference_evidence": ["L2", "L4"],
+        "classification_basis": "required_activity_absent",
+    }
 
 
 def test_reference_evidence_gate_drops_unsupported_findings():
@@ -340,7 +348,10 @@ def test_reference_evidence_gate_keeps_only_valid_line_labels():
         valid_reference_evidence={"L1", "L2"},
     )
 
-    assert issues[0].raw == {"reference_evidence": ["L2"]}
+    assert issues[0].raw == {
+        "reference_evidence": ["L2"],
+        "classification_basis": "required_activity_absent",
+    }
 
 
 # --------------------------------------------------------------------------

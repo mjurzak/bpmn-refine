@@ -44,6 +44,7 @@ def test_validation_prompt_does_not_duplicate_the_input_ir_schema():
     assert '"$defs"' not in rendered
     assert "result.findings" in rendered
     assert "reference_evidence" in rendered
+    assert "classification_basis" in rendered
     assert "semantic_view" in rendered
 
 

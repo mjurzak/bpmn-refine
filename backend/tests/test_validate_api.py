@@ -94,6 +94,7 @@ def test_semantic_issues_are_stamped_as_llm(monkeypatch):
                 "findings": [
                     {
                         "category": "improper_termination",
+                        "classification_basis": "required_final_outcome_absent",
                         "severity": "warning",
                         "message": "Rejected reports end at 'Expense Reimbursed'.",
                         "element_refs": ["end_1"],

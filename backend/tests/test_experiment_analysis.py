@@ -91,6 +91,9 @@ def test_ground_truth_mirror_and_holistic_aliases():
         {"R007", "dead transition"}
     )
     assert normalize_finding("semantic:missing_step") == frozenset({"missing_step"})
+    assert normalize_finding("semantic:improper_termination") == frozenset(
+        {"improper_termination"}
+    )
 
 
 def test_analysis_scores_injected_and_clean_controls(tmp_path):
@@ -484,11 +487,17 @@ def test_relation_anchor_detection_is_independent_of_predicted_category(tmp_path
     _write_truth(
         tmp_path,
         "single/M03/01.bpmn",
-        ["expected_category"],
+        ["missing_step"],
         ["Anchor"],
     )
-    record = _record(str(tmp_path / "variants/single/M03/01.bpmn"), ["wrong_category"])
+    record = _record(
+        str(tmp_path / "variants/single/M03/01.bpmn"),
+        ["inconsistent_naming"],
+    )
     record["pre_validation"]["issues"][0]["element_refs"] = ["Anchor"]
+    record["pre_validation"]["issues"][0]["raw"] = {
+        "classification_basis": "label_or_behavior_mismatch"
+    }
     results = tmp_path / "results.jsonl"
     results.write_text(json.dumps(record) + "\n", encoding="utf-8")
 
@@ -497,3 +506,19 @@ def test_relation_anchor_detection_is_independent_of_predicted_category(tmp_path
     assert group["localization_detection"]["matched"] == 1
     assert group["category_localization"]["matched"] == 0
     assert group["category_accuracy_given_anchor"]["accuracy"] == 0.0
+    assert group["category_accuracy_given_anchor"]["confusion"] == [
+        {
+            "expected": "missing_step",
+            "predicted": "inconsistent_naming",
+            "count": 1,
+        }
+    ]
+    assert group["classification_basis"] == {
+        "predicted_findings": 1,
+        "findings_with_basis": 1,
+        "coverage": 1.0,
+        "category_basis_consistency": 1.0,
+        "anchored_findings": 1,
+        "anchored_findings_with_basis": 1,
+        "expected_basis_accuracy_given_anchor": 0.0,
+    }

@@ -1,0 +1,33 @@
+experiment_id: taxonomy-v3-luna-pilot
+dataset_version: v1.0+ground-truth-overlay-1.2
+inputs:
+- data/eval/v1.0/seeds/18.bpmn
+- data/eval/v1.0/seeds/19.bpmn
+- data/eval/v1.0/seeds/20.bpmn
+- data/eval/v1.0/variants/single/M01/33.bpmn
+- data/eval/v1.0/variants/single/M02/09.bpmn
+- data/eval/v1.0/variants/single/M03/17.bpmn
+- data/eval/v1.0/variants/single/M04/17.bpmn
+- data/eval/v1.0/variants/single/M05/48.bpmn
+- data/eval/v1.0/variants/single/M06/45.bpmn
+- data/eval/v1.0/variants/single/M07/34.bpmn
+description_root: data/eval/v1.0/descriptions
+base:
+  model_tier: custom
+  model_override: gpt-5.6-luna
+  provider_override: codex_cli
+  ir_format: pydantic
+  tiers_enabled:
+    t1: false
+    t2: false
+    t3: true
+  llm_validation_scope: semantic
+  include_semantic_projection: true
+  reasoning_effort: medium
+run_repair: false
+repeats: 1
+notes: >-
+  Cheap diagnostic of the general two-stage semantic taxonomy. This is not a
+  1:1 model comparison with the Terra prompt-v2 pilot. Anchor detection,
+  evidence discipline, category/basis consistency, and speculative findings
+  are the decision signals. No Claude arm is permitted.

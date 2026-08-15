@@ -44,10 +44,19 @@ _SPECIAL_ALIASES: dict[str, frozenset[str]] = {
     "lack_of_synchronization": frozenset({"lack of synchronisation"}),
     "lack_of_synchronisation": frozenset({"lack of synchronisation"}),
     "improper_completion": frozenset({"improper completion"}),
-    "improper_termination": frozenset({"improper completion"}),
     "unreachable_region": frozenset({"dead transition", "R007"}),
     "dead_transition": frozenset({"dead transition", "R007"}),
     "dead transition": frozenset({"dead transition", "R007"}),
+}
+
+_CATEGORY_BASIS: dict[str, str] = {
+    "missing_step": "required_activity_absent",
+    "contradictory_flow": "required_order_violated",
+    "unreachable_branch": "stated_condition_violated",
+    "missing_exception_handling": "required_scenario_path_absent",
+    "inconsistent_naming": "label_or_behavior_mismatch",
+    "improper_termination": "required_final_outcome_absent",
+    "unwanted_action": "prohibited_or_mutually_exclusive_action",
 }
 
 
@@ -322,6 +331,7 @@ class _Prediction:
     aliases: frozenset[str]
     refs: set[str] = field(default_factory=set)
     reference_evidence: tuple[str, ...] = ()
+    classification_basis: str | None = None
     # Keep the source category for diagnostics (not for matching).  Aliases
     # such as ``unreachable_region`` intentionally expand to more than one
     # benchmark label, so the alias set alone is not a useful display value.
@@ -408,6 +418,14 @@ def _row_reference_evidence(row: dict[str, Any]) -> tuple[str, ...]:
     )
 
 
+def _row_classification_basis(row: dict[str, Any]) -> str | None:
+    raw = row.get("raw")
+    value = raw.get("classification_basis") if isinstance(raw, dict) else None
+    if value is None:
+        value = row.get("classification_basis")
+    return value if isinstance(value, str) and value else None
+
+
 def _predictions(
     record: dict[str, Any], keys: Sequence[str] = ("pre_validation", "validation")
 ) -> list[_Prediction]:
@@ -456,6 +474,7 @@ def _predictions(
                         aliases=aliases,
                         refs=_row_refs(row),
                         reference_evidence=_row_reference_evidence(row),
+                        classification_basis=_row_classification_basis(row),
                         category=_display_category(label),
                     )
                 )
@@ -778,12 +797,23 @@ def _category_accuracy_given_anchor(cases: Sequence[_Case]) -> dict[str, Any]:
         )
         for case, pred_index, expected_index in anchors
     )
+    confusion = Counter(
+        (
+            "/".join(sorted(case.expected[expected_index])),
+            case.predicted[pred_index].category or "unknown",
+        )
+        for case, pred_index, expected_index in anchors
+    )
     return {
         "accuracy": _metric(correct, len(anchors)),
         "correct": correct,
         "anchors": len(anchors),
         "expected": sum(len(case.expected) for case in injected),
         "predicted": sum(len(case.predicted) for case in injected),
+        "confusion": [
+            {"expected": expected, "predicted": predicted, "count": count}
+            for (expected, predicted), count in sorted(confusion.items())
+        ],
     }
 
 
@@ -878,6 +908,51 @@ def _reference_evidence_metrics(cases: Sequence[_Case]) -> dict[str, Any]:
         "coverage": _metric(len(with_evidence), len(predictions)),
         "line_citations": sum(
             len(prediction.reference_evidence) for prediction in predictions
+        ),
+    }
+
+
+def _classification_basis_metrics(cases: Sequence[_Case]) -> dict[str, Any]:
+    predictions = [prediction for case in cases for prediction in case.predicted]
+    with_basis = [
+        prediction for prediction in predictions if prediction.classification_basis
+    ]
+    consistent = sum(
+        _CATEGORY_BASIS.get(prediction.category or "")
+        == prediction.classification_basis
+        for prediction in with_basis
+    )
+    anchored = [
+        (case, pred_index, expected_index)
+        for case in cases
+        if case.scored and case.expected
+        for pred_index, expected_index in _anchor_pairs(case)
+    ]
+    anchored_with_basis = [
+        (case, pred_index, expected_index)
+        for case, pred_index, expected_index in anchored
+        if case.predicted[pred_index].classification_basis
+    ]
+    anchored_correct = 0
+    for case, pred_index, expected_index in anchored_with_basis:
+        expected_categories = case.expected[expected_index]
+        accepted_bases = {
+            _CATEGORY_BASIS[category]
+            for category in expected_categories
+            if category in _CATEGORY_BASIS
+        }
+        anchored_correct += (
+            case.predicted[pred_index].classification_basis in accepted_bases
+        )
+    return {
+        "predicted_findings": len(predictions),
+        "findings_with_basis": len(with_basis),
+        "coverage": _metric(len(with_basis), len(predictions)),
+        "category_basis_consistency": _metric(consistent, len(with_basis)),
+        "anchored_findings": len(anchored),
+        "anchored_findings_with_basis": len(anchored_with_basis),
+        "expected_basis_accuracy_given_anchor": _metric(
+            anchored_correct, len(anchored_with_basis)
         ),
     }
 
@@ -984,6 +1059,7 @@ def _case_metrics(cases: Sequence[_Case]) -> dict[str, Any]:
         "clean_finding_count": clean_details["predicted_findings"],
         "clean_finding_categories": clean_details["categories"],
         "reference_evidence": _reference_evidence_metrics(cases),
+        "classification_basis": _classification_basis_metrics(cases),
         "injected_cases": len(injected),
         "clean_cases": len(clean),
         "verified_clean_controls": len(verified_clean_controls),

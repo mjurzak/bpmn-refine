@@ -47,11 +47,33 @@ class SemanticSeverity(StrEnum):
     WARNING = "warning"
 
 
+class SemanticBasis(StrEnum):
+    """Observable reason for a semantic classification.
+
+    This separates evidence in the diagram from the user-facing category. It
+    makes adjacent categories auditable without exposing benchmark operators.
+    """
+
+    REQUIRED_ACTIVITY_ABSENT = "required_activity_absent"
+    REQUIRED_ORDER_VIOLATED = "required_order_violated"
+    STATED_CONDITION_VIOLATED = "stated_condition_violated"
+    REQUIRED_SCENARIO_PATH_ABSENT = "required_scenario_path_absent"
+    LABEL_OR_BEHAVIOR_MISMATCH = "label_or_behavior_mismatch"
+    REQUIRED_FINAL_OUTCOME_ABSENT = "required_final_outcome_absent"
+    PROHIBITED_OR_MUTUALLY_EXCLUSIVE_ACTION = (
+        "prohibited_or_mutually_exclusive_action"
+    )
+
+
 class SemanticFinding(BaseModel):
     """One tier-3 finding, in the shape the provider is constrained to produce."""
 
     category: SemanticCategory = Field(
         description="Which kind of semantic defect this is."
+    )
+    classification_basis: SemanticBasis = Field(
+        description="The observable diagram/reference mismatch used to choose "
+        "the semantic category."
     )
     severity: SemanticSeverity = Field(
         description="'error' if the process cannot execute correctly as modeled, "
@@ -317,7 +339,10 @@ def _normalise_semantic_findings(
                 element_refs=refs,
                 suggestion=finding.suggestion,
                 source=SOURCE_LLM,
-                raw={"reference_evidence": evidence},
+                raw={
+                    "reference_evidence": evidence,
+                    "classification_basis": str(finding.classification_basis),
+                },
             )
         )
 

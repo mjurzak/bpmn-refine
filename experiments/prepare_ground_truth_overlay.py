@@ -22,7 +22,7 @@ from app.model.formats.pydantic_ir import PydanticConverter
 
 
 SCHEMA_NAME = "bpmn-eval-ground-truth-overlay"
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "1.2"
 
 
 def _labels(defect: dict[str, Any]) -> list[str]:
@@ -101,25 +101,28 @@ def build_overlay(dataset_root: Path) -> dict[str, Any]:
                 continue
             injection_site = defect.get("injection_site", [])
             target_ids = defect.get("expected_elements", [])
+            surviving_injection_refs = {
+                str(ref)
+                for ref in injection_site
+                if isinstance(ref, str) and ref in present_ids
+            }
+            surviving_expected_refs = {
+                str(ref)
+                for ref in target_ids
+                if isinstance(ref, str) and ref in present_ids
+            }
+            # The construction site names what changed; expected elements can
+            # also name an unchanged semantic sibling (for example the other
+            # task in a distinct-label relation). Both are valid anchors.
             surviving_refs = sorted(
-                {
-                    str(ref)
-                    for ref in injection_site
-                    if isinstance(ref, str) and ref in present_ids
-                }
+                surviving_injection_refs | surviving_expected_refs
             )
-            if not surviving_refs:
-                surviving_refs = sorted(
-                    {
-                        str(ref)
-                        for ref in target_ids
-                        if isinstance(ref, str) and ref in present_ids
-                    }
-                )
+            derived_from = "semantic_anchor_intersection"
             if not surviving_refs:
                 surviving_refs = _surviving_repair_boundary(
                     truth.get("repair"), present_ids
                 )
+                derived_from = "repair_boundary_intersection"
             injected.append(
                 {
                     "operator": defect.get("operator"),
@@ -134,14 +137,7 @@ def build_overlay(dataset_root: Path) -> dict[str, Any]:
                         "mode": "construction_footprint",
                         "allowed_variant_refs": surviving_refs,
                         "match": "any_overlap",
-                        "derived_from": (
-                            "injection_site_intersection"
-                            if any(
-                                isinstance(ref, str) and ref in present_ids
-                                for ref in injection_site
-                            )
-                            else "repair_boundary_intersection"
-                        ),
+                        "derived_from": derived_from,
                     },
                 }
             )

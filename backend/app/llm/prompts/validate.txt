@@ -22,16 +22,33 @@ finding must be classified into exactly one of these categories:
 Choose the closest category.  There is no "other" — a finding that fits none of these
 well enough to name is one you should omit.
 
-Apply this precedence when several labels seem plausible:
-- an explicitly stated condition is inverted -> `unreachable_branch`
-- an explicitly stated failure or conditional scenario has no modeled path ->
-  `missing_exception_handling`
-- a duplicated, swapped, or wrong business-object label -> `inconsistent_naming`
-- a path bypasses an explicitly required final outcome -> `improper_termination`
-- an explicitly required positive intermediate action is absent -> `missing_step`
-- an explicit prohibition or mutually exclusive outcome is violated -> `unwanted_action`
-- use `contradictory_flow` only for a concrete contradiction between modeled paths that
-  none of the more specific rules above covers
+Classify in two stages. First select the observable `classification_basis`; then use
+the paired category. Do not select a category merely because a reference sentence
+contains similar words.
+
+| `classification_basis` | category | Observable test |
+|---|---|---|
+| `required_activity_absent` | `missing_step` | An explicit intermediate business activity has no node or credible representation at the required graph position. |
+| `required_order_violated` | `contradictory_flow` | The relevant activities exist, but a path reverses or contradicts their explicit order. |
+| `stated_condition_violated` | `unreachable_branch` | The intended branch exists, but its guard/label makes the explicitly stated scenario unable to select that branch. |
+| `required_scenario_path_absent` | `missing_exception_handling` | The reference explicitly defines a conditional or failure scenario and the diagram has no path for it. |
+| `label_or_behavior_mismatch` | `inconsistent_naming` | A node or flow occupies the required structural role, but its label describes the wrong or duplicated behavior. |
+| `required_final_outcome_absent` | `improper_termination` | A path reaches completion while bypassing an explicitly required final business state or outcome. |
+| `prohibited_or_mutually_exclusive_action` | `unwanted_action` | A path executes an action explicitly forbidden in that scenario or permitted only under the opposite outcome. |
+
+Use these boundary rules for adjacent categories:
+- `missing_step` versus `inconsistent_naming`: if no credible node represents the
+  required activity, use `missing_step`. If a node occupies that exact structural role
+  but carries the wrong behavior label, use `inconsistent_naming` and cite that node.
+- `missing_step` versus `improper_termination`: if the omitted requirement is the final
+  business state reached after completion conditions, use `improper_termination`.
+- `missing_step` versus `missing_exception_handling`: if the missing behavior is an
+  entire explicitly conditional/failure path, use `missing_exception_handling`.
+- `unwanted_action` versus an omission: when the wrong path performs an action that is
+  allowed only under the opposite condition, the performed action is the primary defect;
+  use `unwanted_action` even if the correct action is also absent.
+- use `contradictory_flow` only for an explicit order or path contradiction not covered
+  by a condition, missing scenario path, final outcome, or prohibited action above.
 
 ## Evidence gate
 

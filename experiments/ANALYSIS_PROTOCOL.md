@@ -17,10 +17,12 @@ A seed is a clean control only when its overlay says `status: clean` and
 `human_verified: true`. `unreviewed` and `ambiguous` controls do not contribute
 to precision, false-positive rate, ranking, or a winner decision.
 
-The overlay generator derives localization from the intersection of each
-mutation's construction footprint with IDs present in the variant. If an
-entire path was deleted, it uses surviving boundary elements from the inverse
-repair. These references are construction metadata, not model-generated truth.
+The overlay generator derives localization from the union of each mutation's
+construction footprint and its semantic anchor elements that still exist in
+the variant. This includes unchanged sibling elements needed to express a
+relation, not only the directly mutated ID. If an entire path was deleted, it
+uses surviving boundary elements from the inverse repair. These references are
+construction metadata, not model-generated truth.
 
 Rebuild the overlay deterministically:
 
@@ -40,6 +42,8 @@ Analysis reports distinct views instead of conflating them:
   footprint, regardless of the chosen category?
 - category accuracy given anchor: conditional taxonomy accuracy after locating
   the correct defect;
+- classification-basis coverage and category/basis consistency: whether the
+  model identified the observable mismatch before assigning a category;
 - localization coverage and overlap: how often references were supplied and
   how well they overlap the construction footprint;
 - exact localization: a deliberately strict diagnostic, not the primary score;
@@ -53,6 +57,16 @@ anchor-localized taxonomy are the safer post-hoc quantities.
 
 No quality winner is selected when clean controls are not verified, provider
 errors occurred, or the paired confidence interval crosses zero.
+
+The seven semantic labels are adjacent views of a violation, not seven natural
+classes guaranteed to be mutually exclusive. In particular, a wrong label can
+look like an absent activity, a missing final outcome can look like a missing
+last step, and a forbidden branch action can also imply that the required
+action is absent. The application therefore asks for an observable
+`classification_basis` before the category. Exact-category accuracy remains a
+taxonomy diagnostic; a correctly localized, evidence-backed relation must be
+reported separately and must not be turned into a miss solely because an
+adjacent label was selected.
 
 ## Human baseline adjudication
 

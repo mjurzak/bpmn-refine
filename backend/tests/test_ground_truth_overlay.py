@@ -106,3 +106,37 @@ def test_overlay_uses_repair_boundary_when_the_whole_site_was_deleted(tmp_path):
         defect["localization"]["derived_from"]
         == "repair_boundary_intersection"
     )
+
+
+def test_overlay_includes_unchanged_expected_sibling_in_semantic_anchor(tmp_path):
+    root = tmp_path / "v1.0"
+    _write_bpmn(root / "seeds/01.bpmn", include_task=True)
+    _write_bpmn(root / "variants/single/M05/01.bpmn", include_task=True)
+    truth_path = root / "ground_truth/single/M05/01.json"
+    truth_path.parent.mkdir(parents=True)
+    truth_path.write_text(
+        json.dumps(
+            {
+                "variant_id": "single/M05/01",
+                "seed": "01",
+                "defects": [
+                    {
+                        "operator": "M05",
+                        "expected_finding": "inconsistent_naming",
+                        "expected_elements": ["Start", "Task_deleted"],
+                        "injection_site": ["Task_deleted"],
+                    }
+                ],
+                "repair": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    defect = build_overlay(root)["records"]["single/M05/01"]["injected"][0]
+
+    assert defect["localization"]["allowed_variant_refs"] == [
+        "Start",
+        "Task_deleted",
+    ]
+    assert defect["localization"]["derived_from"] == "semantic_anchor_intersection"
