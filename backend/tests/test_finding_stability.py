@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 from app.experiments import ExperimentConfig, RepairMode
 from app.model.schema import (
@@ -130,6 +132,7 @@ def test_the_response_schema_is_strict():
     assert findings["additionalProperties"] is False
     assert _SEMANTIC_SCHEMA["additionalProperties"] is False
     assert _SEMANTIC_SCHEMA["required"] == ["description", "result"]
+    assert "reference_evidence" in findings["required"]
 
 
 @pytest.mark.asyncio
@@ -152,6 +155,40 @@ async def test_semantic_validation_uses_the_structured_call(monkeypatch):
     assert captured["schema"] == _SEMANTIC_SCHEMA
     assert result.semantic_issues[0].rule_id == "semantic:missing_step"
     assert result.semantic_issues[0].tier == ValidationTier.TIER3
+
+
+@pytest.mark.asyncio
+async def test_semantic_payload_numbers_reference_and_adds_geometry_free_view(
+    monkeypatch,
+):
+    captured = {}
+
+    async def fake_complete_structured(**kwargs):
+        captured.update(kwargs)
+        return {"description": "No issue.", "result": {"findings": []}}
+
+    monkeypatch.setattr(
+        validation_service.llm_client, "complete_structured", fake_complete_structured
+    )
+
+    await validate_diagram(
+        _diagram(),
+        include_semantic=True,
+        config=ExperimentConfig(include_semantic_projection=True),
+        reference_description="First step.\n\nSecond step.",
+    )
+
+    payload = json.loads(captured["prompt"])
+    assert payload["reference_description"] == "L1: First step.\nL2: Second step."
+    view = payload["semantic_view"]["processes"][0]
+    assert view["nodes"][1] == {
+        "id": "task_1",
+        "type": "task",
+        "name": "Do it",
+        "incoming": ["sf_1"],
+        "outgoing": ["sf_2"],
+    }
+    assert "bounds" not in json.dumps(view)
 
 
 @pytest.mark.asyncio
@@ -213,12 +250,10 @@ def test_a_finding_with_only_unknown_references_becomes_process_wide():
     assert issues[0].element_id is None
 
 
-def test_info_severity_is_normalised_to_warning():
-    """The prompt asks for `info` to be omitted, so a stray one must not add a third severity."""
-    issues = _normalise_semantic_findings(
-        [_finding(severity=Severity.INFO)], _diagram(), []
-    )
-    assert issues[0].severity == Severity.WARNING
+def test_info_severity_is_rejected_by_the_structured_contract():
+    """An informational thought must be omitted, not upgraded into a false warning."""
+    with pytest.raises(ValueError, match="error|warning"):
+        _finding(severity=Severity.INFO)
 
 
 def test_error_severity_is_preserved():
@@ -271,6 +306,41 @@ def test_semantic_findings_are_always_attributed_to_the_model():
     issues = _normalise_semantic_findings([_finding()], _diagram(), [])
     assert issues[0].source == "llm"
     assert issues[0].tier == ValidationTier.TIER3
+
+
+def test_reference_evidence_is_preserved_for_posthoc_audit():
+    finding = _finding()
+    finding.reference_evidence = ["L2", "L4"]
+
+    issues = _normalise_semantic_findings([finding], _diagram(), [])
+
+    assert issues[0].raw == {"reference_evidence": ["L2", "L4"]}
+
+
+def test_reference_evidence_gate_drops_unsupported_findings():
+    finding = _finding(reference_evidence=[])
+
+    issues = _normalise_semantic_findings(
+        [finding],
+        _diagram(),
+        [],
+        valid_reference_evidence={"L1"},
+    )
+
+    assert issues == []
+
+
+def test_reference_evidence_gate_keeps_only_valid_line_labels():
+    finding = _finding(reference_evidence=["L2", "L99"])
+
+    issues = _normalise_semantic_findings(
+        [finding],
+        _diagram(),
+        [],
+        valid_reference_evidence={"L1", "L2"},
+    )
+
+    assert issues[0].raw == {"reference_evidence": ["L2"]}
 
 
 # --------------------------------------------------------------------------

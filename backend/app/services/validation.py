@@ -40,13 +40,20 @@ class ValidationResult(BaseModel):
     semantic_issues: list[ValidationIssue] = []
 
 
+class SemanticSeverity(StrEnum):
+    """Only severities that Tier 3 is allowed to emit."""
+
+    ERROR = "error"
+    WARNING = "warning"
+
+
 class SemanticFinding(BaseModel):
     """One tier-3 finding, in the shape the provider is constrained to produce."""
 
     category: SemanticCategory = Field(
         description="Which kind of semantic defect this is."
     )
-    severity: Severity = Field(
+    severity: SemanticSeverity = Field(
         description="'error' if the process cannot execute correctly as modeled, "
         "otherwise 'warning'."
     )
@@ -55,6 +62,12 @@ class SemanticFinding(BaseModel):
         default_factory=list,
         description="IDs of the affected BPMN elements. Empty for a process-wide "
         "finding. Every ID must exist in the diagram.",
+    )
+    reference_evidence: list[str] = Field(
+        default_factory=list,
+        description="Numbered reference-description lines (for example 'L3') that "
+        "explicitly support the finding. Empty only when no reference description "
+        "was supplied and the contradiction is internal to the diagram.",
     )
     suggestion: str | None = Field(
         default=None, description="Actionable fix suggestion."
@@ -198,7 +211,9 @@ async def _semantic_validate(
     payload = {
         "ir_format": str(active_config.ir_format),
         "diagram": diagram_payload(diagram, config),
-        "reference_description": reference_description,
+        "reference_description": _number_reference_description(
+            reference_description
+        ),
         "existing_issues": [
             issue_to_dict(
                 issue,
@@ -207,6 +222,8 @@ async def _semantic_validate(
             for issue in existing_issues
         ],
     }
+    if active_config.include_semantic_projection:
+        payload["semantic_view"] = _semantic_diagram_view(diagram)
     try:
         parsed = await llm_client.complete_structured(
             prompt=json.dumps(payload),
@@ -234,8 +251,16 @@ async def _semantic_validate(
             )
         ]
 
+    evidence_labels = (
+        _reference_line_labels(reference_description)
+        if reference_description is not None
+        else None
+    )
     return _normalise_semantic_findings(
-        response.result.findings, diagram, existing_issues
+        response.result.findings,
+        diagram,
+        existing_issues,
+        valid_reference_evidence=evidence_labels,
     )
 
 
@@ -243,6 +268,7 @@ def _normalise_semantic_findings(
     findings: list[SemanticFinding],
     diagram: BpmnDiagram,
     existing_issues: list[ValidationIssue],
+    valid_reference_evidence: set[str] | None = None,
 ) -> list[ValidationIssue]:
     """turn model findings into issues the rest of the pipeline can rely on"""
     known_ids = set(diagram.element_ids())
@@ -251,14 +277,23 @@ def _normalise_semantic_findings(
     issues: list[ValidationIssue] = []
 
     for finding in findings:
+        evidence = [
+            label
+            for label in finding.reference_evidence
+            if valid_reference_evidence is None
+            or label in valid_reference_evidence
+        ]
+        # A supplied reference is authoritative. Enforce the prompt's evidence
+        # gate so an unsupported model thought cannot become a user-facing issue.
+        if valid_reference_evidence is not None and not evidence:
+            continue
+
         # drop refs to elements the diagram does not contain
         refs = [ref for ref in finding.element_refs if ref in known_ids]
         rule_id = semantic_rule_id(finding.category)
 
         # the prompt asks for two severities; `info` is defined as "omit it"
-        severity = (
-            Severity.ERROR if finding.severity == Severity.ERROR else Severity.WARNING
-        )
+        severity = Severity(str(finding.severity))
 
         # drop the same category on the same elements twice in one response
         key = (rule_id, tuple(sorted(refs)))
@@ -282,10 +317,77 @@ def _normalise_semantic_findings(
                 element_refs=refs,
                 suggestion=finding.suggestion,
                 source=SOURCE_LLM,
+                raw={"reference_evidence": evidence},
             )
         )
 
     return issues
+
+
+def _number_reference_description(description: str | None) -> str | None:
+    """Give every non-empty reference line a stable evidence label."""
+    if description is None:
+        return None
+    lines = [line.strip() for line in description.splitlines() if line.strip()]
+    return "\n".join(f"L{index}: {line}" for index, line in enumerate(lines, 1))
+
+
+def _reference_line_labels(description: str) -> set[str]:
+    nonempty = (line for line in description.splitlines() if line.strip())
+    return {f"L{index}" for index, _ in enumerate(nonempty, 1)}
+
+
+def _semantic_diagram_view(diagram: BpmnDiagram) -> dict[str, object]:
+    """Return a geometry-free view optimized for semantic validation.
+
+    The canonical IR remains in ``diagram`` for auditability and format ablations.
+    This projection makes the business graph easy to inspect without layout bounds,
+    label bounds, waypoints, namespaces, or other round-trip-only fields.
+    """
+    processes: list[dict[str, object]] = []
+    for process in diagram.processes:
+        nodes: list[dict[str, object]] = []
+        for node in process.flow_nodes:
+            item: dict[str, object] = {
+                "id": node.id,
+                "type": str(node.type),
+                "name": node.name,
+                "incoming": node.incoming,
+                "outgoing": node.outgoing,
+            }
+            if node.event_definitions:
+                item["event_definitions"] = [
+                    {
+                        "type": str(definition.type),
+                        "id": definition.id,
+                        "extra": definition.extra,
+                    }
+                    for definition in node.event_definitions
+                ]
+            if node.extra:
+                item["extra"] = node.extra
+            nodes.append(item)
+
+        flows: list[dict[str, object]] = []
+        for flow in process.sequence_flows:
+            item = {
+                "id": flow.id,
+                "source_ref": flow.source_ref,
+                "target_ref": flow.target_ref,
+                "name": flow.name,
+                "condition_expression": flow.condition_expression,
+            }
+            flows.append(item)
+
+        processes.append(
+            {
+                "id": process.id,
+                "name": process.name,
+                "nodes": nodes,
+                "flows": flows,
+            }
+        )
+    return {"processes": processes}
 
 
 async def _holistic_validate(

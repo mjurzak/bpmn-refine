@@ -43,6 +43,8 @@ def test_validation_prompt_does_not_duplicate_the_input_ir_schema():
     assert "Requested IR format: `pydantic`" in rendered
     assert '"$defs"' not in rendered
     assert "result.findings" in rendered
+    assert "reference_evidence" in rendered
+    assert "semantic_view" in rendered
 
 
 def test_full_edit_op_schema_can_be_rendered_for_backend_contract(tmp_path):

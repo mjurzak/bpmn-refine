@@ -22,12 +22,42 @@ finding must be classified into exactly one of these categories:
 Choose the closest category.  There is no "other" — a finding that fits none of these
 well enough to name is one you should omit.
 
+Apply this precedence when several labels seem plausible:
+- an explicitly stated condition is inverted -> `unreachable_branch`
+- an explicitly stated failure or conditional scenario has no modeled path ->
+  `missing_exception_handling`
+- a duplicated, swapped, or wrong business-object label -> `inconsistent_naming`
+- a path bypasses an explicitly required final outcome -> `improper_termination`
+- an explicitly required positive intermediate action is absent -> `missing_step`
+- an explicit prohibition or mutually exclusive outcome is violated -> `unwanted_action`
+- use `contradictory_flow` only for a concrete contradiction between modeled paths that
+  none of the more specific rules above covers
+
+## Evidence gate
+
+The request may include a geometry-free `semantic_view`; when present, use it as the
+primary business graph. The complete `diagram` is retained for audit and for fields not
+represented in that view. The reference description, when present, has stable line
+labels (`L1`, `L2`, ...). For every finding:
+- identify the exact line that states the violated condition, order, prohibition, or
+  required outcome and return its label in `reference_evidence`
+- cite only IDs that exist in the received diagram; for a missing element, localize the
+  surviving flows or nodes around the gap
+- if no reference line explicitly supports the claim, omit the finding
+
+When no reference description is supplied, `reference_evidence` must be empty and a
+finding requires a concrete internal contradiction visible in names, conditions, or
+path outcomes. A merely plausible improvement is not a defect.
+
 Do NOT report the following — they are handled elsewhere or are not defects:
 - anything already present in the existing issue list above; never restate it
 - missing `condition_expression` on gateway outgoing flows when the branch semantics are
   already clear from the flow names (e.g. "Approved" / "Rejected"). An unlabelled
   condition field is a modeling-style choice, not a semantic defect. Only report this
   when the branches are genuinely ambiguous and a reader could not tell them apart.
+- an unlabeled gateway, an unlabeled sequence flow, a null `condition_expression`, or
+  the absence of an explicit default-flow label by itself. One branch may be the BPMN
+  default. If the reference does not state the decision rule, omit the finding.
 - structural properties the rule engine and formal checker own: reachability, dead ends,
   missing start/end events, dangling references, soundness, safeness
 - stylistic preferences: naming conventions, capitalization, element ordering, layout
@@ -39,6 +69,11 @@ authoritative description of the intended process and report only contradictions
 the diagram introduces relative to explicit statements in that description. Do not
 infer missing requirements from details the description does not state. When it is
 null, assess only semantic inconsistencies supported by the diagram itself.
+
+The semantic IR represents nodes and sequence flows, event-definition kinds, names,
+conditions, and connectivity. It does not fully represent participant message exchange,
+lane ownership, nested subprocess bodies, or every nested event payload. Do not infer a
+defect from information that this IR cannot express.
 
 Severity discipline:
 - "error"   — the process cannot execute correctly as modeled

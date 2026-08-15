@@ -32,6 +32,7 @@ def test_experiment_config_defaults_match_current_runtime():
     assert data["temperature"] is None
     assert data["seed"] is None
     assert data["include_formal_evidence"] is True
+    assert data["include_semantic_projection"] is False
 
 
 def test_custom_model_tier_requires_model_override():
@@ -73,7 +74,8 @@ def test_canonical_config_json_drops_nulls_and_sorts_keys():
 
     assert canonical == (
         '{"experiment_id":"exp-1","include_formal_evidence":true,'
-        '"include_reference_description":true,"ir_format":"pydantic",'
+        '"include_reference_description":true,"include_semantic_projection":false,'
+        '"ir_format":"pydantic",'
         '"llm_validation_scope":"semantic","max_repair_iters":5,'
         '"model_tier":"strong","provider_override":"openai",'
         '"repair_mode":"atomic","seed":42,'

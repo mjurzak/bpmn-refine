@@ -42,6 +42,7 @@ base:
     t2: false
     t3: true
   llm_validation_scope: semantic
+  include_semantic_projection: true
   reasoning_effort: medium
 run_repair: false
 configs:

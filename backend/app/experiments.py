@@ -85,6 +85,7 @@ class ExperimentConfig(BaseModel):
     tiers_enabled: TiersEnabled = Field(default_factory=TiersEnabled)
     include_formal_evidence: bool = True
     include_reference_description: bool = True
+    include_semantic_projection: bool = False
     llm_validation_scope: LlmValidationScope = LlmValidationScope.SEMANTIC
     repair_mode: RepairMode = RepairMode.ATOMIC
     max_repair_iters: int = Field(default=5, ge=1)

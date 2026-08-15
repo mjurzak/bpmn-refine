@@ -96,6 +96,7 @@ def test_generated_specs_are_native_runner_specs_and_have_expected_controls(tmp_
     assert any("/disjoint/" in path for path in model["inputs"])
     assert any("/seeds/" in path for path in model["inputs"])
     assert model["base"]["ir_format"] == "pydantic"
+    assert model["base"]["include_semantic_projection"] is True
     assert [
         (config.provider_override, config.model_override)
         for config in expand_configs(SweepSpec.model_validate(model))
@@ -114,6 +115,7 @@ def test_generated_specs_are_native_runner_specs_and_have_expected_controls(tmp_
         "compact_json",
     ]
     assert ir["base"]["llm_validation_scope"] == "semantic"
+    assert ir["base"]["include_semantic_projection"] is False
     assert any("/disjoint/" in path for path in ir["inputs"])
 
     validator = specs["validator-contribution"]

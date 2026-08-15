@@ -34,7 +34,7 @@ async def test_semantic_validation_prompt_uses_selected_ir_format(monkeypatch):
     assert isinstance(prompt["diagram"], str)
     assert "definitions_id: definitions_1" in prompt["diagram"]
     assert prompt["reference_description"] == (
-        "The clerk reviews the application."
+        "L1: The clerk reviews the application."
     )
 
 

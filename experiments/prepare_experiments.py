@@ -99,6 +99,7 @@ def _model_base(
     *,
     scope: str,
     reasoning_effort: str | None = DEFAULT_REASONING_EFFORT,
+    include_semantic_projection: bool = False,
 ) -> dict[str, Any]:
     base = {
         "model_tier": "custom",
@@ -107,6 +108,7 @@ def _model_base(
         "ir_format": "pydantic",
         "tiers_enabled": {"t1": False, "t2": False, "t3": True},
         "llm_validation_scope": scope,
+        "include_semantic_projection": include_semantic_projection,
     }
     if reasoning_effort is not None:
         base["reasoning_effort"] = reasoning_effort
@@ -430,7 +432,11 @@ def build_specs(
             inputs=dev_semantic,
             description_root=_description_root(dataset_root),
             base=_model_base(
-                "codex_cli", gpt_model, scope="semantic", reasoning_effort="medium"
+                "codex_cli",
+                gpt_model,
+                scope="semantic",
+                reasoning_effort="medium",
+                include_semantic_projection=True,
             ),
             configs=_paired_model_configs(claude_model),
             repeats=repeats,
