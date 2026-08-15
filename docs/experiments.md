@@ -115,8 +115,9 @@ An Ollama token count is not comparable to a hosted one: the tokenizer is the lo
 CLI runs reuse normal saved CLI authentication, do not probe login state at
 startup, and should pin Codex/Claude Code versions for reproducibility. The
 adapters isolate each request and disable customizations. Claude's tools are
-disabled; Codex runs read-only and is explicitly instructed not to invoke its
-tools. Both serialize history when a native messages API is unavailable. Their
+disabled, and Claude Code prompt suggestions are disabled so the harness does
+not add a second helper-model turn. Codex runs read-only and is explicitly
+instructed not to invoke its tools. Both serialize history when a native messages API is unavailable. Their
 CLI version is part of the experiment environment, not the model name, so
 registration reads it with `--version` and each call stores it as
 `provider_version`. Claude effort-related environment overrides are cleared;

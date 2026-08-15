@@ -101,6 +101,8 @@ class ClaudeCliProvider:
                 "json",
                 "--no-session-persistence",
                 "--safe-mode",
+                "--prompt-suggestions",
+                "false",
                 "--tools",
                 "",
                 "--max-turns",

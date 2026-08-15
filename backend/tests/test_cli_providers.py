@@ -201,6 +201,7 @@ async def test_claude_structured_uses_json_schema_tools_off_and_maps_model_usage
     assert args[:3] == ["claude", "-p", "--output-format"]
     assert "--no-session-persistence" in args
     assert "--safe-mode" in args
+    assert args[args.index("--prompt-suggestions") + 1] == "false"
     assert args[args.index("--tools") + 1] == ""
     assert args[args.index("--effort") + 1] == "high"
     assert json.loads(args[args.index("--json-schema") + 1]) == schema
