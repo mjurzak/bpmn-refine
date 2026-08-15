@@ -106,7 +106,7 @@ class ClaudeCliProvider:
                 "--tools",
                 "",
                 "--max-turns",
-                "1",
+                "2",
                 "--model",
                 model,
             ]
