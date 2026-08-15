@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from app import experiment_runner
 from app.experiment_runner import (
     MANIFEST_FILENAME,
     RESULTS_FILENAME,
+    TRIALS_DIRNAME,
     SweepSpec,
     build_trials,
     completed_trial_ids,
@@ -458,6 +460,9 @@ async def test_a_sweep_writes_one_line_per_trial_and_a_manifest(tmp_path):
     results = (tmp_path / RESULTS_FILENAME).read_text().strip().splitlines()
     assert len(results) == summary.executed == 2
     assert all(json.loads(line)["trial_id"] for line in results)
+    checkpoints = sorted((tmp_path / TRIALS_DIRNAME).glob("*.json"))
+    assert len(checkpoints) == 2
+    assert all(json.loads(path.read_text())["trial_id"] == path.stem for path in checkpoints)
 
     manifest = json.loads((tmp_path / MANIFEST_FILENAME).read_text())
     assert manifest["experiment_id"] == "unit"
@@ -465,6 +470,8 @@ async def test_a_sweep_writes_one_line_per_trial_and_a_manifest(tmp_path):
     assert manifest["app_commit"]
     assert manifest["input_hashes"]
     assert manifest["dataset_version"] == "dev-fixtures"
+    assert manifest["trial_records_dir"] == TRIALS_DIRNAME
+    assert manifest["concurrency"] == 1
 
 
 async def test_resuming_skips_what_is_already_on_disk(tmp_path):
@@ -478,6 +485,70 @@ async def test_resuming_skips_what_is_already_on_disk(tmp_path):
     assert second.skipped == 2
     lines = (tmp_path / RESULTS_FILENAME).read_text().strip().splitlines()
     assert len(lines) == 2
+    manifest = json.loads((tmp_path / MANIFEST_FILENAME).read_text())
+    assert manifest["completed"] == 2
+    assert manifest["executed"] == 2
+    assert manifest["executed_this_run"] == 0
+    assert manifest["last_invocation"]["skipped_already_done"] == 2
+
+
+async def test_resume_migrates_the_legacy_jsonl_checkpoint(tmp_path):
+    spec = _spec(axes={"ir_format": ["yaml", "mermaid"]})
+    await execute_sweep(spec, out_dir=tmp_path, mock=True)
+    for path in (tmp_path / TRIALS_DIRNAME).glob("*.json"):
+        path.unlink()
+
+    resumed = await execute_sweep(spec, out_dir=tmp_path, mock=True)
+
+    assert resumed.executed == 0
+    assert resumed.skipped == 2
+    assert len(list((tmp_path / TRIALS_DIRNAME).glob("*.json"))) == 2
+
+
+async def test_concurrency_is_bounded_and_export_order_is_deterministic(
+    tmp_path, monkeypatch
+):
+    spec = _spec(axes={"ir_format": ["yaml", "mermaid", "compact_json"]})
+    original = experiment_runner.run_trial
+    active = 0
+    peak = 0
+
+    async def observed(trial, keep_payloads=False):
+        nonlocal active, peak
+        active += 1
+        peak = max(peak, active)
+        try:
+            # Force completion order to differ from the spec order.
+            await asyncio.sleep(
+                {"yaml": 0.03, "mermaid": 0.02, "compact_json": 0.01}[
+                    trial.config.ir_format.value
+                ]
+            )
+            return await original(trial, keep_payloads=keep_payloads)
+        finally:
+            active -= 1
+
+    monkeypatch.setattr(experiment_runner, "run_trial", observed)
+
+    summary = await execute_sweep(
+        spec, out_dir=tmp_path, mock=True, concurrency=3
+    )
+
+    assert summary.executed == 3
+    assert peak == 3
+    rows = [
+        json.loads(line)
+        for line in (tmp_path / RESULTS_FILENAME).read_text().splitlines()
+    ]
+    expected = build_trials(spec, [QUICK_FIX_INPUT], expand_configs(spec))
+    assert [row["trial_id"] for row in rows] == [trial.trial_id for trial in expected]
+    manifest = json.loads((tmp_path / MANIFEST_FILENAME).read_text())
+    assert manifest["concurrency"] == 3
+
+
+async def test_concurrency_must_be_positive(tmp_path):
+    with pytest.raises(ValueError, match="at least 1"):
+        await execute_sweep(_spec(), out_dir=tmp_path, mock=True, concurrency=0)
 
 
 async def test_no_resume_reruns_everything(tmp_path):

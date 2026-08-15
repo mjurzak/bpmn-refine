@@ -367,7 +367,7 @@ def run_experiment_command(
     resume: bool = typer.Option(
         True,
         "--resume/--no-resume",
-        help="skip trials already present in results.jsonl",
+        help="skip trials with an atomic checkpoint already on disk",
     ),
     limit: int | None = typer.Option(
         None, "--limit", help="run at most this many pending trials"
@@ -375,11 +375,17 @@ def run_experiment_command(
     keep_payloads: bool = typer.Option(
         False, "--keep-payloads", help="record full prompts and responses per call"
     ),
+    concurrency: int = typer.Option(
+        1,
+        "--concurrency",
+        min=1,
+        help="maximum trials executed concurrently",
+    ),
 ) -> None:
     """Run an ablation sweep and persist one JSON record per trial.
 
-    Results are appended as they complete, so an interrupted sweep resumes where
-    it stopped. Rehearse a new spec with --mock before spending on it.
+    Each completed trial is checkpointed atomically, so an interrupted sweep
+    resumes where it stopped. Rehearse a new spec with --mock before spending.
     """
     from app.experiment_runner import execute_sweep, load_spec
 
@@ -404,6 +410,7 @@ def run_experiment_command(
             mock=mock,
             limit=limit,
             keep_payloads=keep_payloads,
+            concurrency=concurrency,
             on_trial=report,
         )
     )

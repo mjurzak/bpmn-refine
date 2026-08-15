@@ -24,7 +24,7 @@ dry-run:
 
 # resumable: re-running the same SPEC/OUT skips what is already on disk
 experiment:
-	cd $(ROOT) && PYTHONPATH=backend .venv/bin/python -m app.cli run-experiment --spec $(SPEC) --out $(OUT)
+	cd $(ROOT) && PYTHONPATH=backend .venv/bin/python -m app.cli run-experiment --spec $(SPEC) --out $(OUT) --concurrency $(or $(CONCURRENCY),1)
 
 # which source models qualify as dataset seeds — deterministic, no API call
 eligibility-probe:
@@ -53,4 +53,4 @@ e8-rehearse:
 
 # same spec, canned responses, no API call — rehearse before paying
 experiment-rehearse:
-	cd $(ROOT) && PYTHONPATH=backend .venv/bin/python -m app.cli run-experiment --spec $(SPEC) --out $(OUT) --mock --no-resume
+	cd $(ROOT) && PYTHONPATH=backend .venv/bin/python -m app.cli run-experiment --spec $(SPEC) --out $(OUT) --mock --no-resume --concurrency $(or $(CONCURRENCY),1)

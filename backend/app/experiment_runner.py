@@ -1,18 +1,22 @@
 """Sweep runner: turns a declarative spec into a persisted result set.
 
-Trials resume from `results.jsonl` via a deterministic `trial_id`, a trial that
-raised is recorded with its error, and each phase gets its own trace context so
-tokens are attributable per phase. Run it with `make experiment SPEC=<path> OUT=<dir>`.
+Each trial is checkpointed as an atomic JSON file and exported to ``results.jsonl``
+in deterministic order. A trial that raised is recorded with its error, and each
+phase gets its own trace context so tokens are attributable per phase. Run it with
+``make experiment SPEC=<path> OUT=<dir>``.
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
+import os
 import time
+import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, nullcontext
 from dataclasses import asdict
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from itertools import product
 from pathlib import Path
 from typing import Any
@@ -51,6 +55,7 @@ from app.validation.rules import RULES_VERSION, Severity, ValidationIssue
 
 RESULTS_FILENAME = "results.jsonl"
 MANIFEST_FILENAME = "manifest.json"
+TRIALS_DIRNAME = "trials"
 
 _GLOB_CHARS = set("*?[")
 
@@ -594,24 +599,110 @@ def _model_for(config: ExperimentConfig) -> str:
 # ---------------------------------------------------------------------------
 
 
-def completed_trial_ids(results_path: Path) -> set[str]:
-    """trial ids already on disk, so a resumed sweep does not pay twice
-
-    A malformed trailing line is skipped; a run killed mid-write leaves one behind.
-    """
-    if not results_path.exists():
-        return set()
-    seen: set[str] = set()
+def _jsonl_records(results_path: Path) -> list[dict[str, Any]]:
+    """Read valid objects from a legacy or exported JSONL file."""
+    if not results_path.is_file():
+        return []
+    records: list[dict[str, Any]] = []
     with results_path.open(encoding="utf-8") as handle:
         for line in handle:
-            line = line.strip()
-            if not line:
-                continue
             try:
-                seen.add(json.loads(line)["trial_id"])
-            except (json.JSONDecodeError, KeyError, TypeError):
+                record = json.loads(line)
+            except json.JSONDecodeError:
                 continue
-    return seen
+            if isinstance(record, dict) and isinstance(record.get("trial_id"), str):
+                records.append(record)
+    return records
+
+
+def _trial_records_dir(out_dir: Path) -> Path:
+    return out_dir / TRIALS_DIRNAME
+
+
+def _trial_record_path(out_dir: Path, trial_id_value: str) -> Path:
+    return _trial_records_dir(out_dir) / f"{trial_id_value}.json"
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    """Replace one file atomically after its contents reach the filesystem."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        with temporary.open("w", encoding="utf-8") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def write_trial_record(out_dir: Path, record: TrialRecord) -> Path:
+    """Persist one independently recoverable trial checkpoint."""
+    path = _trial_record_path(out_dir, record.trial_id)
+    _atomic_write_text(
+        path,
+        json.dumps(record.model_dump(mode="json"), ensure_ascii=False) + "\n",
+    )
+    return path
+
+
+def _stored_trial_records(out_dir: Path) -> dict[str, dict[str, Any]]:
+    records: dict[str, dict[str, Any]] = {}
+    directory = _trial_records_dir(out_dir)
+    if not directory.is_dir():
+        return records
+    for path in directory.glob("*.json"):
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        trial_id_value = record.get("trial_id") if isinstance(record, dict) else None
+        if isinstance(trial_id_value, str) and path.stem == trial_id_value:
+            records[trial_id_value] = record
+    return records
+
+
+def migrate_legacy_results(out_dir: Path) -> int:
+    """Import valid records from the old append-only JSONL checkpoint format."""
+    migrated = 0
+    for record in _jsonl_records(out_dir / RESULTS_FILENAME):
+        path = _trial_record_path(out_dir, record["trial_id"])
+        if path.exists():
+            continue
+        _atomic_write_text(path, json.dumps(record, ensure_ascii=False) + "\n")
+        migrated += 1
+    return migrated
+
+
+def completed_trial_ids(location: Path) -> set[str]:
+    """Return trial ids from an output directory or a legacy JSONL file."""
+    if location.is_dir():
+        return set(_stored_trial_records(location))
+    return {record["trial_id"] for record in _jsonl_records(location)}
+
+
+def clear_trial_records(out_dir: Path) -> None:
+    """Remove only checkpoints owned by one explicit fresh experiment run."""
+    directory = _trial_records_dir(out_dir)
+    if not directory.is_dir():
+        return
+    for path in directory.glob("*.json"):
+        path.unlink()
+
+
+def export_results_jsonl(out_dir: Path, trials: list[Trial]) -> Path:
+    """Build the compatibility JSONL export in deterministic trial order."""
+    stored = _stored_trial_records(out_dir)
+    content = "".join(
+        json.dumps(stored[trial.trial_id], ensure_ascii=False) + "\n"
+        for trial in trials
+        if trial.trial_id in stored
+    )
+    path = out_dir / RESULTS_FILENAME
+    _atomic_write_text(path, content)
+    return path
 
 
 def write_manifest(
@@ -625,13 +716,37 @@ def write_manifest(
     skipped: int,
     failed: int,
     started_at: datetime,
+    concurrency: int,
 ) -> Path:
+    invocation_finished_at = datetime.now(UTC)
+    stored = _stored_trial_records(out_dir)
+    completed_records = [
+        stored[trial.trial_id] for trial in trials if trial.trial_id in stored
+    ]
+    record_windows: list[tuple[datetime, datetime]] = []
+    for record in completed_records:
+        try:
+            record_started = datetime.fromisoformat(str(record["started_at"]))
+            duration = timedelta(milliseconds=max(0, int(record["duration_ms"])))
+        except (KeyError, TypeError, ValueError):
+            continue
+        record_windows.append((record_started, record_started + duration))
+
+    experiment_started_at = (
+        min(window[0] for window in record_windows) if record_windows else started_at
+    )
+    experiment_finished_at = (
+        max(window[1] for window in record_windows)
+        if record_windows
+        else invocation_finished_at
+    )
+    failed_total = sum(bool(record.get("error")) for record in completed_records)
     manifest = {
         "experiment_id": spec.experiment_id,
         "dataset_version": spec.dataset_version,
         "app_commit": app_commit(),
-        "started_at": started_at.isoformat(),
-        "finished_at": datetime.now(UTC).isoformat(),
+        "started_at": experiment_started_at.isoformat(),
+        "finished_at": experiment_finished_at.isoformat(),
         "spec": spec.model_dump(mode="json"),
         "inputs": [str(path) for path in inputs],
         "input_hashes": {
@@ -644,15 +759,26 @@ def write_manifest(
         "config_count": len(configs),
         "config_hashes": [config_hash(config) for config in configs],
         "trial_count": len(trials),
-        "executed": executed,
+        "completed": len(completed_records),
+        "executed": len(completed_records),
+        "executed_this_run": executed,
         "skipped_already_done": skipped,
-        "failed": failed,
+        "failed": failed_total,
+        "failed_this_run": failed,
+        "concurrency": concurrency,
+        "last_invocation": {
+            "started_at": started_at.isoformat(),
+            "finished_at": invocation_finished_at.isoformat(),
+            "executed": executed,
+            "skipped_already_done": skipped,
+            "failed": failed,
+            "concurrency": concurrency,
+        },
+        "trial_records_dir": TRIALS_DIRNAME,
         "results_file": RESULTS_FILENAME,
     }
     path = out_dir / MANIFEST_FILENAME
-    path.write_text(
-        json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
-    )
+    _atomic_write_text(path, json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return path
 
 
@@ -696,17 +822,24 @@ async def execute_sweep(
     mock: bool = False,
     limit: int | None = None,
     keep_payloads: bool = False,
+    concurrency: int = 1,
     on_trial: Any = None,
 ) -> SweepSummary:
-    """run every trial in the spec, appending each result as it completes"""
+    """Run trials with bounded concurrency and atomic per-trial checkpoints."""
+    if concurrency < 1:
+        raise ValueError("concurrency must be at least 1")
     inputs = resolve_inputs(spec, root)
     descriptions = resolve_descriptions(spec, inputs, root)
     configs = expand_configs(spec)
     trials = build_trials(spec, inputs, configs, descriptions)
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    results_path = out_dir / RESULTS_FILENAME
-    already_done = completed_trial_ids(results_path) if resume else set()
+    if resume:
+        migrate_legacy_results(out_dir)
+        already_done = completed_trial_ids(out_dir)
+    else:
+        clear_trial_records(out_dir)
+        already_done = set()
 
     pending = [trial for trial in trials if trial.trial_id not in already_done]
     skipped = len(trials) - len(pending)
@@ -719,21 +852,31 @@ async def execute_sweep(
     totals: list[UsageTotals] = []
 
     async with _mocked_providers() if mock else nullcontext():
-        # Resume appends checkpoints; an explicit fresh run replaces stale
-        # records so deterministic trial ids are never counted twice.
-        with results_path.open("a" if resume else "w", encoding="utf-8") as handle:
-            for index, trial in enumerate(pending, start=1):
-                record = await run_trial(trial, keep_payloads=keep_payloads)
-                handle.write(
-                    json.dumps(record.model_dump(mode="json"), ensure_ascii=False) + "\n"
-                )
-                handle.flush()
+        semaphore = asyncio.Semaphore(concurrency)
+
+        async def execute_one(trial: Trial) -> TrialRecord:
+            async with semaphore:
+                return await run_trial(trial, keep_payloads=keep_payloads)
+
+        tasks = [asyncio.create_task(execute_one(trial)) for trial in pending]
+        try:
+            for completed in asyncio.as_completed(tasks):
+                record = await completed
+                write_trial_record(out_dir, record)
                 executed += 1
                 if record.error:
                     failed += 1
                 totals.append(record.usage)
                 if on_trial is not None:
-                    on_trial(index, len(pending), record)
+                    on_trial(executed, len(pending), record)
+        finally:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
+
+    results_path = export_results_jsonl(out_dir, trials)
 
     manifest_path = write_manifest(
         out_dir=out_dir,
@@ -746,6 +889,7 @@ async def execute_sweep(
         skipped=skipped,
         failed=failed,
         started_at=started_at,
+        concurrency=concurrency,
     )
 
     return SweepSummary(
