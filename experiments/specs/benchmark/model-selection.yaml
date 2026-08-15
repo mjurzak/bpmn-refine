@@ -1,5 +1,5 @@
 experiment_id: model-selection
-dataset_version: v1.0
+dataset_version: v1.0+ground-truth-overlay-1.2
 inputs:
 - data/eval/v1.0/seeds/02.bpmn
 - data/eval/v1.0/seeds/05.bpmn
@@ -48,6 +48,6 @@ run_repair: false
 configs:
 - provider_override: claude_cli
   model_override: claude-sonnet-5
-  reasoning_effort: null
+  reasoning_effort: medium
 repeats: 1
-notes: Balanced 30-case semantic panel; GPT 5.6 Terra uses medium reasoning and Claude Sonnet 5 uses its default thinking.
+notes: Balanced 30-case semantic panel; GPT 5.6 Terra and Claude Sonnet 5 both use explicit medium reasoning.
