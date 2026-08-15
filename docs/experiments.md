@@ -116,8 +116,8 @@ CLI runs reuse normal saved CLI authentication, do not probe login state at
 startup, and should pin Codex/Claude Code versions for reproducibility. The
 adapters isolate each request and disable customizations. Claude's tools are
 disabled, and Claude Code prompt suggestions are disabled so the harness does
-not add a follow-up suggestion. Claude Code can use one internal continuation
-to complete its structured-output tool call; this does not add a user turn.
+not add a follow-up suggestion. Claude Code has a five-agentic-turn bound to
+complete or correct its structured-output tool call; this remains one user request.
 Codex runs read-only and is explicitly instructed not to invoke its tools. Both
 serialize history when a native messages API is unavailable. Their
 CLI version is part of the experiment environment, not the model name, so
