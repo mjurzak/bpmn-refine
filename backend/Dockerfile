@@ -16,7 +16,9 @@ RUN uv export --frozen --extra dev --no-emit-project --format requirements.txt -
     && rm requirements.txt
 
 COPY backend/ ./backend/
-COPY tests/ ./tests/
+# Read-only dataset comparison endpoints resolve this versioned snapshot at runtime.
+# The source PMo corpus and experiment results are not part of the application image.
+COPY data/eval/ ./data/eval/
 
 ENV PYTHONPATH=/app/backend
 

@@ -10,7 +10,6 @@ services:
     volumes:
       # live-reload the source during development
       - ./backend:/app/backend
-      - ./tests:/app/tests
     environment:
       PYTHONPATH: /app/backend
 

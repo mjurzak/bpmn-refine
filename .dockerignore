@@ -1,0 +1,14 @@
+.git
+.gitignore
+.venv
+.pytest_cache
+**/__pycache__
+**/*.pyc
+**/*.pyo
+.env
+data/pmo-dataset
+experiments/results
+frontend/dist
+frontend/node_modules
+project-explorer.html
+workspaces
