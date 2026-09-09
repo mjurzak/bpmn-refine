@@ -1,15 +1,4 @@
-"""Build a versioned, reviewable semantic ground-truth overlay.
-
-The frozen dataset truth describes injected mutations, but it does not certify
-that source seeds are semantically clean. It also sometimes localizes a deletion
-to an element that no longer exists in the variant. This tool keeps the frozen
-truth untouched and derives a review overlay with:
-
-* an explicit ``unreviewed`` baseline record for every seed; and
-* a surviving construction footprint for every injected defect.
-
-No model is contacted. Baseline findings must be filled by human adjudicators.
-"""
+"""Build the reviewed semantic ground-truth overlay without model calls."""
 
 from __future__ import annotations
 
@@ -53,9 +42,7 @@ def _variant_element_ids(path: Path) -> set[str]:
     return set(diagram.element_ids())
 
 
-def _surviving_repair_boundary(
-    repair: object, present_ids: set[str]
-) -> list[str]:
+def _surviving_repair_boundary(repair: object, present_ids: set[str]) -> list[str]:
     """Recover surviving neighbors when a mutation deletes its entire site."""
     if not isinstance(repair, list):
         return []
@@ -114,9 +101,7 @@ def build_overlay(dataset_root: Path) -> dict[str, Any]:
             # The construction site names what changed; expected elements can
             # also name an unchanged semantic sibling (for example the other
             # task in a distinct-label relation). Both are valid anchors.
-            surviving_refs = sorted(
-                surviving_injection_refs | surviving_expected_refs
-            )
+            surviving_refs = sorted(surviving_injection_refs | surviving_expected_refs)
             derived_from = "semantic_anchor_intersection"
             if not surviving_refs:
                 surviving_refs = _surviving_repair_boundary(
@@ -128,9 +113,7 @@ def build_overlay(dataset_root: Path) -> dict[str, Any]:
                     "operator": defect.get("operator"),
                     "categories": _labels(defect),
                     "target_ids_in_seed": [
-                        str(ref)
-                        for ref in target_ids
-                        if isinstance(ref, str) and ref
+                        str(ref) for ref in target_ids if isinstance(ref, str) and ref
                     ],
                     "reference_lines": _reference_lines(defect),
                     "localization": {
