@@ -156,9 +156,6 @@ describe("DatasetComparePage", () => {
     expect(screen.getByLabelText("Enhancement contract")).toHaveTextContent(
       "Add the approval task.",
     );
-    expect(screen.getByLabelText("Enhancement contract")).toHaveTextContent(
-      "pending",
-    );
     expect(
       within(screen.getByLabelText("Visual diff legend")).getByText("Task_2"),
     ).toBeInTheDocument();

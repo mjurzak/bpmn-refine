@@ -43,7 +43,7 @@ async def run_tier2_checkers(
         except Exception as exc:
             issues.append(_checker_runtime_issue(WOFLAN_TOOL, exc))
 
-    # tier provenance is stamped here, so an adapter never has to
+    # Stamp tier provenance centrally instead of duplicating it in each adapter.
     for issue in issues:
         issue.tier = ValidationTier.TIER2
     return _deduplicate(issues)

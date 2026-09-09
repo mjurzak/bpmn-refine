@@ -1,7 +1,6 @@
 // dependency analysis over a repair plan: ops apply in order, so an add_flow
 // whose endpoint comes from an earlier add_node cannot be selected on its own
 
-// which element IDs an operation introduces
 function producedIds(op) {
   switch (op?.op) {
     case "add_node":
@@ -12,7 +11,6 @@ function producedIds(op) {
   }
 }
 
-// which element IDs an operation requires to already exist
 function requiredIds(op) {
   switch (op?.op) {
     case "add_flow":
@@ -37,7 +35,6 @@ function requiredIds(op) {
 // Map<number, number[]>. only IDs the plan itself introduces count
 export function operationDependencies(ops = []) {
   const dependencies = new Map();
-  // id -> index of the operation that introduces it
   const producedBy = new Map();
 
   ops.forEach((op, index) => {
@@ -56,7 +53,6 @@ export function operationDependencies(ops = []) {
   return dependencies;
 }
 
-// selected ops whose dependencies are not, as [{ index, missing }]
 export function unmetDependencies(ops = [], selectedIndexes = []) {
   const dependencies = operationDependencies(ops);
   const selected = new Set(selectedIndexes);
@@ -72,7 +68,6 @@ export function unmetDependencies(ops = [], selectedIndexes = []) {
   return broken;
 }
 
-// grow a selection until every dependency it relies on is included
 export function withDependencies(ops = [], selectedIndexes = []) {
   const dependencies = operationDependencies(ops);
   const resolved = new Set(selectedIndexes);
@@ -91,7 +86,6 @@ export function withDependencies(ops = [], selectedIndexes = []) {
   return [...resolved].sort((a, b) => a - b);
 }
 
-// wording the review panel shows for one broken dependency
 export function describeUnmetDependency({ index, missing }) {
   const listed = missing.map((item) => `#${item + 1}`).join(", ");
   return `Operation #${index + 1} needs ${listed} to be selected as well.`;

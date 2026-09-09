@@ -144,7 +144,6 @@ function writeSessionString(key, value) {
   try {
     window.sessionStorage.setItem(key, value);
   } catch {
-    // sessionStorage can be unavailable in private browsing
   }
 }
 
@@ -162,7 +161,6 @@ function writeSessionJson(key, value) {
   try {
     window.sessionStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // sessionStorage can be unavailable in private browsing
   }
 }
 
@@ -1228,7 +1226,6 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      {/* toolbar */}
       <div className="toolbar">
         <div className="toolbar-title">
           BPMN <span>AI</span> Validator
@@ -1263,9 +1260,7 @@ export default function App() {
         </button>
       </div>
 
-      {/* main area */}
       <div className="main-area">
-        {/* left sidebar */}
         <div
           className={`sidebar${!leftPanelOpen ? " sidebar--hidden" : ""}`}
           style={leftPanelOpen ? { width: sidebar.size } : undefined}
@@ -1348,7 +1343,6 @@ export default function App() {
           />
         )}
 
-        {/* editor pane */}
         <div className="editor-pane">
           <div className="diagram-action-bar">
             <div className="diagram-action-group diagram-action-group--file">

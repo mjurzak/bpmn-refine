@@ -1,6 +1,3 @@
-// tests for the manual review gate: acceptance, subset acceptance, rejection,
-// and complete-diagram proposals
-
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

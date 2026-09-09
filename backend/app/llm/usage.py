@@ -70,10 +70,8 @@ def total_usage(usages: Iterable[TokenUsage | None]) -> UsageTotals:
     return totals
 
 
-# ---------------------------------------------------------------------------
 # per-provider extraction. read defensively: SDK fields move between releases,
 # and a moved field should record nothing rather than fail the call
-# ---------------------------------------------------------------------------
 
 
 def _int(value: Any) -> int | None:

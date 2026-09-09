@@ -1,7 +1,6 @@
 // presentation helpers for a repair plan, shared by the chat proposal list and
 // the canvas review panel. op names come from EditOpType in backend/app/repair/ops.py
 
-// one-line description of an operation, for a review list
 export function opLabel(op) {
   switch (op?.op) {
     case "add_node":

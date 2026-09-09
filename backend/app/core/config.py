@@ -44,8 +44,4 @@ class Settings(BaseSettings):
     # workspace — where session snapshots are stored
     workspace_dir: str = "workspaces"
 
-    # behaviour
-    max_repair_iterations: int = 3
-
-
 settings = Settings()

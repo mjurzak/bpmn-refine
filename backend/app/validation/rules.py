@@ -229,9 +229,7 @@ def validate(diagram: BpmnDiagram) -> ValidationReport:
     return report
 
 
-# ---------------------------------------------------------------------------
-# class A — integrity / translation preconditions
-# ---------------------------------------------------------------------------
+# Class A: integrity and translation preconditions
 
 
 def _check_start_events(proc: BpmnProcess, report: ValidationReport) -> None:
@@ -315,9 +313,7 @@ def _check_sequence_flow_refs(proc: BpmnProcess, report: ValidationReport) -> No
             )
 
 
-# ---------------------------------------------------------------------------
-# class B — live under-approximations of soundness
-# ---------------------------------------------------------------------------
+# Class B: live under-approximations of soundness
 
 
 def _check_reachability(

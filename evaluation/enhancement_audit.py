@@ -1,31 +1,4 @@
-"""Provider-free construction audit for methodology section 7 cases.
-
-The audit treats an enhancement case as a small, replayable record:
-
-.. code-block:: json
-
-    {
-      "case_id": "seed-01-r01",
-      "seed_id": "01",
-      "core": "cases/seed-01-core.bpmn",
-      "reference": "seeds/01.bpmn",
-      "instruction": "The process also records the result.",
-      "removed_element_ids": ["RecordTask", "Flow_3"],
-      "oracle_plan": [{"op": "add_node", "...": "..."}],
-    }
-
-``core`` and ``reference`` may also be XML bytes, a ``BpmnDiagram``, or a
-diagram-shaped mapping. ``oracle_plan`` is a list of production atomic
-``EditOp`` objects or their JSON form. The adapter also accepts the common
-aliases ``core_path``, ``reference_path``, ``oracle``, ``plan``, ``seed``, and
-``d_extra`` so a builder can emit a dataclass or a JSON record without a
-translation file.
-
-The default audit never calls an LLM provider. Tier 2 is ``auto``: it uses the
-local Woflan checker when importable and records ``not_run`` when the checker
-is unavailable. Pass ``tier2='off'`` for a completely checker-free run, or
-``tier2='on'`` to make unavailable Tier 2 a construction failure.
-"""
+"""Provider-free audit of E8 construction artifacts."""
 
 from __future__ import annotations
 
@@ -55,8 +28,6 @@ Tier2Runner = Callable[[BpmnDiagram], Any]
 
 @dataclass(frozen=True)
 class GateResult:
-    """A compact machine-readable result for one deterministic gate."""
-
     status: GateStatus
     codes: tuple[str, ...] = ()
 
@@ -89,8 +60,6 @@ class CaseAudit:
 
 @dataclass(frozen=True)
 class AuditSummary:
-    """Audit output; no XML, traces, exception text, or duplicate artifacts."""
-
     cases: tuple[CaseAudit, ...]
 
     def as_dict(self) -> dict[str, Any]:
@@ -120,15 +89,12 @@ class AuditSummary:
 
 
 class _ArtifactError(ValueError):
-    """Internal short error code; details are deliberately not in the output."""
-
     def __init__(self, code: str):
         super().__init__(code)
         self.code = code
 
 
 def _text(value: Any) -> str:
-    """Return a compact text value for tolerant case adapters."""
     return value.strip() if isinstance(value, str) else str(value or "")
 
 
@@ -140,14 +106,7 @@ def audit_case(
     tier2_runner: Tier2Runner | None = None,
     required_metadata: Sequence[str] | None = None,
 ) -> CaseAudit:
-    """Audit one enhancement case without invoking a model provider.
-
-    Automatic gates are: required metadata, lossless parse, XML/IR round-trip,
-    Tier 1 validity, optional Tier 2 soundness, no deletion residue, successful
-    oracle-plan application, and exact restoration of the reference semantics.
-    Manual semantic approval is reported independently and never replaces an
-    automatic gate.
-    """
+    """Run deterministic construction gates for one case."""
 
     record = _record_mapping(case)
     metadata = _metadata_gate(record, required_metadata)
@@ -217,8 +176,6 @@ def audit_cases(
     tier2_runner: Tier2Runner | None = None,
     required_metadata: Sequence[str] | None = None,
 ) -> AuditSummary:
-    """Audit cases in input order and return one concise summary."""
-
     return AuditSummary(
         tuple(
             audit_case(
@@ -233,15 +190,7 @@ def audit_cases(
     )
 
 
-# Explicit aliases make the API discoverable for the builder and Agent C's
-# evaluation runner without forcing either caller to depend on naming trivia.
-audit_enhancement_case = audit_case
-audit_enhancement_cases = audit_cases
-
-
 def load_cases(path: Path) -> list[Any]:
-    """Load a JSON list, ``{"cases": [...]}``, or a directory of JSON files."""
-
     if path.is_dir():
         return [
             item
@@ -540,13 +489,6 @@ def _residue_gate(
     return GateResult("pass" if not codes else "fail", tuple(sorted(set(codes))))
 
 
-def _process(diagram: BpmnDiagram, process_id: str):
-    for process in diagram.processes:
-        if process.id == process_id:
-            return process
-    return diagram.processes[0] if diagram.processes else type("EmptyProcess", (), {"flow_nodes": [], "sequence_flows": []})()
-
-
 def _removed_ids(record: Mapping[str, Any]) -> set[str]:
     value = _lookup(
         record,
@@ -590,7 +532,6 @@ def _automatic_status(gates: Mapping[str, GateResult]) -> str:
 
 
 def _normalise(diagram: BpmnDiagram) -> BpmnDiagram:
-    """Compare control-flow IR while ignoring serializer-added layout."""
     result = diagram.model_copy(deep=True)
     result.namespaces = {}
     for process in result.processes:

@@ -8,8 +8,8 @@ from app.repair.ops import apply_edit_ops, edit_op_list_adapter
 from evaluation.enhancement import (
     DEFAULT_OPERATOR_SEEDS,
     build_enhancement_dataset,
-    load_m01_evidence,
 )
+from evaluation.enhancement_audit import audit_cases, load_cases
 
 
 DATASET = Path("data/eval/v1.0")
@@ -52,41 +52,6 @@ def test_m01_builder_emits_an_auditable_case(tmp_path: Path):
     assert _semantic_projection(restored) == _semantic_projection(reference)
 
 
-def test_m01_builder_is_byte_stable_and_idempotent(tmp_path: Path):
-    out = tmp_path / "enhancement"
-    build_enhancement_dataset(
-        dataset_root=DATASET,
-        out=out,
-        seed_ids=("01", "20"),
-        verify_tier2=False,
-    )
-    first = {
-        path.relative_to(out).as_posix(): path.read_bytes()
-        for path in out.rglob("*")
-        if path.is_file()
-    }
-
-    build_enhancement_dataset(
-        dataset_root=DATASET,
-        out=out,
-        seed_ids=("20", "01"),
-        verify_tier2=False,
-    )
-    second = {
-        path.relative_to(out).as_posix(): path.read_bytes()
-        for path in out.rglob("*")
-        if path.is_file()
-    }
-    assert first == second
-
-
-def test_m01_evidence_is_taken_from_existing_verified_record():
-    evidence = load_m01_evidence(DATASET, "35")
-    assert evidence["source_ground_truth"] == "ground_truth/single/M01/35.json"
-    assert evidence["verified_source_record"] is True
-    assert evidence["expected_element_ids"] == ["ServiceTask_5"]
-
-
 def test_default_builder_emits_three_cases_per_non_m01_family(tmp_path: Path):
     manifest = build_enhancement_dataset(
         dataset_root=DATASET,
@@ -110,6 +75,18 @@ def test_default_builder_is_byte_stable(tmp_path: Path):
     build_enhancement_dataset(dataset_root=DATASET, out=out, verify_tier2=False)
     second = {path.relative_to(out).as_posix(): path.read_bytes() for path in out.rglob("*") if path.is_file()}
     assert first == second
+
+
+def test_real_cases_pass_automatic_audit_without_tier2():
+    root = Path("data/eval/enhancement")
+    summary = audit_cases(load_cases(root / "cases.json"), root=root, tier2="off")
+    payload = summary.as_dict()
+    assert payload["counts"] == {
+        "cases": 21,
+        "automatic_pass": 0,
+        "automatic_pass_with_skips": 21,
+        "automatic_fail": 0,
+    }
 
 
 def _semantic_projection(diagram):

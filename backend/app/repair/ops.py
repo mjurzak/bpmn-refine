@@ -213,8 +213,6 @@ def _apply_one(op: EditOp, diagram: BpmnDiagram) -> None:
         _apply_set_condition(op, diagram)
     elif isinstance(op, ReplaceDiagramOp):
         _apply_replace_diagram(op, diagram)
-    # else:
-    #     raise EditOpError(f"unsupported edit operation: {op}")
 
 
 def _apply_add_node(op: AddNodeOp, diagram: BpmnDiagram) -> None:

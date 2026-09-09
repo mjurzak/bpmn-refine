@@ -336,8 +336,8 @@ def build_dataset(
             reparsed, dropped = converter.parse_with_diagnostics(variant_bytes)
             if dropped:
                 raise ValueError(f"generated variant {variant_id} is lossy")
-            findings = {issue.rule_id for issue in validate(reparsed).issues}
             issues = validate(reparsed).issues
+            findings = {issue.rule_id for issue in issues}
             _validate_plan_findings(plan, issues, variant_id)
 
             woflan_findings = (

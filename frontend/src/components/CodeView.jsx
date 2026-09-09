@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 
-// escape first, so the injected highlight spans are the only markup
 function escapeHtml(text) {
   return text
     .replace(/&/g, "&amp;")
@@ -8,7 +7,6 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;");
 }
 
-// minimal XML highlighter, operating on already html-escaped text
 function highlightXml(escaped) {
   // comments first so their inner < > are not treated as tags
   const withComments = escaped.replace(

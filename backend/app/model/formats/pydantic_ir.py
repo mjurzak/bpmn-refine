@@ -119,11 +119,6 @@ class PydanticConverter(BaseDiagramConverter):
         )
 
 
-# ---------------------------------------------------------------------------
-# internal helpers
-# ---------------------------------------------------------------------------
-
-
 def _extract_namespaces(root: etree._Element) -> dict[str, str]:
     return {prefix or "": uri for prefix, uri in root.nsmap.items()}
 

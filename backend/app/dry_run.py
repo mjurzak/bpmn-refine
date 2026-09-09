@@ -44,9 +44,7 @@ from app.services.validation import validate_diagram, validate_prompt_path
 from app.validation.checkers import checker_versions
 from app.validation.rules import RULES_VERSION, ValidationTier
 
-# ---------------------------------------------------------------------------
-# the mocked provider
-# ---------------------------------------------------------------------------
+# Mock provider
 
 
 @dataclass
@@ -213,9 +211,7 @@ def _first_node_id(payload: dict[str, Any]) -> str | None:
     return None
 
 
-# ---------------------------------------------------------------------------
-# the sweep
-# ---------------------------------------------------------------------------
+# Dry-run matrix
 
 
 def _tier_subsets() -> list[TiersEnabled]:
