@@ -1,20 +1,14 @@
-from fastapi.testclient import TestClient
-
 from app.experiments import CONVERTER_VERSION, ExperimentConfig, config_hash
-from app.main import app
 
 
-client = TestClient(app)
-
-
-def test_validate_response_includes_run_block():
+async def test_validate_response_includes_run_block(api_client):
     config = {
         "model_tier": "fast",
         "seed": 7,
         "experiment_id": "validate-run-test",
     }
 
-    response = client.post(
+    response = await api_client.post(
         "/api/v1/validate",
         json={
             "diagram": _minimal_valid_diagram(),
@@ -38,8 +32,8 @@ def test_validate_response_includes_run_block():
     assert run["timestamp"]
 
 
-def test_validate_tier2_response_records_checker_versions():
-    response = client.post(
+async def test_validate_tier2_response_records_checker_versions(api_client):
+    response = await api_client.post(
         "/api/v1/validate",
         json={
             "diagram": _minimal_valid_diagram(),
@@ -83,7 +77,7 @@ def _minimal_valid_diagram() -> dict:
     }
 
 
-def test_semantic_issues_are_stamped_as_llm(monkeypatch):
+async def test_semantic_issues_are_stamped_as_llm(monkeypatch, api_client):
     """An LLM finding must never render as a deterministic verdict."""
     from app.services import validation as validation_service
 
@@ -110,7 +104,7 @@ def test_semantic_issues_are_stamped_as_llm(monkeypatch):
         fake_complete_structured,
     )
 
-    response = client.post(
+    response = await api_client.post(
         "/api/v1/validate",
         json={"diagram": _minimal_valid_diagram(), "include_semantic": True},
     )

@@ -66,7 +66,7 @@ class EnhancementComparison(BaseModel):
 
 
 @router.get("/enhancement", response_model=EnhancementIndex)
-def enhancement_index() -> EnhancementIndex:
+async def enhancement_index() -> EnhancementIndex:
     """List deterministic enhancement cases for visual inspection."""
     return EnhancementIndex(
         cases=[_enhancement_summary(case) for case in _read_enhancement_cases()]
@@ -77,7 +77,7 @@ def enhancement_index() -> EnhancementIndex:
     "/enhancement/comparisons/{case_id}",
     response_model=EnhancementComparison,
 )
-def enhancement_comparison(case_id: str) -> EnhancementComparison:
+async def enhancement_comparison(case_id: str) -> EnhancementComparison:
     """Return the core/reference pair and semantic contract for one case."""
     _require_safe(case_id, "enhancement case")
     cases = _read_enhancement_cases()
@@ -99,7 +99,7 @@ def enhancement_comparison(case_id: str) -> EnhancementComparison:
 
 
 @router.get("/{version}", response_model=DatasetIndex)
-def dataset_index(version: str) -> DatasetIndex:
+async def dataset_index(version: str) -> DatasetIndex:
     """List seeds and their matching variants for one dataset snapshot."""
     dataset = _dataset_dir(version)
     grouped: dict[str, list[VariantSummary]] = {}
@@ -127,7 +127,7 @@ def dataset_index(version: str) -> DatasetIndex:
 
 
 @router.get("/{version}/comparisons/{variant_id:path}", response_model=DatasetComparison)
-def dataset_comparison(version: str, variant_id: str) -> DatasetComparison:
+async def dataset_comparison(version: str, variant_id: str) -> DatasetComparison:
     """Return one original/variant XML pair and its ground-truth summary."""
     dataset = _dataset_dir(version)
     relative = _require_safe_relative(variant_id, "variant")

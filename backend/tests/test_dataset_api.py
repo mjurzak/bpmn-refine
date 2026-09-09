@@ -1,12 +1,7 @@
 import json
 from pathlib import Path
 
-from fastapi.testclient import TestClient
-
 from app.api.routes import dataset
-from app.main import app
-
-client = TestClient(app)
 
 
 def _write_dataset(root: Path) -> None:
@@ -68,11 +63,13 @@ def _write_enhancement_dataset(root: Path) -> None:
     )
 
 
-def test_dataset_index_groups_variants_under_their_seed(tmp_path, monkeypatch):
+async def test_dataset_index_groups_variants_under_their_seed(
+    tmp_path, monkeypatch, api_client
+):
     _write_dataset(tmp_path)
     monkeypatch.setattr(dataset, "DATASET_ROOT", tmp_path)
 
-    response = client.get("/api/v1/evaluation/datasets/v-test")
+    response = await api_client.get("/api/v1/evaluation/datasets/v-test")
 
     assert response.status_code == 200
     assert response.json() == {
@@ -96,11 +93,13 @@ def test_dataset_index_groups_variants_under_their_seed(tmp_path, monkeypatch):
     }
 
 
-def test_dataset_comparison_returns_the_matched_pair(tmp_path, monkeypatch):
+async def test_dataset_comparison_returns_the_matched_pair(
+    tmp_path, monkeypatch, api_client
+):
     _write_dataset(tmp_path)
     monkeypatch.setattr(dataset, "DATASET_ROOT", tmp_path)
 
-    response = client.get(
+    response = await api_client.get(
         "/api/v1/evaluation/datasets/v-test/comparisons/single/S01/01"
     )
 
@@ -110,22 +109,26 @@ def test_dataset_comparison_returns_the_matched_pair(tmp_path, monkeypatch):
     assert response.json()["variant_xml"] == "<variant />"
 
 
-def test_dataset_api_rejects_unknown_or_unsafe_paths(tmp_path, monkeypatch):
+async def test_dataset_api_rejects_unknown_or_unsafe_paths(
+    tmp_path, monkeypatch, api_client
+):
     _write_dataset(tmp_path)
     monkeypatch.setattr(dataset, "DATASET_ROOT", tmp_path)
 
-    missing = client.get("/api/v1/evaluation/datasets/missing")
-    unsafe = client.get("/api/v1/evaluation/datasets/v-test/comparisons/not-found")
+    missing = await api_client.get("/api/v1/evaluation/datasets/missing")
+    unsafe = await api_client.get(
+        "/api/v1/evaluation/datasets/v-test/comparisons/not-found"
+    )
 
     assert missing.status_code == 404
     assert unsafe.status_code == 404
 
 
-def test_enhancement_index_exposes_case_metadata(tmp_path, monkeypatch):
+async def test_enhancement_index_exposes_case_metadata(tmp_path, monkeypatch):
     _write_enhancement_dataset(tmp_path)
     monkeypatch.setattr(dataset, "DATASET_ROOT", tmp_path)
 
-    response = dataset.enhancement_index().model_dump(mode="json")
+    response = (await dataset.enhancement_index()).model_dump(mode="json")
 
     assert response["cases"] == [
         {
@@ -139,13 +142,13 @@ def test_enhancement_index_exposes_case_metadata(tmp_path, monkeypatch):
     ]
 
 
-def test_enhancement_comparison_returns_core_reference_and_contract(
+async def test_enhancement_comparison_returns_core_reference_and_contract(
     tmp_path, monkeypatch
 ):
     _write_enhancement_dataset(tmp_path)
     monkeypatch.setattr(dataset, "DATASET_ROOT", tmp_path)
 
-    response = dataset.enhancement_comparison("M01-refine-01")
+    response = await dataset.enhancement_comparison("M01-refine-01")
 
     assert response.core_xml == "<core />"
     assert response.reference_xml == "<reference />"

@@ -1,11 +1,5 @@
-from fastapi.testclient import TestClient
-
-from app.main import app
 from app.services import repair as repair_service
 from app.services.repair import _strip_code_fences
-
-
-client = TestClient(app)
 
 # two elements colliding on id "task_main", rejected by the parser
 _DUPLICATE_ID_XML = """<?xml version='1.0' encoding='UTF-8'?>
@@ -41,13 +35,15 @@ def test_strip_code_fences_removes_wrapping_fence():
     assert _strip_code_fences("```\n<a/>\n```") == "<a/>"
 
 
-def test_repair_xml_returns_diagram_when_fix_parses(monkeypatch):
+async def test_repair_xml_returns_diagram_when_fix_parses(monkeypatch, api_client):
     async def fake_repair_raw_xml(xml, instruction=None, config=None):
         return _FIXED_XML
 
     monkeypatch.setattr("app.api.routes.repair.repair_raw_xml", fake_repair_raw_xml)
 
-    response = client.post("/api/v1/repair/xml", json={"xml": _DUPLICATE_ID_XML})
+    response = await api_client.post(
+        "/api/v1/repair/xml", json={"xml": _DUPLICATE_ID_XML}
+    )
 
     assert response.status_code == 200
     body = response.json()
@@ -59,14 +55,16 @@ def test_repair_xml_returns_diagram_when_fix_parses(monkeypatch):
     assert body["run"]["converged"] is True
 
 
-def test_repair_xml_reports_still_unparseable(monkeypatch):
+async def test_repair_xml_reports_still_unparseable(monkeypatch, api_client):
     async def fake_repair_raw_xml(xml, instruction=None, config=None):
         # the model failed to dedupe, so the result still has a duplicate id
         return _DUPLICATE_ID_XML
 
     monkeypatch.setattr("app.api.routes.repair.repair_raw_xml", fake_repair_raw_xml)
 
-    response = client.post("/api/v1/repair/xml", json={"xml": _DUPLICATE_ID_XML})
+    response = await api_client.post(
+        "/api/v1/repair/xml", json={"xml": _DUPLICATE_ID_XML}
+    )
 
     assert response.status_code == 200
     body = response.json()

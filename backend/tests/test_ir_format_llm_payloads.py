@@ -102,6 +102,7 @@ async def test_chat_context_and_reply_use_selected_ir_format(monkeypatch):
         messages=[chat_service.ChatMessage(role="user", content="Please refine it.")],
         diagram=diagram,
         config=config,
+        snapshot_changes=False,
     )
 
     first_message = captured["messages"][0]["content"]

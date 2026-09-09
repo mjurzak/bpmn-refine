@@ -1,18 +1,12 @@
 import json
 
-from fastapi.testclient import TestClient
-
 from app.experiments import CONVERTER_VERSION, ExperimentConfig, config_hash
-from app.main import app
 from app.model.schema import BpmnDiagram
 from app.services.diagrams import export_bpmn_xml
 from app.services.repair import RepairResult
 
 
-client = TestClient(app)
-
-
-def test_repair_response_includes_run_and_proposed_xml(monkeypatch):
+async def test_repair_response_includes_run_and_proposed_xml(monkeypatch, api_client):
     captured = {}
 
     async def fake_repair_diagram(
@@ -36,7 +30,7 @@ def test_repair_response_includes_run_and_proposed_xml(monkeypatch):
         "experiment_id": "repair-run-test",
     }
 
-    response = client.post(
+    response = await api_client.post(
         "/api/v1/repair",
         json={
             "xml": _minimal_valid_xml(),
@@ -77,8 +71,8 @@ def test_repair_response_includes_run_and_proposed_xml(monkeypatch):
     assert run["converged"] is True
 
 
-def test_repair_rejects_empty_issue_list_with_run():
-    response = client.post(
+async def test_repair_rejects_empty_issue_list_with_run(api_client):
+    response = await api_client.post(
         "/api/v1/repair",
         json={"xml": _minimal_valid_xml(), "issues": []},
     )
@@ -91,8 +85,8 @@ def test_repair_rejects_empty_issue_list_with_run():
     assert body["run"]["converged"] is False
 
 
-def test_apply_selected_edit_ops_returns_updated_diagram():
-    response = client.post(
+async def test_apply_selected_edit_ops_returns_updated_diagram(api_client):
+    response = await api_client.post(
         "/api/v1/repair/apply",
         json={
             "diagram": _minimal_valid_diagram(),
@@ -116,7 +110,9 @@ def test_apply_selected_edit_ops_returns_updated_diagram():
     assert body["updated_xml"].startswith("<?xml")
 
 
-def test_manual_semantic_repair_makes_one_plan_and_labels_revalidation(monkeypatch):
+async def test_manual_semantic_repair_makes_one_plan_and_labels_revalidation(
+    monkeypatch, api_client
+):
     class FakeProvider:
         async def complete_structured(self, **kwargs):
             schema_defs = kwargs["schema"].get("$defs", {})
@@ -157,7 +153,7 @@ def test_manual_semantic_repair_makes_one_plan_and_labels_revalidation(monkeypat
         "app.llm.client.get_provider",
         lambda provider=None: FakeProvider(),
     )
-    response = client.post(
+    response = await api_client.post(
         "/api/v1/repair",
         json={
             "xml": _minimal_valid_xml(),

@@ -1,30 +1,7 @@
 import pytest
-from fastapi.testclient import TestClient
 
-from app.main import app
 from app.model.schema import BpmnDiagram
 from app.services.diagrams import export_bpmn_xml
-from app.services.chat import ChatResult
-from app.services.repair import RepairResult
-
-
-client = TestClient(app)
-
-
-@pytest.mark.parametrize(
-    "endpoint",
-    ["/api/v1/validate", "/api/v1/chat", "/api/v1/repair"],
-)
-def test_run_endpoints_never_omit_run_on_success(monkeypatch, endpoint):
-    if endpoint.endswith("/chat"):
-        monkeypatch.setattr("app.api.routes.chat.chat_diagram", _fake_chat_diagram)
-    if endpoint.endswith("/repair"):
-        monkeypatch.setattr("app.api.routes.repair.repair_diagram", _fake_repair_diagram)
-
-    response = client.post(endpoint, json=_payload_for(endpoint))
-
-    assert response.status_code == 200
-    assert "run" in response.json()
 
 
 @pytest.mark.parametrize(
@@ -44,14 +21,15 @@ def test_run_endpoints_never_omit_run_on_success(monkeypatch, endpoint):
         ),
     ],
 )
-def test_run_endpoints_never_omit_run_on_error(
+async def test_run_endpoints_never_omit_run_on_error(
     monkeypatch,
     endpoint,
     patch_target,
+    api_client,
 ):
     monkeypatch.setattr(patch_target, _failing_service_call)
 
-    response = client.post(endpoint, json=_payload_for(endpoint))
+    response = await api_client.post(endpoint, json=_payload_for(endpoint))
 
     assert response.status_code == 500
     body = response.json()
@@ -59,14 +37,6 @@ def test_run_endpoints_never_omit_run_on_error(
     assert "run" in body
     assert body["run"]["request_id"]
     assert body["run"]["timestamp"]
-
-
-async def _fake_chat_diagram(*args, **kwargs):
-    return ChatResult(reply="No diagram changes needed.")
-
-
-async def _fake_repair_diagram(diagram, *args, **kwargs):
-    return RepairResult(repaired_diagram=diagram)
 
 
 async def _failing_service_call(*args, **kwargs):

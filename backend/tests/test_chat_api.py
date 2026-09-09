@@ -1,11 +1,8 @@
-from fastapi.testclient import TestClient
-
 from app.experiments import CONVERTER_VERSION, ExperimentConfig, config_hash
-from app.main import app
 from app.services.chat import ChatResult
 
 
-def test_chat_response_includes_run_block(monkeypatch):
+async def test_chat_response_includes_run_block(monkeypatch, api_client):
     captured = {}
 
     async def fake_chat_diagram(
@@ -27,9 +24,7 @@ def test_chat_response_includes_run_block(monkeypatch):
         "model_override": "custom-chat-model",
         "experiment_id": "chat-run-test",
     }
-    client = TestClient(app)
-
-    response = client.post(
+    response = await api_client.post(
         "/api/v1/chat",
         json={
             "messages": [{"role": "user", "content": "Check this process."}],
@@ -55,7 +50,7 @@ def test_chat_response_includes_run_block(monkeypatch):
     assert run["timestamp"]
 
 
-def test_chat_can_return_unsnapshotted_proposal(monkeypatch):
+async def test_chat_can_return_unsnapshotted_proposal(monkeypatch, api_client):
     captured = {}
 
     async def fake_chat_diagram(
@@ -71,8 +66,7 @@ def test_chat_can_return_unsnapshotted_proposal(monkeypatch):
 
     monkeypatch.setattr("app.api.routes.chat.chat_diagram", fake_chat_diagram)
 
-    client = TestClient(app)
-    response = client.post(
+    response = await api_client.post(
         "/api/v1/chat",
         json={
             "messages": [{"role": "user", "content": "Change this process."}],
