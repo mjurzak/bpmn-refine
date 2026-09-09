@@ -1,8 +1,12 @@
 # run — response envelope
 
-Every backend response includes a `run` block. It records what produced the response: which model, which prompts, which rules, and which config. Without it, experiment analysis cannot join a metric back to the conditions that produced it.
+Every validation, repair, and chat response includes a `run` block. It records
+what produced the response: which model, prompts, rules, application revision,
+and configuration. Without it, experiment analysis cannot join a metric back to
+the conditions that produced it.
 
-`run` is a hard contract — **no endpoint omits it**, even on error.
+`run` is a hard contract for endpoints that own an experiment context. Diagram
+conversion, dataset browsing, and history endpoints do not claim this envelope.
 
 ---
 
@@ -21,6 +25,8 @@ run {
   rules_version:    str                   // e.g. "R001-R008"
   checkers?:        { woflan: "pm4py-2.7" }
   config_hash:      str                   // 12-char hex prefix of sha256(ExperimentConfig)
+  config?:          ExperimentConfig      // canonical resolved request configuration
+  app_commit?:      str                   // implementation commit or explicit override
   timestamp:        str                   // ISO-8601 UTC
   request_id:       str                   // per-request UUID
   iterations?:      int                   // repair loop only
@@ -70,6 +76,14 @@ Per-tool version strings. Formal checker findings depend on the tool binary; pin
 ### `config_hash`
 
 12-char hex prefix of `sha256(canonical_json(ExperimentConfig))`. The join key for experiment analysis. See [`experiments.md`](experiments.md) for the canonicalisation rules.
+
+### `config` and `app_commit`
+
+`config` preserves the resolved request fields, not only their hash.
+`app_commit` records the implementation revision returned by Git, or the
+explicit `BPMN_AI_APP_COMMIT` override used in a packaged environment. Stored
+experiment manifests also record the application revision so a dirty or moved
+working tree remains visible in the evidence.
 
 ### `timestamp` and `request_id`
 

@@ -18,7 +18,9 @@ The system is designed so the **same backend** serves interactive sessions and b
 
 ## `ExperimentConfig` — authoritative schema
 
-Carried on **every** request that touches validation, repair, or chat. The frontend exposes these as a configuration panel; the batch runner iterates over the same fields.
+Resolved for every request that touches validation, repair, or chat. The
+frontend exposes provider, model, and reasoning controls plus fixed validation
+actions. Experiment specs and the CLI expose the complete schema.
 
 ```
 ExperimentConfig {
@@ -33,9 +35,13 @@ ExperimentConfig {
   // validation
   tiers_enabled:      { t1: bool, t2: bool, t3: bool }
   include_formal_evidence: bool           // default true; false withholds counterexamples
+  include_reference_description: bool     // default true
+  include_semantic_projection: bool       // default false
+  llm_validation_scope: "semantic" | "holistic"
 
   // repair
   repair_mode:        "atomic" | "regen"
+  repair_loop_policy?: "legacy_all_findings" | "target_scoped_safe"
   max_repair_iters:   int                 // default 5
 
   // LLM call parameters
@@ -57,6 +63,14 @@ ExperimentConfig {
   and Claude/Anthropic are the thesis focus because compute and budget are
   limited. Gemini CLI and Antigravity/agy are intentionally out of scope.
 - `include_formal_evidence` withholds the counterexample traces, dead elements, and uncovered places from every prompt, while the checker still runs and its verdict still travels. That separates what the *evidence* contributes from what the *check* contributes. Turning the checker off instead would confound the two.
+- `include_reference_description` controls whether the matching process text is
+  included in semantic validation. `include_semantic_projection` adds the
+  compact relation-oriented projection used by the corresponding ablation.
+- `llm_validation_scope` selects the closed semantic taxonomy or the broader
+  holistic validation prompt.
+- Omitting `repair_loop_policy` preserves historical run hashes and the E7 loop
+  behavior. New safety-focused runs opt into `target_scoped_safe`, which freezes
+  the initial targets and rejects Tier 1 or Woflan regressions.
 - `temperature` defaults to **`null`**, meaning "whatever the model defaults to". Set it explicitly only for models that support it; unsupported requested controls fail instead of being silently substituted.
 - `seed` is best-effort — not all providers honour it. Anthropic's Messages API has no sampling seed at all. A requested control the selected provider cannot forward is recorded in `LlmTrace.unsupported_controls` rather than reported as if it had applied, so a record never implies a seeded run that never happened.
 
@@ -76,27 +90,33 @@ All metrics are computed post-hoc from `run` data plus endpoint outputs — the 
 
 | Metric | Definition | Source |
 |---|---|---|
-| **precision** | `\|found ∩ ground_truth\| / \|found\|` | compare `/validate` issues against annotated corpus |
-| **recall** | `\|found ∩ ground_truth\| / \|ground_truth\|` | same |
-| **F1** | harmonic mean | derived |
-| **tier attribution** | fraction of correct findings unique to each tier | isolate per-tier runs (`tiers_enabled` toggled) |
+| **target-category recall** | injected categories recovered by at least one finding | compare `/validate` issues with mutation truth |
+| **target-anchor recall** | injected defects with at least one finding on an expected element | compare `element_refs` with construction anchors |
+| **category accuracy given anchor** | correct category among localized targets | separates taxonomy from localization |
+| **control alert / false-positive rate** | findings on controls | semantic controls remain alerts unless exhaustively adjudicated |
+| **tier attribution** | target findings unique to each tier | isolate per-tier runs (`tiers_enabled` toggled) |
 
-Tier attribution is the metric that answers whether the formal-checker stack is worth its cost. If tier 2 adds few uniquely-detected issues over tier 1 and tier 3 together, that is evidence against the design, and it should be reported as such.
+Semantic mutation truth is positive-unlabeled: it certifies injected defects but
+does not certify that no other semantic problem exists. Unmatched semantic
+findings are therefore unadjudicated rather than automatic false positives.
+Conventional precision and F1 are valid only for exhaustively annotated groups
+or as explicitly labelled conservative lower-bound views.
 
 ### repair quality
 
 | Metric | Definition | Rationale |
 |---|---|---|
-| **convergence rate** | fraction of runs with `run.converged = true` | headline correctness number |
-| **iterations** | mean `run.iterations` | convergence speed; compare against the Dantas et al. `4/δ` theoretical bound |
-| **minimality** | mean `len(applied_ops)` per repair | how surgical is the fix — lower is better when convergence is equal |
+| **target removal** | assigned injected findings absent after repair | primary defect-resolution measure |
+| **post-validation safety** | no new Tier 1 or Woflan error | guards against superficially successful edits |
+| **iterations and stop reason** | loop work plus its explicit termination cause | distinguishes success, no progress, repetition, and regression rejection |
+| **operation count** | number of accepted atomic edits | descriptive change-size measure |
 | **model share of repair** | fraction of `applied_op_origins` that is not `quick_fix` | R001/R002/R005/R006 are repaired deterministically; without this split a cross-model comparison credits the model for edits no model made |
-| **GED(initial, final)** | graph edit distance from pre-repair to post-repair IR | magnitude of change |
-| **GED(final, ground_truth)** | GED from repaired IR to the known-correct diagram | does the repair go where it should |
-| **RGED** | relative GED — GED normalised by diagram size | cross-dataset comparison |
-| **soundness pass rate** | fraction of repaired diagrams that pass tier 2 | independent check that repair is real, not just tier-1-surface |
+| **preservation / unnecessary change** | expected unaffected elements retained | detects collateral changes |
+| **manual semantic validity** | reviewed alternative repairs accepted or rejected | covers valid solutions that differ from the inverse mutation |
 
-GED / RGED implementations follow the metric definitions in the PMo Benchmark and in ProMoAI (Kourani et al., 2024). See `research/reports/Initial-Research.md` §3.
+Graph-edit distance remains a secondary descriptive measure for refinement. It
+must not require byte identity with the stored reference because multiple BPMN
+repairs can be valid.
 
 ### efficiency
 
@@ -149,15 +169,22 @@ The benchmark the sweeps actually read is *derived* from PMo by defect injection
 
 ## reproducibility contract
 
-A result is reproducible iff:
+A result is auditable and rerunnable when these anchors are present:
 
-1. `run.config_hash` is present — recovers `ExperimentConfig`.
-2. `run.prompt_versions` are present — recovers the exact prompt file content via the repo's prompt registry.
-3. `run.model_used` and `run.converter` pin the provider-side and IR-side surfaces.
-4. `run.rules_version` pins tier 1 (and tier 2's tool set + versions when wired).
-5. The dataset snapshot pins the input. Two fields carry it, both in the experiment manifest and neither inside `run`: `input_hashes` pins the bytes of every resolved file, and `dataset_version` — declared by the spec — names the corpus they were drawn from. The hashes alone are not enough, because a sweep over development fixtures and a sweep over the benchmark produce structurally identical manifests.
+1. `run.config_hash` and the embedded `run.config` pin `ExperimentConfig`.
+2. `run.prompt_versions` pin every invoked prompt by name and content hash.
+3. `run.model_used`, provider/harness version, and recorded unsupported controls
+   identify the effective model surface.
+4. `run.converter`, `run.rules_version`, and `run.checkers` pin deterministic
+   implementation surfaces.
+5. The experiment manifest records `dataset_version`, resolved input paths, and
+   byte hashes.
+6. `run.app_commit` and the archival run record identify the application state
+   and any declared harness drift.
 
-Given these five anchors, rerunning the same endpoint against the same input should reproduce the output modulo provider non-determinism (temperature, seed honouring). Rerunning is how regressions are caught — the CI harness replays a small fixture suite on every prompt or rules change and fails if metrics drop.
+These anchors make the execution trace recoverable; they do not make an
+unseeded remote model deterministic. Repeatability is measured separately where
+needed. Provider-free generator and analysis steps should be deterministic.
 
 ---
 
@@ -174,16 +201,12 @@ Ablations are `ExperimentConfig` sweeps. Each row below corresponds to a plot or
 | **model tier** | `model_tier` + `model_override` | strong vs fast; cross-provider (Claude vs GPT vs local Llama via Ollama) |
 | **counterexample prompting** | `include_formal_evidence` | does giving the model the checker's evidence improve repair over giving it the verdict alone |
 
-Each ablation is run with fixed other fields. Paid model and IR selection use a
-balanced 30-case semantic panel; the final confirmatory run uses 100 cases across
-clean, single, disjoint, and interacting strata. The panels are selected by a
-stable hash and declared before results are observed. The cost-quality model
-pair is `claude-sonnet-5` and `gpt-5.6-terra`. Model selection uses medium
-reasoning for GPT and Claude Code's default thinking. Full-corpus T1/T2 evaluation
-does not consume model quota.
+Each ablation fixes all other fields. The exact panel sizes, selections, model
+identifiers, and harness settings are recorded in the executed specs rather than
+restated here. Full-corpus Tier 1 and Tier 2 evaluation does not consume model
+quota.
 
-Executable `v1.0` benchmark specs live in `experiments/specs/benchmark/`; regenerate them after
-each model/IR/pipeline selection as described in
+The exact executed specifications live in `experiments/specs/runs/`; see
 [`experiments/README.md`](../experiments/README.md).
 
 ---
@@ -192,14 +215,14 @@ each model/IR/pipeline selection as described in
 
 ```bash
 # rehearse first: canned responses, no API call, proves the spec resolves
-make experiment-rehearse SPEC=experiments/specs/smoke.yaml OUT=/tmp/rehearsal
+make experiment-rehearse SPEC=experiments/specs/runs/smoke.yaml OUT=/tmp/rehearsal
 
 # then for real; --out is where results.jsonl and manifest.json land
-make experiment SPEC=experiments/specs/benchmark/model-selection.yaml OUT=experiments/results/model-selection
+make experiment SPEC=experiments/specs/runs/e1-model-selection.yaml OUT=experiments/results/e1-model-selection
 
 # bounded parallel execution; the manifest records the chosen concurrency
-make experiment SPEC=experiments/specs/benchmark/model-selection.yaml \
-  OUT=experiments/results/model-selection CONCURRENCY=2
+make experiment SPEC=experiments/specs/runs/e1-model-selection.yaml \
+  OUT=experiments/results/e1-model-selection CONCURRENCY=2
 ```
 
 Re-running the same `SPEC`/`OUT` pair **resumes**: trials already on disk are skipped. A sweep killed by a rate limit at trial 40 keeps its 40 results and picks up at 41. Concurrency is bounded inside one runner process; multiple processes must not share an output directory.

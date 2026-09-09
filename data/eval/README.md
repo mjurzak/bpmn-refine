@@ -42,4 +42,7 @@ v1.0/
 
 `ATTRIBUTION.md` identifies the PMo source, its DOI and CC BY 4.0 license, and the changes made by the generator. `manifest.json` records SHA-256 hashes for every generated or copied file except the manifest itself.
 
-Sibling directories — `rule_cases/`, `test_cases/`, `import_cases/` — are unit-test fixtures, and `.cases/` is the Chapter 6 case study. No thesis number comes from any of them.
+Sibling directories — `rule_cases/`, `test_cases/`, and `import_cases/` — are
+test fixtures, not evaluation inputs. The Chapter 6 walkthrough is pinned by
+`test_cases/03_expense_reimbursement.bpmn` and its backend regression test. No
+quantitative result comes from these fixture directories.

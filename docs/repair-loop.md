@@ -8,7 +8,11 @@ The endpoint has two orchestration modes.
 
 **Closed loop** (`single_plan=false`) backs unattended experiment runs: dispatcher -> apply -> re-validate -> stop or iterate. Keeping it opt-in is what stops the human review gate from ending up behind several model-generated plans.
 
-**Status (2026-07-20):** the loop, both repair modes, the quick-fix registry (R001–R006), the `/repair`, `/repair/xml`, and `/repair/apply` endpoints, and the `tier2_findings` prompt section are all wired. The one gap is the *content* of the counterexample: the witness structure below is populated only with a diagnosis, not a firing trace, because the wired tier-2 checker (Woflan) does not emit one. The trace fields in the examples that follow are the target shape, not current output.
+**Status (2026-09-03):** the loop, both repair modes, quick fixes for R001,
+R002, R005, and R006, the `/repair`, `/repair/xml`, and `/repair/apply`
+endpoints, and the `tier2_findings` prompt section are wired. Woflan locking
+scenarios are localized to BPMN element IDs when available and populate
+`counterexample_traces`; a separate deadlock marking is not currently derived.
 
 This doc owns:
 
@@ -173,7 +177,15 @@ is revalidated once. Remaining or newly discovered findings are returned to the
 reviewer instead of becoming more repair work inside the same request.
 
 With `single_plan=false`, errors are drained before warnings and the dispatcher
-may continue until convergence or `max_repair_iters`.
+may continue until convergence or `max_repair_iters`. The loop policy is explicit:
+
+- omitted / `legacy_all_findings` preserves the historical E7 behavior and lets
+  every revalidation replace the next repair scope;
+- `target_scoped_safe` freezes the initially assigned targets, treats newly
+  observed findings as context only, stops when those targets disappear, and
+  rolls back a candidate that introduces a new deterministic Tier 1 or Woflan
+  error. Rejected candidates are returned in `rejected_ops` with
+  `regression_issues`; there is no automatic retry.
 
 ```
 input: diagram, issues[], ExperimentConfig, single_plan
@@ -208,9 +220,10 @@ return diagram, applied, issues, iteration, converged = no_repairable_issues(iss
 ### deterministic quick-fixes
 
 The Tier 1 category map ([`validation-rules.md`](validation-rules.md)) supplies
-deterministic fixes such as removing a dangling sequence flow for R005/R006.
-Structural errors that need a decision about *where* to wire (R001-R004,
-R007/R008) are surfaced as suggestions and are not applied automatically.
+deterministic fixes for R001/R002 (add a missing start or end event and connect it
+to the inferred entry or exit) and R005/R006 (remove a dangling sequence flow).
+R003/R004 and R007/R008 have no registered quick fix because the correct
+rewiring or deletion cannot be determined from the local finding alone.
 
 The dispatcher prefers a deterministic fix whenever one is available, even if the LLM could also do it — deterministic fixes are cheaper, verifiable, and always reproduce.
 
@@ -260,7 +273,13 @@ Given the trace, the model can identify the cause — here the classic exclusive
 - Explicit auto-approval sets `single_plan=false` and may use the full iteration
   budget.
 - The loop stops early when no repairable error or warning remains.
-- `iterations` is written to `run.iterations` so experiments can report convergence behaviour against the 4/δ theoretical bound (Dantas et al., 2025; see Initial-Research.md §4).
+- Under `target_scoped_safe`, it instead stops when the frozen targets are gone;
+  unrelated new warnings remain visible but do not become repair work.
+- A hard regression restores the previous safe diagram and returns
+  `stop_reason=regression_rejected`.
+- `iterations` is written to `run.iterations` so experiments can report observed
+  convergence behavior. Comparison with a theoretical iteration bound remains
+  separate unless the implementation and theorem assumptions are shown to align.
 - A non-converged result is still returned — the user sees a partial repair and decides whether to accept, refine in chat, or try a different repair mode.
 
 ---

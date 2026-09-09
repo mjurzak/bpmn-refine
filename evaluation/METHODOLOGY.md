@@ -1,9 +1,8 @@
 # Defect Injection Methodology
 
-The concise plan for executing the quantitative benchmark is maintained in
-[`EXPERIMENT_PLAN.md`](EXPERIMENT_PLAN.md). This document defines dataset and
-ground-truth construction; the experiment plan defines the model matrix,
-reasoning sweep, ablations, repair sample, and subscription-harness limitation.
+This document defines dataset and ground-truth construction. Exact executed
+configurations and result artifacts are mapped in
+[`experiments/README.md`](../experiments/README.md).
 
 The benchmark is stored at `data/eval/v1.0/`; its on-disk layout is specified in [`data/eval/README.md`](../data/eval/README.md).
 
@@ -161,11 +160,12 @@ was excluded because it also produced Tier-1 `R007`, and `11-M06` was removed
 because it was byte-identical to the more specific `11-M04` case. Difficulty was not
 persisted and is therefore not used for stratification or scoring.
 
-The experiments use all 43 eligible seeds. There is no development/test split:
-the study compares fixed configurations on the complete benchmark rather than
-claiming generalisation to unseen source models. E3 and E4 use their declared
-small diagnostic sample only to control cost. Report results per operator, with
-a macro summary by seed and operator.
+The dataset contains all 43 eligible seeds. E1–E5 use frozen, paired selection
+panels and may reuse only records with matching input, prompt, model, harness,
+reasoning, IR, and converter metadata. E6 is the complete confirmatory panel.
+The exact panels and reuse provenance are stored in `experiments/specs/runs/`
+and `experiments/results/`; they do not support a claim of generalisation to
+unseen source models.
 
 ## 7. Refinement instances
 

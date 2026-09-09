@@ -2,7 +2,7 @@ ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 PROBE ?= data/eval/v1.0/probe.json
 TIER2 ?= off
 
-.PHONY: backend frontend test test-backend test-frontend dry-run experiment experiment-rehearse eligibility-probe dataset-build dataset-refresh-manifest dataset-audit enhancement-build enhancement-audit e8-rehearse
+.PHONY: backend frontend test test-backend test-frontend docs-check dry-run experiment experiment-rehearse eligibility-probe dataset-build dataset-refresh-manifest dataset-audit enhancement-build enhancement-audit e8-rehearse
 
 backend:
 	cd $(ROOT) && PYTHONPATH=backend .venv/bin/uvicorn app.main:app --reload
@@ -10,13 +10,16 @@ backend:
 frontend:
 	cd $(ROOT)/frontend && npm run dev
 
-test: test-backend test-frontend
+test: docs-check test-backend test-frontend
 
 test-backend:
 	cd $(ROOT) && PYTHONPATH=backend .venv/bin/pytest -v
 
 test-frontend:
 	cd $(ROOT)/frontend && npm test
+
+docs-check:
+	cd $(ROOT) && .venv/bin/python scripts/check_docs.py
 
 # every ablation control against mocked providers, no paid API call
 dry-run:

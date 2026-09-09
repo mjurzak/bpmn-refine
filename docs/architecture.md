@@ -9,7 +9,8 @@ Four ideas shape the architecture:
 - Three validation tiers: cheap deterministic rules first, formal model checking second, LLM semantic review third.
 - Repair runs as a toggleable loop. Atomic edit operations by default, full IR regeneration as a fallback; the LLM is given formal-checker counterexamples rather than a bare error message.
 - One canonical IR drives internal logic. Candidate IRs (YAML, Mermaid, compact-JSON) are swappable I/O formats used for comparison experiments.
-- Two validation triggers: tier 1 runs on every edit, tier 2 and tier 3 on explicit user action.
+- Validation is user-triggered. Separate actions run deterministic rules, rules plus
+  Woflan, or rules plus LLM semantic review.
 
 ---
 
@@ -19,7 +20,7 @@ The system performs three distinct operations over a diagram:
 
 | Operation | Driven by | Surface | Output |
 |---|---|---|---|
-| **validation** | diagram state | live (tier 1) + on-demand (tier 2/3) | issue list (read-only) |
+| **validation** | diagram state | explicit rule, formal, or semantic action | issue list (read-only) |
 | **repair** | specific issues from validation | explicit *Repair* action | proposed changes (`EditOp[]` or full IR) |
 | **refinement** | user intent ("add a cancellation path") | chat | proposed changes (`EditOp[]` or full IR) |
 
@@ -65,18 +66,31 @@ FastAPI (port 8000)
 
 ## request envelope — `ExperimentConfig`
 
-Every request that touches validation or repair carries an `ExperimentConfig`. It bundles every parameter a user or experimenter can tune; the frontend exposes these as a configuration panel so the same backend serves both interactive sessions and ablation runs.
+Every request that touches validation, repair, or chat resolves an
+`ExperimentConfig`. It bundles every parameter an experimenter can tune. The
+frontend exposes provider, model, and reasoning controls plus fixed
+validation-mode actions; the CLI and experiment specs expose the complete
+ablation surface.
 
 ```
 ExperimentConfig {
   model_tier:         "strong" | "fast" | "custom"
   model_override?:    str              // explicit model id when tier = custom
+  provider_override?: str
   ir_format:          "pydantic" | "yaml" | "mermaid" | "compact_json" | ...
   tiers_enabled:      { t1: bool, t2: bool, t3: bool }
+  include_formal_evidence: bool
+  include_reference_description: bool
+  include_semantic_projection: bool
+  llm_validation_scope: "semantic" | "holistic"
   repair_mode:        "atomic" | "regen"
+  repair_loop_policy?: "legacy_all_findings" | "target_scoped_safe"
   max_repair_iters:   int
-  temperature:        float
+  temperature?:       float
+  reasoning_effort?:  "none" | "low" | "medium" | "high" | "xhigh"
   seed?:              int
+  experiment_id?:     str
+  notes?:             str
 }
 ```
 
@@ -86,7 +100,7 @@ The config is hashed into `run.config_hash` so every result traces back to the e
 
 ## response envelope — `run`
 
-Every backend response includes a `run` block:
+Every validation, repair, and chat response includes a `run` block:
 
 ```
 run {
@@ -118,7 +132,7 @@ A diagram passes through three independent validators. Each emits a uniform `Iss
 
 ### tier 1 — deterministic rules
 
-Pure Python, zero external dependencies, runs quickly on typical diagrams. Detects *local, structural* violations: missing start/end events, dangling references; and unreachable nodes or traps (a linear-time under-approximation of soundness). Every rule is an `error` — heuristic "might be a problem" checks are deferred to tier 2 / tier 3 rather than emitted as deterministic warnings. Eight rules today (R001–R008). Runs on the **live** trigger — on every edit. See [`validation-rules.md`](validation-rules.md).
+Pure Python, zero external dependencies, runs quickly on typical diagrams. Detects *local, structural* violations: missing start/end events, dangling references; and unreachable nodes or traps (a linear-time under-approximation of soundness). Every rule is an `error` — heuristic "might be a problem" checks are deferred to tier 2 / tier 3 rather than emitted as deterministic warnings. Eight rules today (R001–R008). Runs when the user selects any validation action. See [`validation-rules.md`](validation-rules.md).
 
 ### tier 2 — formal validation
 
@@ -127,11 +141,11 @@ Petri-net mapping. It runs synchronously in-process, localizes diagnostic names
 to stable BPMN element IDs, and exposes dead elements, uncovered elements, and
 locking-scenario traces through the shared formal-witness schema.
 
-Runs on the **on-demand** trigger (explicit formal-validate action). See [`formal-checkers.md`](formal-checkers.md).
+Runs on the explicit **Formal Validate** action. See [`formal-checkers.md`](formal-checkers.md).
 
 ### tier 3 — LLM semantic review
 
-Single-turn LLM call over the IR plus tier 1 and tier 2 diagnostics. Targets concerns no deterministic or formal tool can express — label quality, role mislabelling, missing steps, process-intent issues. Runs on-demand, same surface as tier 2. See [`llm-integration.md`](llm-integration.md).
+Single-turn LLM call over the IR plus tier 1 diagnostics. Targets concerns no deterministic or formal tool can express — label quality, role mislabelling, missing steps, process-intent issues. Runs through the explicit **Semantic LLM** action. See [`llm-integration.md`](llm-integration.md).
 
 ---
 
@@ -224,13 +238,15 @@ For every converter, `serialize(parse(xml))` must produce semantically equivalen
 
 ## validation triggers
 
-| Trigger       | Runs              | When                                            | Latency budget |
-|---------------|-------------------|-------------------------------------------------|----------------|
-| **live**      | tier 1            | every diagram edit, debounced ~500 ms           | <50 ms         |
-| **on-demand** | tier 2 + tier 3   | explicit *Deep Validate* action                 | <5 s           |
-| **repair**    | full loop         | explicit *Repair* action                        | bounded by `max_repair_iters` |
+| Trigger | Runs | When | Latency budget |
+|---|---|---|---|
+| **Verify Rules** | tier 1 | explicit structural-validation action | <50 ms |
+| **Formal Validate** | tier 1 + tier 2 | explicit formal-validation action | <5 s |
+| **Semantic LLM** | tier 1 + tier 3 | explicit semantic-validation action | model-dependent |
+| **repair** | configured revalidation loop | explicit *Repair* action | bounded by `max_repair_iters` |
 
-Live validation is read-only: it produces issues, never modifies the diagram. The *no silent mutations* principle applies to **applying** repairs, not to **running** checks.
+Validation is read-only: it produces issues and never modifies the diagram. The
+*no silent mutations* principle applies to **applying** repairs, not to **running** checks.
 
 ---
 
@@ -273,26 +289,24 @@ Thin adapters over service-layer functions. Current routes: `diagrams`, `validat
 
 ## data flows
 
-### live edit -> tier 1
+### explicit rules validation -> tier 1
 
 ```
-user edit in bpmn-js
-  -> debounce ~500 ms
+user clicks "Verify Rules"
   -> POST /validate { xml, ExperimentConfig, tiers: [1] }
   -> canonical converter: parse
   -> rules.validate(diagram)
   -> response { issues, run }
-  -> bpmn-js marker overlay + ValidationPanel update
+  -> ValidationPanel update
 ```
 
-### deep validate -> tier 1 + 2 + 3
+### formal or semantic validation
 
 ```
-user clicks "Deep validate"
-  -> POST /validate { xml, ExperimentConfig, tiers: [1, 2, 3] }
+user clicks "Formal Validate" or "Semantic LLM"
+  -> POST /validate with tiers [1, 2] or [1, 3]
   -> parse -> tier 1 rules
-  -> fan out to tier 2 checkers in parallel, normalise to Issue
-  -> tier 3 LLM call with full IR + tier 1/2 diagnostics
+  -> selected tier 2 Woflan check or tier 3 LLM review
   -> merge into a unified Issue list
   -> response { issues, run }
 ```

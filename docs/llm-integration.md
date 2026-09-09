@@ -234,7 +234,11 @@ IR inside the common envelope.
 
 ## counterexample prompting
 
-When tier 2 produces a witness, it enters the repair prompt as a structured `tier2_findings` section built by `_extract_tier2_findings`, rather than as pasted raw tool output. That much is wired. What is missing is the witness content: Woflan supplies a diagnosis but no firing trace, so the `trace` and `marking` fields below are empty in practice. The prompts already warn the model that they may be.
+When tier 2 produces a witness, it enters the repair prompt as a structured
+`tier2_findings` section built by `_extract_tier2_findings`, rather than as
+pasted raw tool output. Woflan locking scenarios are localized to BPMN element
+IDs and populate the trace when available. A separate marking is not currently
+derived, so both fields remain optional.
 
 Target structure:
 
@@ -252,7 +256,10 @@ Marking at deadlock: { node_id: token_count, ... }
 {compact canonical IR in the active candidate format}
 ```
 
-The point of the structure is that the model can work from *why* the trace deadlocks rather than from the symptom alone, and emit an `EditOp` plan against the cause. See `research/reports/Initial-Research.md` §3 for the background, and [`repair-loop.md`](repair-loop.md) for what the dispatcher does with the plan.
+The point of the structure is that the model can work from *why* the trace
+deadlocks rather than from the symptom alone, and emit an `EditOp` plan against
+the cause. See [`repair-loop.md`](repair-loop.md) for what the dispatcher does
+with the plan.
 
 ---
 
