@@ -1,0 +1,97 @@
+{
+  "integrity": {
+    "call_errors": 0,
+    "checkpoints": 3,
+    "config_hash_match": true,
+    "e6_hash_mismatches": 0,
+    "errors": 0,
+    "input_hash_mismatches": 0,
+    "missing_usage": 0,
+    "models": [
+      "gpt-5.6-terra"
+    ],
+    "overall": {
+      "cases": 3,
+      "converged_cases": 2,
+      "errors": 0,
+      "errors_resolved_cases": 2,
+      "final_complete_cases": 2,
+      "final_resolved": 4,
+      "final_safe_target_success_cases": 2,
+      "final_target_removal_rate": 0.8,
+      "first_complete_cases": 1,
+      "first_resolved": 3,
+      "first_safe_target_success_cases": 1,
+      "first_target_removal_rate": 0.6,
+      "manual_review_cases": 0,
+      "mean_label_stability_rate": 1.0,
+      "mean_preservation_rate": 1.0,
+      "new_deterministic_errors": 0,
+      "new_deterministic_warnings": 0,
+      "regression_issues": 8,
+      "rejected_ops": 2,
+      "rolled_back_cases": 1,
+      "strict_preservation_cases": 3,
+      "targets": 5
+    },
+    "policy_values": [
+      "target_scoped_safe"
+    ],
+    "provider_versions": [
+      "codex-cli 0.147.0"
+    ],
+    "providers": [
+      "codex_cli"
+    ],
+    "records": 3,
+    "selection_hash": true,
+    "unique_cases": 3
+  },
+  "manifest": {
+    "app_commit": "7064556",
+    "completed": 3,
+    "concurrency": 2,
+    "config": {
+      "experiment_id": null,
+      "include_formal_evidence": true,
+      "include_reference_description": true,
+      "include_semantic_projection": true,
+      "ir_format": "compact_json",
+      "llm_validation_scope": "holistic",
+      "max_repair_iters": 2,
+      "model_override": "gpt-5.6-terra",
+      "model_tier": "custom",
+      "notes": null,
+      "provider_override": "codex_cli",
+      "reasoning_effort": "low",
+      "repair_loop_policy": "target_scoped_safe",
+      "repair_mode": "atomic",
+      "seed": null,
+      "temperature": null,
+      "tiers_enabled": {
+        "t1": true,
+        "t2": true,
+        "t3": true
+      }
+    },
+    "config_hash": "ca75de02cb3a",
+    "executed_this_run": 3,
+    "experiment_id": "e7-repair",
+    "failed": 0,
+    "mock": false,
+    "planned": 3,
+    "selection_hash": "a742141eb7ad",
+    "selection_path": "experiments/specs/runs/e7b-safe-loop-diagnostic.json",
+    "usage": {
+      "cached_input_tokens": 46848,
+      "calls": 8,
+      "calls_missing_usage": 0,
+      "input_tokens": 128601,
+      "output_tokens": 4034,
+      "reasoning_tokens": 2875,
+      "total_tokens": 132635
+    }
+  },
+  "schema": "bpmn-experiment-run",
+  "schema_version": "1.0"
+}

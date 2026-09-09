@@ -1,0 +1,59 @@
+{
+  "schema": "experiment-run-manifest",
+  "schema_version": 2,
+  "manifest": {
+    "experiment": "E8",
+    "status": "complete",
+    "interpretation": "complete refinement corpus",
+    "executed_cases": 21,
+    "planned_full_cases": 21,
+    "concurrency": 4,
+    "app_commit": "7064556",
+    "worktree_dirty": true,
+    "provider": "codex_cli",
+    "provider_version": "codex-cli 0.151.0-alpha.7.2",
+    "model": "gpt-5.6-terra",
+    "reasoning_effort": "low",
+    "config": "experiments/specs/runs/e8-refinement.json",
+    "config_hash": "d69d61ad10e4",
+    "prompt_version": {
+      "name": "chat_system.txt",
+      "hash": "c8c566205962"
+    },
+    "cases": "data/eval/enhancement/cases.json",
+    "raw_results": "results.jsonl",
+    "rescored_results": "results-rescored.jsonl",
+    "analysis": "analysis.json",
+    "manual_review": "manual-review.json",
+    "sha256": {
+      "cases": "3dec727cde261118e87245c418093fa66edf2028410edc93b7800961b67b9571",
+      "config": "75a11432b959b82187e3bec57653b7e0e6f75f14a070786b50a7b7f6425e1357",
+      "raw_results": "b4a7be6c6132bf7f0d433310b5ad6c1aa325bf190ef406e04f887706b72b5b73",
+      "rescored_results": "8120b821eba449c60442629b448224052e5c89e9c69134c25cc5b8716dc41598",
+      "analysis": "2f4b260628952649fcec4e02e3dafa7450350a0283d5f77aa1fec68540a986b3",
+      "manual_review": "dd12240d03574cab47c5d2edf825b75546f66d3fa7d0668440dff410c1efbacb"
+    },
+    "manual_review_status": "complete",
+    "manual_review_type": "model_assisted_manual_adjudication_human_confirmed",
+    "human_review_confirmed": true
+  },
+  "integrity": {
+    "ok": true,
+    "checks": {
+      "records_21": true,
+      "unique_case_ids": true,
+      "complete_case_set": true,
+      "config_hash_exact": true,
+      "prompt_hash_exact": true,
+      "model_exact": true,
+      "provider_exact": true,
+      "provider_version_uniform": true,
+      "reasoning_exact": true,
+      "one_call_each": true,
+      "no_provider_errors": true,
+      "usage_complete": true,
+      "scorer_v2": true,
+      "manual_review_complete": true
+    }
+  }
+}

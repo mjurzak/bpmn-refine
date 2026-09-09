@@ -1,0 +1,39 @@
+experiment_id: reasoning-ablation-e3-terra-compact-json
+dataset_version: v1.0+ground-truth-overlay-1.2
+inputs:
+- data/eval/v1.0/seeds/02.bpmn
+- data/eval/v1.0/seeds/05.bpmn
+- data/eval/v1.0/seeds/18.bpmn
+- data/eval/v1.0/variants/single/M01/33.bpmn
+- data/eval/v1.0/variants/single/M02/09.bpmn
+- data/eval/v1.0/variants/single/M03/17.bpmn
+- data/eval/v1.0/variants/single/M04/11.bpmn
+- data/eval/v1.0/variants/single/M05/16.bpmn
+- data/eval/v1.0/variants/single/M06/05.bpmn
+- data/eval/v1.0/variants/single/M07/31.bpmn
+description_root: data/eval/v1.0/descriptions
+base:
+  model_tier: custom
+  model_override: gpt-5.6-terra
+  provider_override: codex_cli
+  ir_format: compact_json
+  tiers_enabled:
+    t1: false
+    t2: false
+    t3: true
+  include_semantic_projection: true
+  llm_validation_scope: semantic
+  reasoning_effort: low
+run_repair: false
+axes:
+  reasoning_effort:
+  - low
+  - high
+  - xhigh
+repeats: 1
+notes: >-
+  E3 resource-constrained reasoning ablation. The matching compact-JSON medium
+  arm is reused unchanged from E2 stage 1. Low and high were executed first;
+  xhigh was appended and the same output directory was resumed, so their 20
+  checkpoints are skipped and only ten xhigh trials are added. Terra has no
+  distinct none effort; omitting the override selects its medium default.

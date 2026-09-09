@@ -106,13 +106,18 @@ base:
   model_tier: custom
   model_override: gpt-5.6-terra
   provider_override: codex_cli
-  ir_format: pydantic
+  ir_format: compact_json
   tiers_enabled:
     t1: true
     t2: true
     t3: true
   llm_validation_scope: holistic
+  include_reference_description: true
+  include_semantic_projection: true
   reasoning_effort: low
 run_repair: false
 repeats: 1
-notes: Balanced 100-case single, disjoint, interacting, and clean panel with the frozen winning configuration.
+notes: >-
+  E6 complete 100-case detection benchmark. Frozen configuration from E1-E5:
+  Codex CLI, GPT-5.6 Terra, low reasoning, compact JSON, reference description,
+  semantic projection, and full Tier 1 + Tier 2 + holistic Tier 3 validation.

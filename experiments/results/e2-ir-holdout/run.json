@@ -1,0 +1,184 @@
+{
+  "integrity": {
+    "analysis_errors": 0,
+    "analysis_file": "analysis.json",
+    "app_commit": "7064556",
+    "checkpoints": 20,
+    "configurations": [
+      {
+        "model": "gpt-5.6-terra",
+        "provider": "codex_cli",
+        "provider_version": "codex-cli 0.147.0",
+        "reasoning_effective": "medium",
+        "reasoning_requested": "medium",
+        "trials": 20
+      }
+    ],
+    "dataset_version": "v1.0+ground-truth-overlay-1.2",
+    "description_hash_mismatches": 0,
+    "errors": 0,
+    "experiment_id": "ir-selection-e2-holdout-terra-medium",
+    "input_hash_mismatches": 0,
+    "missing_payloads": 0,
+    "missing_usage": 0,
+    "planned_trials": 20,
+    "prompt_hash_current": "e4de599ddc37",
+    "prompt_hashes_recorded": [
+      "e4de599ddc37"
+    ],
+    "provider_errors": 0,
+    "ranking_suppressed": true,
+    "records": 20,
+    "schema": "bpmn-experiment-integrity",
+    "schema_version": "1.0",
+    "unique_trial_ids": 20,
+    "unsupported_controls": [
+      "max_tokens"
+    ],
+    "worktree_at_verification": {
+      "dirty": true,
+      "status": [
+        " M evaluation/EXPERIMENT_PLAN.md",
+        "?? experiments/E2_PROTOCOL.md",
+        "?? experiments/specs/runs/"
+      ],
+      "tracked_application_code_dirty": false
+    }
+  },
+  "manifest": {
+    "app_commit": "7064556",
+    "completed": 20,
+    "concurrency": 4,
+    "config_count": 2,
+    "config_hashes": [
+      "35c1fedd7506",
+      "5fc8d6b164d7"
+    ],
+    "dataset_version": "v1.0+ground-truth-overlay-1.2",
+    "description_hashes": {
+      "data/eval/v1.0/descriptions/seeds/19.txt": "f1b341af5bcc",
+      "data/eval/v1.0/descriptions/seeds/20.txt": "87d5465a809e",
+      "data/eval/v1.0/descriptions/seeds/34.txt": "982e07771fb8",
+      "data/eval/v1.0/descriptions/variants/single/M01/40.txt": "ac84005008a1",
+      "data/eval/v1.0/descriptions/variants/single/M02/12.txt": "d04febf6125f",
+      "data/eval/v1.0/descriptions/variants/single/M03/36.txt": "e397532af866",
+      "data/eval/v1.0/descriptions/variants/single/M04/17.txt": "265c63b42a76",
+      "data/eval/v1.0/descriptions/variants/single/M05/26.txt": "1db3410ec1be",
+      "data/eval/v1.0/descriptions/variants/single/M06/33.txt": "6bb43b58c9a4",
+      "data/eval/v1.0/descriptions/variants/single/M07/34.txt": "982e07771fb8"
+    },
+    "executed": 20,
+    "executed_this_run": 20,
+    "experiment_id": "ir-selection-e2-holdout-terra-medium",
+    "failed": 0,
+    "failed_this_run": 0,
+    "input_hashes": {
+      "data/eval/v1.0/seeds/19.bpmn": "3fb42f94c75f",
+      "data/eval/v1.0/seeds/20.bpmn": "45b3a8755792",
+      "data/eval/v1.0/seeds/34.bpmn": "b6b308fa8111",
+      "data/eval/v1.0/variants/single/M01/40.bpmn": "428f785f1c0e",
+      "data/eval/v1.0/variants/single/M02/12.bpmn": "def3008105a0",
+      "data/eval/v1.0/variants/single/M03/36.bpmn": "e42e897228a2",
+      "data/eval/v1.0/variants/single/M04/17.bpmn": "b7f7ca92d53e",
+      "data/eval/v1.0/variants/single/M05/26.bpmn": "aa50fb73dd64",
+      "data/eval/v1.0/variants/single/M06/33.bpmn": "2c599abbf575",
+      "data/eval/v1.0/variants/single/M07/34.bpmn": "dd11e5862a09"
+    },
+    "inputs": [
+      "data/eval/v1.0/seeds/19.bpmn",
+      "data/eval/v1.0/seeds/20.bpmn",
+      "data/eval/v1.0/seeds/34.bpmn",
+      "data/eval/v1.0/variants/single/M01/40.bpmn",
+      "data/eval/v1.0/variants/single/M02/12.bpmn",
+      "data/eval/v1.0/variants/single/M03/36.bpmn",
+      "data/eval/v1.0/variants/single/M04/17.bpmn",
+      "data/eval/v1.0/variants/single/M05/26.bpmn",
+      "data/eval/v1.0/variants/single/M06/33.bpmn",
+      "data/eval/v1.0/variants/single/M07/34.bpmn"
+    ],
+    "last_invocation": {
+      "concurrency": 4,
+      "executed": 20,
+      "failed": 0,
+      "skipped_already_done": 0
+    },
+    "results_file": "results.jsonl",
+    "skipped_already_done": 0,
+    "spec": {
+      "axes": {
+        "ir_format": [
+          "compact_json",
+          "yaml"
+        ]
+      },
+      "base": {
+        "include_semantic_projection": true,
+        "ir_format": "compact_json",
+        "llm_validation_scope": "semantic",
+        "model_override": "gpt-5.6-terra",
+        "model_tier": "custom",
+        "provider_override": "codex_cli",
+        "reasoning_effort": "medium",
+        "tiers_enabled": {
+          "t1": false,
+          "t2": false,
+          "t3": true
+        }
+      },
+      "configs": [],
+      "dataset_version": "v1.0+ground-truth-overlay-1.2",
+      "description_root": "data/eval/v1.0/descriptions",
+      "exclude": [],
+      "experiment_id": "ir-selection-e2-holdout-terra-medium",
+      "inputs": [
+        "data/eval/v1.0/seeds/19.bpmn",
+        "data/eval/v1.0/seeds/20.bpmn",
+        "data/eval/v1.0/seeds/34.bpmn",
+        "data/eval/v1.0/variants/single/M01/40.bpmn",
+        "data/eval/v1.0/variants/single/M02/12.bpmn",
+        "data/eval/v1.0/variants/single/M03/36.bpmn",
+        "data/eval/v1.0/variants/single/M04/17.bpmn",
+        "data/eval/v1.0/variants/single/M05/26.bpmn",
+        "data/eval/v1.0/variants/single/M06/33.bpmn",
+        "data/eval/v1.0/variants/single/M07/34.bpmn"
+      ],
+      "notes": "E2 stage 2: compact JSON and YAML were shortlisted by the preregistered stage-1 ordering. This disjoint holdout was frozen before stage-1 results were inspected and contains the other three controls and a second single-defect case for every semantic operator.",
+      "repeats": 1,
+      "run_repair": false
+    },
+    "trial_count": 20,
+    "trial_records_dir": "trials"
+  },
+  "provenance": {
+    "interpretation": "descriptive_only_after_adaptive_shortlisting",
+    "original_records_modified": false,
+    "purpose": "Descriptive 20-case view of the two adaptively shortlisted E2 finalists",
+    "records": 40,
+    "schema": "e2-derived-results-provenance",
+    "schema_version": "1.0",
+    "sources": [
+      {
+        "filter": {
+          "ir_formats": [
+            "compact_json",
+            "yaml"
+          ]
+        },
+        "path": "experiments/results/e2-ir-screening/results-combined.jsonl",
+        "records": 20
+      },
+      {
+        "filter": {
+          "ir_formats": [
+            "compact_json",
+            "yaml"
+          ]
+        },
+        "path": "experiments/results/e2-ir-holdout/results.jsonl",
+        "records": 20
+      }
+    ]
+  },
+  "schema": "bpmn-experiment-run",
+  "schema_version": "1.0"
+}

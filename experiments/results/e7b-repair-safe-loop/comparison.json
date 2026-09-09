@@ -1,0 +1,63 @@
+{
+  "cases": [
+    {
+      "case_id": "disjoint/F01+F02/18",
+      "legacy": {
+        "final_resolved": 2,
+        "final_safe_target_success": true,
+        "iterations": 2,
+        "new_deterministic_errors": 0,
+        "preservation_rate": 1.0
+      },
+      "safe": {
+        "final_resolved": 2,
+        "final_safe_target_success": true,
+        "iterations": 2,
+        "new_deterministic_errors": 0,
+        "preservation_rate": 1.0,
+        "rolled_back": false,
+        "stop_reason": "targets_resolved"
+      }
+    },
+    {
+      "case_id": "disjoint/F04+F04/08",
+      "legacy": {
+        "final_resolved": 2,
+        "final_safe_target_success": false,
+        "iterations": 2,
+        "new_deterministic_errors": 1,
+        "preservation_rate": 0.9375
+      },
+      "safe": {
+        "final_resolved": 2,
+        "final_safe_target_success": true,
+        "iterations": 1,
+        "new_deterministic_errors": 0,
+        "preservation_rate": 1.0,
+        "rolled_back": false,
+        "stop_reason": "targets_resolved"
+      }
+    },
+    {
+      "case_id": "single/M02/01",
+      "legacy": {
+        "final_resolved": 1,
+        "final_safe_target_success": false,
+        "iterations": 2,
+        "new_deterministic_errors": 0,
+        "preservation_rate": 0.9629629629629629
+      },
+      "safe": {
+        "final_resolved": 0,
+        "final_safe_target_success": false,
+        "iterations": 1,
+        "new_deterministic_errors": 0,
+        "preservation_rate": 1.0,
+        "rolled_back": true,
+        "stop_reason": "regression_rejected"
+      }
+    }
+  ],
+  "policy": "post_hoc_diagnostic_not_confirmatory",
+  "schema_version": "e7b-comparison-v1"
+}

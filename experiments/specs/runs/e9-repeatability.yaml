@@ -1,0 +1,36 @@
+experiment_id: e9-repeatability-new-calls
+dataset_version: v1.0
+inputs:
+- data/eval/v1.0/seeds/03.bpmn
+- data/eval/v1.0/seeds/04.bpmn
+- data/eval/v1.0/seeds/11.bpmn
+- data/eval/v1.0/variants/single/M01/08.bpmn
+- data/eval/v1.0/variants/single/M02/01.bpmn
+- data/eval/v1.0/variants/single/M03/15.bpmn
+- data/eval/v1.0/variants/single/M04/15.bpmn
+- data/eval/v1.0/variants/single/M05/02.bpmn
+- data/eval/v1.0/variants/single/M06/14.bpmn
+- data/eval/v1.0/variants/single/M07/28.bpmn
+description_root: data/eval/v1.0/descriptions
+base:
+  model_tier: custom
+  model_override: gpt-5.6-terra
+  provider_override: codex_cli
+  ir_format: compact_json
+  tiers_enabled:
+    t1: true
+    t2: true
+    t3: true
+  llm_validation_scope: holistic
+  include_reference_description: true
+  include_semantic_projection: true
+  reasoning_effort: low
+run_repair: false
+repeats: 2
+notes: >-
+  E9 repeated-call stability diagnostic. The panel is the first three control
+  records and the first single-defect record for each M01-M07 in the frozen E6
+  result order. These are the two new independent calls per case; analysis
+  reuses the corresponding immutable E6 record as the first of three runs.
+  No deterministic seed or temperature is requested because neither was part
+  of the final E6 configuration and Codex CLI does not support those controls.

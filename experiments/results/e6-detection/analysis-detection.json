@@ -1,0 +1,878 @@
+{
+  "by_class": {
+    "SEM": {
+      "case_detection": {
+        "all_categories": 18,
+        "all_categories_rate": 0.43902439024390244,
+        "any_category": 24,
+        "any_category_rate": 0.5853658536585366
+      },
+      "cases": 41,
+      "injected_targets": 54,
+      "paired": {
+        "all_detected": 3,
+        "all_detected_rate": 0.23076923076923078,
+        "any_detected": 9,
+        "any_detected_rate": 0.6923076923076923,
+        "cases": 13,
+        "exact_set_conservative": 2,
+        "exact_set_conservative_rate": 0.15384615384615385
+      },
+      "predicted_findings": 108,
+      "target_anchor": {
+        "matched": 39,
+        "recall": 0.7222222222222222
+      },
+      "target_category": {
+        "matched": 27,
+        "recall": 0.5
+      },
+      "target_category_and_anchor": {
+        "matched": 22,
+        "recall": 0.4074074074074074
+      },
+      "unmatched_findings_unadjudicated": 81
+    },
+    "SOUND": {
+      "case_detection": {
+        "all_categories": 19,
+        "all_categories_rate": 0.9047619047619048,
+        "any_category": 19,
+        "any_category_rate": 0.9047619047619048
+      },
+      "cases": 21,
+      "injected_targets": 34,
+      "paired": {
+        "all_detected": 13,
+        "all_detected_rate": 1.0,
+        "any_detected": 13,
+        "any_detected_rate": 1.0,
+        "cases": 13,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": 0.0
+      },
+      "predicted_findings": 318,
+      "target_anchor": {
+        "matched": 34,
+        "recall": 1.0
+      },
+      "target_category": {
+        "matched": 32,
+        "recall": 0.9411764705882353
+      },
+      "target_category_and_anchor": {
+        "matched": 32,
+        "recall": 0.9411764705882353
+      },
+      "unmatched_findings_unadjudicated": 286
+    },
+    "STRUCT": {
+      "case_detection": {
+        "all_categories": 18,
+        "all_categories_rate": 1.0,
+        "any_category": 18,
+        "any_category_rate": 1.0
+      },
+      "cases": 18,
+      "injected_targets": 30,
+      "paired": {
+        "all_detected": 12,
+        "all_detected_rate": 1.0,
+        "any_detected": 12,
+        "any_detected_rate": 1.0,
+        "cases": 12,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": 0.0
+      },
+      "predicted_findings": 210,
+      "target_anchor": {
+        "matched": 14,
+        "recall": 0.4666666666666667
+      },
+      "target_category": {
+        "matched": 30,
+        "recall": 1.0
+      },
+      "target_category_and_anchor": {
+        "matched": 14,
+        "recall": 0.4666666666666667
+      },
+      "unmatched_findings_unadjudicated": 180
+    }
+  },
+  "by_operator": {
+    "F01": {
+      "case_detection": {
+        "all_categories": 8,
+        "all_categories_rate": 1.0,
+        "any_category": 8,
+        "any_category_rate": 1.0
+      },
+      "cases": 8,
+      "injected_targets": 8,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 100,
+      "target_anchor": {
+        "matched": 8,
+        "recall": 1.0
+      },
+      "target_category": {
+        "matched": 8,
+        "recall": 1.0
+      },
+      "target_category_and_anchor": {
+        "matched": 8,
+        "recall": 1.0
+      },
+      "unmatched_findings_unadjudicated": 92
+    },
+    "F02": {
+      "case_detection": {
+        "all_categories": 10,
+        "all_categories_rate": 1.0,
+        "any_category": 10,
+        "any_category_rate": 1.0
+      },
+      "cases": 10,
+      "injected_targets": 10,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 129,
+      "target_anchor": {
+        "matched": 10,
+        "recall": 1.0
+      },
+      "target_category": {
+        "matched": 10,
+        "recall": 1.0
+      },
+      "target_category_and_anchor": {
+        "matched": 10,
+        "recall": 1.0
+      },
+      "unmatched_findings_unadjudicated": 119
+    },
+    "F03": {
+      "case_detection": {
+        "all_categories": 1,
+        "all_categories_rate": 0.3333333333333333,
+        "any_category": 1,
+        "any_category_rate": 0.3333333333333333
+      },
+      "cases": 3,
+      "injected_targets": 3,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 12,
+      "target_anchor": {
+        "matched": 3,
+        "recall": 1.0
+      },
+      "target_category": {
+        "matched": 1,
+        "recall": 0.3333333333333333
+      },
+      "target_category_and_anchor": {
+        "matched": 1,
+        "recall": 0.3333333333333333
+      },
+      "unmatched_findings_unadjudicated": 11
+    },
+    "F04": {
+      "case_detection": {
+        "all_categories": 11,
+        "all_categories_rate": 1.0,
+        "any_category": 11,
+        "any_category_rate": 1.0
+      },
+      "cases": 11,
+      "injected_targets": 13,
+      "paired": {
+        "all_detected": 2,
+        "all_detected_rate": 1.0,
+        "any_detected": 2,
+        "any_detected_rate": 1.0,
+        "cases": 2,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": 0.0
+      },
+      "predicted_findings": 273,
+      "target_anchor": {
+        "matched": 13,
+        "recall": 1.0
+      },
+      "target_category": {
+        "matched": 13,
+        "recall": 1.0
+      },
+      "target_category_and_anchor": {
+        "matched": 13,
+        "recall": 1.0
+      },
+      "unmatched_findings_unadjudicated": 260
+    },
+    "M01": {
+      "case_detection": {
+        "all_categories": 7,
+        "all_categories_rate": 1.0,
+        "any_category": 7,
+        "any_category_rate": 1.0
+      },
+      "cases": 7,
+      "injected_targets": 7,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 18,
+      "target_anchor": {
+        "matched": 6,
+        "recall": 0.8571428571428571
+      },
+      "target_category": {
+        "matched": 7,
+        "recall": 1.0
+      },
+      "target_category_and_anchor": {
+        "matched": 6,
+        "recall": 0.8571428571428571
+      },
+      "unmatched_findings_unadjudicated": 11
+    },
+    "M02": {
+      "case_detection": {
+        "all_categories": 5,
+        "all_categories_rate": 0.625,
+        "any_category": 5,
+        "any_category_rate": 0.625
+      },
+      "cases": 8,
+      "injected_targets": 8,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 20,
+      "target_anchor": {
+        "matched": 4,
+        "recall": 0.5
+      },
+      "target_category": {
+        "matched": 5,
+        "recall": 0.625
+      },
+      "target_category_and_anchor": {
+        "matched": 4,
+        "recall": 0.5
+      },
+      "unmatched_findings_unadjudicated": 15
+    },
+    "M03": {
+      "case_detection": {
+        "all_categories": 0,
+        "all_categories_rate": 0.0,
+        "any_category": 0,
+        "any_category_rate": 0.0
+      },
+      "cases": 8,
+      "injected_targets": 8,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 26,
+      "target_anchor": {
+        "matched": 7,
+        "recall": 0.875
+      },
+      "target_category": {
+        "matched": 0,
+        "recall": 0.0
+      },
+      "target_category_and_anchor": {
+        "matched": 0,
+        "recall": 0.0
+      },
+      "unmatched_findings_unadjudicated": 26
+    },
+    "M04": {
+      "case_detection": {
+        "all_categories": 5,
+        "all_categories_rate": 0.625,
+        "any_category": 5,
+        "any_category_rate": 0.625
+      },
+      "cases": 8,
+      "injected_targets": 8,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 21,
+      "target_anchor": {
+        "matched": 6,
+        "recall": 0.75
+      },
+      "target_category": {
+        "matched": 5,
+        "recall": 0.625
+      },
+      "target_category_and_anchor": {
+        "matched": 2,
+        "recall": 0.25
+      },
+      "unmatched_findings_unadjudicated": 16
+    },
+    "M05": {
+      "case_detection": {
+        "all_categories": 1,
+        "all_categories_rate": 0.125,
+        "any_category": 1,
+        "any_category_rate": 0.125
+      },
+      "cases": 8,
+      "injected_targets": 8,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 20,
+      "target_anchor": {
+        "matched": 7,
+        "recall": 0.875
+      },
+      "target_category": {
+        "matched": 1,
+        "recall": 0.125
+      },
+      "target_category_and_anchor": {
+        "matched": 1,
+        "recall": 0.125
+      },
+      "unmatched_findings_unadjudicated": 19
+    },
+    "M06": {
+      "case_detection": {
+        "all_categories": 2,
+        "all_categories_rate": 0.25,
+        "any_category": 2,
+        "any_category_rate": 0.25
+      },
+      "cases": 8,
+      "injected_targets": 8,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 18,
+      "target_anchor": {
+        "matched": 3,
+        "recall": 0.375
+      },
+      "target_category": {
+        "matched": 2,
+        "recall": 0.25
+      },
+      "target_category_and_anchor": {
+        "matched": 2,
+        "recall": 0.25
+      },
+      "unmatched_findings_unadjudicated": 16
+    },
+    "M07": {
+      "case_detection": {
+        "all_categories": 7,
+        "all_categories_rate": 1.0,
+        "any_category": 7,
+        "any_category_rate": 1.0
+      },
+      "cases": 7,
+      "injected_targets": 7,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 22,
+      "target_anchor": {
+        "matched": 7,
+        "recall": 1.0
+      },
+      "target_category": {
+        "matched": 7,
+        "recall": 1.0
+      },
+      "target_category_and_anchor": {
+        "matched": 7,
+        "recall": 1.0
+      },
+      "unmatched_findings_unadjudicated": 15
+    },
+    "S01": {
+      "case_detection": {
+        "all_categories": 9,
+        "all_categories_rate": 1.0,
+        "any_category": 9,
+        "any_category_rate": 1.0
+      },
+      "cases": 9,
+      "injected_targets": 9,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 64,
+      "target_anchor": {
+        "matched": 1,
+        "recall": 0.1111111111111111
+      },
+      "target_category": {
+        "matched": 9,
+        "recall": 1.0
+      },
+      "target_category_and_anchor": {
+        "matched": 1,
+        "recall": 0.1111111111111111
+      },
+      "unmatched_findings_unadjudicated": 55
+    },
+    "S02": {
+      "case_detection": {
+        "all_categories": 8,
+        "all_categories_rate": 1.0,
+        "any_category": 8,
+        "any_category_rate": 1.0
+      },
+      "cases": 8,
+      "injected_targets": 8,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 62,
+      "target_anchor": {
+        "matched": 0,
+        "recall": 0.0
+      },
+      "target_category": {
+        "matched": 8,
+        "recall": 1.0
+      },
+      "target_category_and_anchor": {
+        "matched": 0,
+        "recall": 0.0
+      },
+      "unmatched_findings_unadjudicated": 54
+    },
+    "S03": {
+      "case_detection": {
+        "all_categories": 12,
+        "all_categories_rate": 1.0,
+        "any_category": 12,
+        "any_category_rate": 1.0
+      },
+      "cases": 12,
+      "injected_targets": 13,
+      "paired": {
+        "all_detected": 1,
+        "all_detected_rate": 1.0,
+        "any_detected": 1,
+        "any_detected_rate": 1.0,
+        "cases": 1,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": 0.0
+      },
+      "predicted_findings": 177,
+      "target_anchor": {
+        "matched": 13,
+        "recall": 1.0
+      },
+      "target_category": {
+        "matched": 13,
+        "recall": 1.0
+      },
+      "target_category_and_anchor": {
+        "matched": 13,
+        "recall": 1.0
+      },
+      "unmatched_findings_unadjudicated": 164
+    }
+  },
+  "by_shape": {
+    "disjoint": {
+      "case_detection": {
+        "all_categories": 14,
+        "all_categories_rate": 0.5833333333333334,
+        "any_category": 20,
+        "any_category_rate": 0.8333333333333334
+      },
+      "cases": 24,
+      "injected_targets": 48,
+      "paired": {
+        "all_detected": 14,
+        "all_detected_rate": 0.5833333333333334,
+        "any_detected": 20,
+        "any_detected_rate": 0.8333333333333334,
+        "cases": 24,
+        "exact_set_conservative": 2,
+        "exact_set_conservative_rate": 0.08333333333333333
+      },
+      "predicted_findings": 209,
+      "target_anchor": {
+        "matched": 33,
+        "recall": 0.6875
+      },
+      "target_category": {
+        "matched": 34,
+        "recall": 0.7083333333333334
+      },
+      "target_category_and_anchor": {
+        "matched": 26,
+        "recall": 0.5416666666666666
+      },
+      "unmatched_findings_unadjudicated": 175
+    },
+    "interacting": {
+      "case_detection": {
+        "all_categories": 14,
+        "all_categories_rate": 1.0,
+        "any_category": 14,
+        "any_category_rate": 1.0
+      },
+      "cases": 14,
+      "injected_targets": 28,
+      "paired": {
+        "all_detected": 14,
+        "all_detected_rate": 1.0,
+        "any_detected": 14,
+        "any_detected_rate": 1.0,
+        "cases": 14,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": 0.0
+      },
+      "predicted_findings": 222,
+      "target_anchor": {
+        "matched": 21,
+        "recall": 0.75
+      },
+      "target_category": {
+        "matched": 28,
+        "recall": 1.0
+      },
+      "target_category_and_anchor": {
+        "matched": 21,
+        "recall": 0.75
+      },
+      "unmatched_findings_unadjudicated": 194
+    },
+    "single": {
+      "case_detection": {
+        "all_categories": 27,
+        "all_categories_rate": 0.6428571428571429,
+        "any_category": 27,
+        "any_category_rate": 0.6428571428571429
+      },
+      "cases": 42,
+      "injected_targets": 42,
+      "paired": {
+        "all_detected": 0,
+        "all_detected_rate": null,
+        "any_detected": 0,
+        "any_detected_rate": null,
+        "cases": 0,
+        "exact_set_conservative": 0,
+        "exact_set_conservative_rate": null
+      },
+      "predicted_findings": 205,
+      "target_anchor": {
+        "matched": 33,
+        "recall": 0.7857142857142857
+      },
+      "target_category": {
+        "matched": 27,
+        "recall": 0.6428571428571429
+      },
+      "target_category_and_anchor": {
+        "matched": 21,
+        "recall": 0.5
+      },
+      "unmatched_findings_unadjudicated": 178
+    }
+  },
+  "controls": {
+    "cases": 20,
+    "in_scope_structural_formal": {
+      "alerted_cases": 0,
+      "false_positive_rate": 0.0,
+      "findings": 0
+    },
+    "other_descriptive": {
+      "findings": 0
+    },
+    "outcomes": [
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/03.bpmn",
+        "other_alert": false,
+        "semantic_alert": false
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/04.bpmn",
+        "other_alert": false,
+        "semantic_alert": true
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/11.bpmn",
+        "other_alert": false,
+        "semantic_alert": true
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/12.bpmn",
+        "other_alert": false,
+        "semantic_alert": true
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/13.bpmn",
+        "other_alert": false,
+        "semantic_alert": false
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/14.bpmn",
+        "other_alert": false,
+        "semantic_alert": false
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/16.bpmn",
+        "other_alert": false,
+        "semantic_alert": false
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/18.bpmn",
+        "other_alert": false,
+        "semantic_alert": false
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/19.bpmn",
+        "other_alert": false,
+        "semantic_alert": false
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/33.bpmn",
+        "other_alert": false,
+        "semantic_alert": true
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/34.bpmn",
+        "other_alert": false,
+        "semantic_alert": true
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/40.bpmn",
+        "other_alert": false,
+        "semantic_alert": true
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/41.bpmn",
+        "other_alert": false,
+        "semantic_alert": true
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/45.bpmn",
+        "other_alert": false,
+        "semantic_alert": true
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/48.bpmn",
+        "other_alert": false,
+        "semantic_alert": true
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/50.bpmn",
+        "other_alert": false,
+        "semantic_alert": false
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/52.bpmn",
+        "other_alert": false,
+        "semantic_alert": false
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/53.bpmn",
+        "other_alert": false,
+        "semantic_alert": false
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/54.bpmn",
+        "other_alert": false,
+        "semantic_alert": true
+      },
+      {
+        "in_scope_alert": false,
+        "input_path": "data/eval/v1.0/seeds/55.bpmn",
+        "other_alert": false,
+        "semantic_alert": false
+      }
+    ],
+    "semantic_descriptive": {
+      "alert_rate": 0.5,
+      "alerted_cases": 10,
+      "findings": 13
+    }
+  },
+  "errors": 0,
+  "latency_ms": {
+    "mean": 26161.35,
+    "total": 2616135.0
+  },
+  "overall": {
+    "case_detection": {
+      "all_categories": 55,
+      "all_categories_rate": 0.6875,
+      "any_category": 61,
+      "any_category_rate": 0.7625
+    },
+    "cases": 80,
+    "injected_targets": 118,
+    "paired": {
+      "all_detected": 28,
+      "all_detected_rate": 0.7368421052631579,
+      "any_detected": 34,
+      "any_detected_rate": 0.8947368421052632,
+      "cases": 38,
+      "exact_set_conservative": 2,
+      "exact_set_conservative_rate": 0.05263157894736842
+    },
+    "predicted_findings": 636,
+    "target_anchor": {
+      "matched": 87,
+      "recall": 0.7372881355932204
+    },
+    "target_category": {
+      "matched": 89,
+      "recall": 0.7542372881355932
+    },
+    "target_category_and_anchor": {
+      "matched": 68,
+      "recall": 0.576271186440678
+    },
+    "unmatched_findings_unadjudicated": 547
+  },
+  "policy": {
+    "control_semantic_alerts": "descriptive_only",
+    "exact_set": "conservative_descriptive_only",
+    "targets": "positive_partial_labels_with_one_to_one_matching",
+    "unmatched_findings": "unadjudicated_not_automatic_false_positives"
+  },
+  "positive_cases": 80,
+  "records": 100,
+  "response_contract": {
+    "classification_basis_supported": false,
+    "note": "reference evidence and classification basis belong to the semantic schema, not the active holistic schema",
+    "parse_error_records": 0,
+    "records": 100,
+    "reference_evidence_supported": false,
+    "schema": "holistic",
+    "success_rate": 1.0,
+    "successful_records": 100
+  },
+  "results_path": "experiments/results/e6-detection/results.jsonl",
+  "schema_version": "e6-analysis-v1",
+  "source_findings": {
+    "llm": 278,
+    "rules": 332,
+    "woflan": 39
+  },
+  "usage": {
+    "cached_input_tokens": 887040,
+    "calls": 100,
+    "calls_missing_usage": 0,
+    "input_tokens": 1316466,
+    "output_tokens": 78504,
+    "reasoning_tokens": 54113,
+    "total_tokens": 1394970
+  }
+}

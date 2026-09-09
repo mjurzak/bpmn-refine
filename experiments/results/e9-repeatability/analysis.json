@@ -1,0 +1,1184 @@
+{
+  "category_stability_summary": {
+    "all_semantic_findings": {
+      "all_three_equal": 1,
+      "cases": 7,
+      "mean_case_pairwise_multiset_jaccard": 0.6531746031746032
+    },
+    "findings_overlapping_target_anchor": {
+      "all_three_equal": 1,
+      "cases": 7,
+      "mean_case_pairwise_multiset_jaccard": 0.630952380952381
+    }
+  },
+  "controls": {
+    "alerted_observations": 7,
+    "cases": [
+      {
+        "alerted_runs": 1,
+        "input_path": "data/eval/v1.0/seeds/03.bpmn",
+        "other_alerts": 0,
+        "runs": [
+          {
+            "other_alerts": 0,
+            "run_ordinal": 1,
+            "semantic_alerts": 0,
+            "structural_formal_alerts": 0,
+            "total_alerts": 0
+          },
+          {
+            "other_alerts": 0,
+            "run_ordinal": 2,
+            "semantic_alerts": 0,
+            "structural_formal_alerts": 0,
+            "total_alerts": 0
+          },
+          {
+            "other_alerts": 0,
+            "run_ordinal": 3,
+            "semantic_alerts": 3,
+            "structural_formal_alerts": 0,
+            "total_alerts": 3
+          }
+        ],
+        "semantic_alerts": 3,
+        "structural_formal_alerts": 0,
+        "total_alerts": 3
+      },
+      {
+        "alerted_runs": 3,
+        "input_path": "data/eval/v1.0/seeds/04.bpmn",
+        "other_alerts": 0,
+        "runs": [
+          {
+            "other_alerts": 0,
+            "run_ordinal": 1,
+            "semantic_alerts": 1,
+            "structural_formal_alerts": 0,
+            "total_alerts": 1
+          },
+          {
+            "other_alerts": 0,
+            "run_ordinal": 2,
+            "semantic_alerts": 1,
+            "structural_formal_alerts": 0,
+            "total_alerts": 1
+          },
+          {
+            "other_alerts": 0,
+            "run_ordinal": 3,
+            "semantic_alerts": 1,
+            "structural_formal_alerts": 0,
+            "total_alerts": 1
+          }
+        ],
+        "semantic_alerts": 3,
+        "structural_formal_alerts": 0,
+        "total_alerts": 3
+      },
+      {
+        "alerted_runs": 3,
+        "input_path": "data/eval/v1.0/seeds/11.bpmn",
+        "other_alerts": 0,
+        "runs": [
+          {
+            "other_alerts": 0,
+            "run_ordinal": 1,
+            "semantic_alerts": 3,
+            "structural_formal_alerts": 0,
+            "total_alerts": 3
+          },
+          {
+            "other_alerts": 0,
+            "run_ordinal": 2,
+            "semantic_alerts": 1,
+            "structural_formal_alerts": 0,
+            "total_alerts": 1
+          },
+          {
+            "other_alerts": 0,
+            "run_ordinal": 3,
+            "semantic_alerts": 4,
+            "structural_formal_alerts": 0,
+            "total_alerts": 4
+          }
+        ],
+        "semantic_alerts": 8,
+        "structural_formal_alerts": 0,
+        "total_alerts": 8
+      }
+    ],
+    "observations": 9,
+    "other_alerts": 0,
+    "semantic_alerts": 14,
+    "structural_formal_alerts": 0,
+    "total_alerts": 14
+  },
+  "design": {
+    "cases": 10,
+    "controls": 3,
+    "new_independent_calls": 20,
+    "reused_e6_records": 10,
+    "runs_per_case": 3,
+    "seed_policy": "no seed requested; the final E6 configuration had no seed and Codex CLI does not support one",
+    "selection_rule": "first three E6 controls, then first E6 single for each M01-M07 in record order",
+    "semantic_cases": 7
+  },
+  "detection_frequency_buckets": {
+    "anchor": {
+      "0/3": 0,
+      "1/3": 1,
+      "2/3": 0,
+      "3/3": 6
+    },
+    "category": {
+      "0/3": 2,
+      "1/3": 1,
+      "2/3": 0,
+      "3/3": 4
+    },
+    "category_and_anchor": {
+      "0/3": 2,
+      "1/3": 1,
+      "2/3": 1,
+      "3/3": 3
+    }
+  },
+  "indicated_element_stability_summary": {
+    "all_semantic_findings": {
+      "all_three_equal": 1,
+      "cases": 7,
+      "mean_case_pairwise_jaccard": 0.6996701710987425
+    },
+    "findings_overlapping_target_anchor": {
+      "all_three_equal": 2,
+      "cases": 7,
+      "mean_case_pairwise_jaccard": 0.7639455782312926
+    }
+  },
+  "integrity": {
+    "converter_versions": [
+      "compact_json@v1"
+    ],
+    "e6_raw_outputs_retained": 10,
+    "errors": 0,
+    "models": [
+      "gpt-5.6-terra"
+    ],
+    "new_provider_calls": 20,
+    "new_raw_outputs_retained": 20,
+    "new_records": 20,
+    "prompt_hashes": [
+      "f00c060029b0"
+    ],
+    "records": 30,
+    "unsupported_controls_declared": {
+      "max_tokens": "requested by the validation client but not enforceable by Codex CLI",
+      "seed": "not supported by Codex CLI and not requested in E6 or E9",
+      "temperature": "not supported by Codex CLI and not requested in E6 or E9"
+    },
+    "unsupported_controls_observed": [
+      "max_tokens"
+    ]
+  },
+  "provenance": {
+    "application_commits": [
+      "7064556"
+    ],
+    "config_hash": "90d893e3d439",
+    "e6_provider_versions": [
+      "codex-cli 0.147.0"
+    ],
+    "e6_results_path": "experiments/results/e6-detection/results.jsonl",
+    "e6_results_sha256": "c18b67a8ee146f3d9737ac89f39528dc5bb05b09256f548230b09eb5c3342092",
+    "new_provider_versions": [
+      "codex-cli 0.151.0-alpha.7.2"
+    ],
+    "new_results_path": "experiments/results/e9-repeatability/results.jsonl",
+    "new_results_sha256": "2251693511fa3295f9dce286d2ec874547e142169ded7d4b386d0983a51aae80",
+    "new_trial_ids": [
+      "555a41a76a1b",
+      "847d982e1824",
+      "ddd0e4692972",
+      "1a5a00405fb4",
+      "4309330b660c",
+      "41eeae8da0f3",
+      "e644d9fe0d6a",
+      "7455f30643b9",
+      "06923220fdf4",
+      "b27112c755f0",
+      "f961313ea6e1",
+      "51503c0ae9a6",
+      "10922f2ca171",
+      "3eb3f2e3b311",
+      "44bf9dc6419e",
+      "bb66ce0041f8",
+      "df4f6a926e94",
+      "75d12c25c8cf",
+      "e2f7f74c0635",
+      "085aecf46b84"
+    ],
+    "provider_version_drift": true,
+    "reused_e6_trial_ids": [
+      "9297b00a0534",
+      "b69a84c6f5d6",
+      "791b4d08fb37",
+      "708f6910d379",
+      "6ef1295a5e84",
+      "7f7b8905a9bc",
+      "8a5e83097f89",
+      "7c08cd8bd678",
+      "4fc9c796f83f",
+      "5d0d5e6cd232"
+    ]
+  },
+  "schema_version": "e9-repeatability-analysis-v1",
+  "semantic_cases": [
+    {
+      "category_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": false,
+          "distinct_multisets": 2,
+          "mean_pairwise_multiset_jaccard": 0.6666666666666666,
+          "runs": [
+            [
+              "contradictory_flow",
+              "missing_step"
+            ],
+            [
+              "missing_step"
+            ],
+            [
+              "missing_step"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": true,
+          "distinct_multisets": 1,
+          "mean_pairwise_multiset_jaccard": 1.0,
+          "runs": [
+            [
+              "missing_step"
+            ],
+            [
+              "missing_step"
+            ],
+            [
+              "missing_step"
+            ]
+          ]
+        }
+      },
+      "detection_frequency": {
+        "anchor": 3,
+        "category": 3,
+        "category_and_anchor": 3,
+        "denominator": 3
+      },
+      "expected_category": [
+        "missing_step"
+      ],
+      "expected_elements": [
+        "SequenceFlow_21",
+        "Task_5",
+        "Task_6"
+      ],
+      "indicated_element_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": false,
+          "distinct_sets": 2,
+          "mean_pairwise_jaccard": 0.6,
+          "runs": [
+            [
+              "ParallelGateway_2",
+              "Task_5",
+              "Task_6",
+              "Task_8",
+              "Task_9"
+            ],
+            [
+              "Task_5",
+              "Task_6"
+            ],
+            [
+              "Task_5",
+              "Task_6"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": true,
+          "distinct_sets": 1,
+          "mean_pairwise_jaccard": 1.0,
+          "runs": [
+            [
+              "Task_5",
+              "Task_6"
+            ],
+            [
+              "Task_5",
+              "Task_6"
+            ],
+            [
+              "Task_5",
+              "Task_6"
+            ]
+          ]
+        }
+      },
+      "input_path": "data/eval/v1.0/variants/single/M01/08.bpmn",
+      "operator": "M01",
+      "per_run_detection": [
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": true,
+          "run_ordinal": 1
+        },
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": true,
+          "run_ordinal": 2
+        },
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": true,
+          "run_ordinal": 3
+        }
+      ]
+    },
+    {
+      "category_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": false,
+          "distinct_multisets": 3,
+          "mean_pairwise_multiset_jaccard": 0.6388888888888888,
+          "runs": [
+            [
+              "contradictory_flow",
+              "improper_termination",
+              "improper_termination",
+              "missing_step"
+            ],
+            [
+              "contradictory_flow",
+              "improper_termination"
+            ],
+            [
+              "contradictory_flow",
+              "improper_termination",
+              "improper_termination"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": false,
+          "distinct_multisets": 3,
+          "mean_pairwise_multiset_jaccard": 0.6388888888888888,
+          "runs": [
+            [
+              "contradictory_flow",
+              "improper_termination",
+              "improper_termination",
+              "missing_step"
+            ],
+            [
+              "contradictory_flow",
+              "improper_termination"
+            ],
+            [
+              "contradictory_flow",
+              "improper_termination",
+              "improper_termination"
+            ]
+          ]
+        }
+      },
+      "detection_frequency": {
+        "anchor": 3,
+        "category": 3,
+        "category_and_anchor": 3,
+        "denominator": 3
+      },
+      "expected_category": [
+        "contradictory_flow"
+      ],
+      "expected_elements": [
+        "ExclusiveGateway_2",
+        "ExclusiveGateway_4",
+        "SequenceFlow_14",
+        "SequenceFlow_15",
+        "SequenceFlow_18",
+        "Task_3",
+        "Task_4"
+      ],
+      "indicated_element_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": false,
+          "distinct_sets": 2,
+          "mean_pairwise_jaccard": 0.8095238095238096,
+          "runs": [
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "ExclusiveGateway_3",
+              "ExclusiveGateway_4",
+              "Task_3",
+              "Task_4"
+            ],
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_2",
+              "ExclusiveGateway_4",
+              "Task_3",
+              "Task_4"
+            ],
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "ExclusiveGateway_3",
+              "ExclusiveGateway_4",
+              "Task_3",
+              "Task_4"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": false,
+          "distinct_sets": 2,
+          "mean_pairwise_jaccard": 0.8095238095238096,
+          "runs": [
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "ExclusiveGateway_3",
+              "ExclusiveGateway_4",
+              "Task_3",
+              "Task_4"
+            ],
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_2",
+              "ExclusiveGateway_4",
+              "Task_3",
+              "Task_4"
+            ],
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "ExclusiveGateway_3",
+              "ExclusiveGateway_4",
+              "Task_3",
+              "Task_4"
+            ]
+          ]
+        }
+      },
+      "input_path": "data/eval/v1.0/variants/single/M02/01.bpmn",
+      "operator": "M02",
+      "per_run_detection": [
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": true,
+          "run_ordinal": 1
+        },
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": true,
+          "run_ordinal": 2
+        },
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": true,
+          "run_ordinal": 3
+        }
+      ]
+    },
+    {
+      "category_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": false,
+          "distinct_multisets": 2,
+          "mean_pairwise_multiset_jaccard": 0.8333333333333334,
+          "runs": [
+            [
+              "contradictory_flow",
+              "improper_termination",
+              "missing_step",
+              "unwanted_action"
+            ],
+            [
+              "contradictory_flow",
+              "improper_termination",
+              "unwanted_action"
+            ],
+            [
+              "contradictory_flow",
+              "improper_termination",
+              "unwanted_action"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": false,
+          "distinct_multisets": 2,
+          "mean_pairwise_multiset_jaccard": 0.8333333333333334,
+          "runs": [
+            [
+              "contradictory_flow",
+              "improper_termination",
+              "missing_step",
+              "unwanted_action"
+            ],
+            [
+              "contradictory_flow",
+              "improper_termination",
+              "unwanted_action"
+            ],
+            [
+              "contradictory_flow",
+              "improper_termination",
+              "unwanted_action"
+            ]
+          ]
+        }
+      },
+      "detection_frequency": {
+        "anchor": 3,
+        "category": 0,
+        "category_and_anchor": 0,
+        "denominator": 3
+      },
+      "expected_category": [
+        "unreachable_branch"
+      ],
+      "expected_elements": [
+        "ExclusiveGateway_1",
+        "SequenceFlow_6",
+        "Task_5"
+      ],
+      "indicated_element_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": false,
+          "distinct_sets": 2,
+          "mean_pairwise_jaccard": 0.9047619047619048,
+          "runs": [
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "SequenceFlow_16",
+              "SequenceFlow_6",
+              "Task_5"
+            ],
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "SequenceFlow_16",
+              "SequenceFlow_6",
+              "Task_3",
+              "Task_5"
+            ],
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "SequenceFlow_16",
+              "SequenceFlow_6",
+              "Task_3",
+              "Task_5"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": false,
+          "distinct_sets": 2,
+          "mean_pairwise_jaccard": 0.9047619047619048,
+          "runs": [
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "SequenceFlow_16",
+              "SequenceFlow_6",
+              "Task_5"
+            ],
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "SequenceFlow_16",
+              "SequenceFlow_6",
+              "Task_3",
+              "Task_5"
+            ],
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "SequenceFlow_16",
+              "SequenceFlow_6",
+              "Task_3",
+              "Task_5"
+            ]
+          ]
+        }
+      },
+      "input_path": "data/eval/v1.0/variants/single/M03/15.bpmn",
+      "operator": "M03",
+      "per_run_detection": [
+        {
+          "anchor": true,
+          "category": false,
+          "category_and_anchor": false,
+          "run_ordinal": 1
+        },
+        {
+          "anchor": true,
+          "category": false,
+          "category_and_anchor": false,
+          "run_ordinal": 2
+        },
+        {
+          "anchor": true,
+          "category": false,
+          "category_and_anchor": false,
+          "run_ordinal": 3
+        }
+      ]
+    },
+    {
+      "category_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": true,
+          "distinct_multisets": 1,
+          "mean_pairwise_multiset_jaccard": 1.0,
+          "runs": [
+            [
+              "improper_termination",
+              "missing_exception_handling",
+              "missing_step"
+            ],
+            [
+              "improper_termination",
+              "missing_exception_handling",
+              "missing_step"
+            ],
+            [
+              "improper_termination",
+              "missing_exception_handling",
+              "missing_step"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": false,
+          "distinct_multisets": 3,
+          "mean_pairwise_multiset_jaccard": 0.5,
+          "runs": [
+            [
+              "improper_termination",
+              "missing_exception_handling",
+              "missing_step"
+            ],
+            [
+              "missing_exception_handling",
+              "missing_step"
+            ],
+            [
+              "missing_step"
+            ]
+          ]
+        }
+      },
+      "detection_frequency": {
+        "anchor": 3,
+        "category": 3,
+        "category_and_anchor": 2,
+        "denominator": 3
+      },
+      "expected_category": [
+        "missing_exception_handling"
+      ],
+      "expected_elements": [
+        "SequenceFlow_19",
+        "Task_10",
+        "Task_7"
+      ],
+      "indicated_element_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": true,
+          "distinct_sets": 1,
+          "mean_pairwise_jaccard": 1.0,
+          "runs": [
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "Task_10",
+              "Task_7"
+            ],
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "Task_10",
+              "Task_7"
+            ],
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "Task_10",
+              "Task_7"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": false,
+          "distinct_sets": 2,
+          "mean_pairwise_jaccard": 0.6,
+          "runs": [
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2",
+              "Task_10",
+              "Task_7"
+            ],
+            [
+              "Task_10",
+              "Task_7"
+            ],
+            [
+              "Task_10",
+              "Task_7"
+            ]
+          ]
+        }
+      },
+      "input_path": "data/eval/v1.0/variants/single/M04/15.bpmn",
+      "operator": "M04",
+      "per_run_detection": [
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": true,
+          "run_ordinal": 1
+        },
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": true,
+          "run_ordinal": 2
+        },
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": false,
+          "run_ordinal": 3
+        }
+      ]
+    },
+    {
+      "category_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": false,
+          "distinct_multisets": 3,
+          "mean_pairwise_multiset_jaccard": 0.5,
+          "runs": [
+            [
+              "contradictory_flow",
+              "inconsistent_naming",
+              "missing_exception_handling",
+              "missing_step",
+              "missing_step"
+            ],
+            [
+              "contradictory_flow",
+              "improper_termination",
+              "missing_step",
+              "missing_step"
+            ],
+            [
+              "missing_exception_handling",
+              "missing_step",
+              "missing_step"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": false,
+          "distinct_multisets": 3,
+          "mean_pairwise_multiset_jaccard": 0.4444444444444444,
+          "runs": [
+            [
+              "inconsistent_naming",
+              "missing_step"
+            ],
+            [
+              "contradictory_flow",
+              "missing_step"
+            ],
+            [
+              "missing_step"
+            ]
+          ]
+        }
+      },
+      "detection_frequency": {
+        "anchor": 3,
+        "category": 1,
+        "category_and_anchor": 1,
+        "denominator": 3
+      },
+      "expected_category": [
+        "inconsistent_naming"
+      ],
+      "expected_elements": [
+        "Task_16",
+        "Task_3"
+      ],
+      "indicated_element_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": false,
+          "distinct_sets": 3,
+          "mean_pairwise_jaccard": 0.6707070707070707,
+          "runs": [
+            [
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_3",
+              "ExclusiveGateway_4",
+              "ExclusiveGateway_5",
+              "ExclusiveGateway_6",
+              "Task_15",
+              "Task_16",
+              "Task_3",
+              "Task_4",
+              "Task_8"
+            ],
+            [
+              "EndEvent_1",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_6",
+              "Task_16",
+              "Task_3",
+              "Task_4",
+              "Task_8"
+            ],
+            [
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_3",
+              "ExclusiveGateway_6",
+              "Task_15",
+              "Task_16",
+              "Task_3",
+              "Task_4",
+              "Task_8"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": true,
+          "distinct_sets": 1,
+          "mean_pairwise_jaccard": 1.0,
+          "runs": [
+            [
+              "ExclusiveGateway_1",
+              "Task_16",
+              "Task_3"
+            ],
+            [
+              "ExclusiveGateway_1",
+              "Task_16",
+              "Task_3"
+            ],
+            [
+              "ExclusiveGateway_1",
+              "Task_16",
+              "Task_3"
+            ]
+          ]
+        }
+      },
+      "input_path": "data/eval/v1.0/variants/single/M05/02.bpmn",
+      "operator": "M05",
+      "per_run_detection": [
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": true,
+          "run_ordinal": 1
+        },
+        {
+          "anchor": true,
+          "category": false,
+          "category_and_anchor": false,
+          "run_ordinal": 2
+        },
+        {
+          "anchor": true,
+          "category": false,
+          "category_and_anchor": false,
+          "run_ordinal": 3
+        }
+      ]
+    },
+    {
+      "category_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": false,
+          "distinct_multisets": 2,
+          "mean_pairwise_multiset_jaccard": 0.3333333333333333,
+          "runs": [
+            [],
+            [],
+            [
+              "missing_step"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": false,
+          "distinct_multisets": 2,
+          "mean_pairwise_multiset_jaccard": 0.3333333333333333,
+          "runs": [
+            [],
+            [],
+            [
+              "missing_step"
+            ]
+          ]
+        }
+      },
+      "detection_frequency": {
+        "anchor": 1,
+        "category": 0,
+        "category_and_anchor": 0,
+        "denominator": 3
+      },
+      "expected_category": [
+        "improper_termination"
+      ],
+      "expected_elements": [
+        "EndEvent_1",
+        "SequenceFlow_15",
+        "Task_4"
+      ],
+      "indicated_element_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": false,
+          "distinct_sets": 2,
+          "mean_pairwise_jaccard": 0.3333333333333333,
+          "runs": [
+            [],
+            [],
+            [
+              "EndEvent_1",
+              "Task_4"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": false,
+          "distinct_sets": 2,
+          "mean_pairwise_jaccard": 0.3333333333333333,
+          "runs": [
+            [],
+            [],
+            [
+              "EndEvent_1",
+              "Task_4"
+            ]
+          ]
+        }
+      },
+      "input_path": "data/eval/v1.0/variants/single/M06/14.bpmn",
+      "operator": "M06",
+      "per_run_detection": [
+        {
+          "anchor": false,
+          "category": false,
+          "category_and_anchor": false,
+          "run_ordinal": 1
+        },
+        {
+          "anchor": false,
+          "category": false,
+          "category_and_anchor": false,
+          "run_ordinal": 2
+        },
+        {
+          "anchor": true,
+          "category": false,
+          "category_and_anchor": false,
+          "run_ordinal": 3
+        }
+      ]
+    },
+    {
+      "category_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": false,
+          "distinct_multisets": 2,
+          "mean_pairwise_multiset_jaccard": 0.6,
+          "runs": [
+            [
+              "missing_exception_handling",
+              "unwanted_action"
+            ],
+            [
+              "contradictory_flow",
+              "missing_exception_handling",
+              "missing_step",
+              "missing_step",
+              "unwanted_action"
+            ],
+            [
+              "contradictory_flow",
+              "missing_exception_handling",
+              "missing_step",
+              "missing_step",
+              "unwanted_action"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": false,
+          "distinct_multisets": 2,
+          "mean_pairwise_multiset_jaccard": 0.6666666666666666,
+          "runs": [
+            [
+              "unwanted_action"
+            ],
+            [
+              "contradictory_flow",
+              "unwanted_action"
+            ],
+            [
+              "contradictory_flow",
+              "unwanted_action"
+            ]
+          ]
+        }
+      },
+      "detection_frequency": {
+        "anchor": 3,
+        "category": 3,
+        "category_and_anchor": 3,
+        "denominator": 3
+      },
+      "expected_category": [
+        "unwanted_action"
+      ],
+      "expected_elements": [
+        "ParallelGateway_1",
+        "SequenceFlow_36",
+        "SequenceFlow_37",
+        "ServiceTask_2",
+        "Task_1",
+        "UserTask_6"
+      ],
+      "indicated_element_stability": {
+        "all_semantic_findings": {
+          "all_three_equal": false,
+          "distinct_sets": 3,
+          "mean_pairwise_jaccard": 0.5793650793650794,
+          "runs": [
+            [
+              "ServiceTask_2",
+              "ServiceTask_3",
+              "Task_1",
+              "UserTask_6"
+            ],
+            [
+              "ParallelGateway_2",
+              "ServiceTask_1",
+              "ServiceTask_2",
+              "ServiceTask_3",
+              "Task_1",
+              "UserTask_6",
+              "UserTask_8"
+            ],
+            [
+              "ExclusiveGateway_1",
+              "ServiceTask_1",
+              "ServiceTask_2",
+              "ServiceTask_3",
+              "Task_1",
+              "UserTask_6",
+              "UserTask_7",
+              "UserTask_8"
+            ]
+          ]
+        },
+        "findings_overlapping_target_anchor": {
+          "all_three_equal": false,
+          "distinct_sets": 3,
+          "mean_pairwise_jaccard": 0.7000000000000001,
+          "runs": [
+            [
+              "ServiceTask_2",
+              "Task_1",
+              "UserTask_6"
+            ],
+            [
+              "ParallelGateway_2",
+              "ServiceTask_2",
+              "Task_1",
+              "UserTask_6"
+            ],
+            [
+              "ExclusiveGateway_1",
+              "ServiceTask_2",
+              "Task_1",
+              "UserTask_6"
+            ]
+          ]
+        }
+      },
+      "input_path": "data/eval/v1.0/variants/single/M07/28.bpmn",
+      "operator": "M07",
+      "per_run_detection": [
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": true,
+          "run_ordinal": 1
+        },
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": true,
+          "run_ordinal": 2
+        },
+        {
+          "anchor": true,
+          "category": true,
+          "category_and_anchor": true,
+          "run_ordinal": 3
+        }
+      ]
+    }
+  ],
+  "status": "complete",
+  "threats_to_validity": [
+    "This is a ten-case descriptive diagnostic, not a new performance estimate.",
+    "The first run is reused from E6 and predates the two new calls.",
+    "The Codex CLI harness version changed between E6 and E9; model and application configuration remained fixed.",
+    "No deterministic seed was available or invented, so variation includes uncontrolled provider sampling and serving effects.",
+    "Raw prompts and provider outputs must remain retained for all three runs; derived combined records wrap rather than rewrite them.",
+    "Source controls have no exhaustive semantic-negative annotation, so their semantic findings are control alerts rather than automatic false positives."
+  ]
+}

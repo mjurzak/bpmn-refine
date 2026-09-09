@@ -1,0 +1,92 @@
+{
+  "integrity": {
+    "call_errors": 0,
+    "checkpoints": 13,
+    "e6_hash_mismatches": 0,
+    "errors": 0,
+    "input_hash_mismatches": 0,
+    "missing_usage": 0,
+    "models": [
+      "gpt-5.6-terra"
+    ],
+    "overall": {
+      "cases": 13,
+      "converged_cases": 8,
+      "errors": 0,
+      "errors_resolved_cases": 11,
+      "final_complete_cases": 13,
+      "final_resolved": 20,
+      "final_safe_target_success_cases": 11,
+      "final_target_removal_rate": 1.0,
+      "first_complete_cases": 12,
+      "first_resolved": 19,
+      "first_safe_target_success_cases": 9,
+      "first_target_removal_rate": 0.95,
+      "manual_review_cases": 3,
+      "mean_label_stability_rate": 1.0,
+      "mean_preservation_rate": 0.9857067875301807,
+      "new_deterministic_errors": 1,
+      "new_deterministic_warnings": 1,
+      "regression_issues": 0,
+      "rejected_ops": 0,
+      "rolled_back_cases": 0,
+      "strict_preservation_cases": 7,
+      "targets": 20
+    },
+    "provider_versions": [
+      "codex-cli 0.147.0"
+    ],
+    "providers": [
+      "codex_cli"
+    ],
+    "records": 13,
+    "selection_hash": true,
+    "unique_cases": 13
+  },
+  "manifest": {
+    "app_commit": "7064556",
+    "completed": 13,
+    "concurrency": 2,
+    "config": {
+      "experiment_id": null,
+      "include_formal_evidence": true,
+      "include_reference_description": true,
+      "include_semantic_projection": true,
+      "ir_format": "compact_json",
+      "llm_validation_scope": "holistic",
+      "max_repair_iters": 2,
+      "model_override": "gpt-5.6-terra",
+      "model_tier": "custom",
+      "notes": null,
+      "provider_override": "codex_cli",
+      "reasoning_effort": "low",
+      "repair_mode": "atomic",
+      "seed": null,
+      "temperature": null,
+      "tiers_enabled": {
+        "t1": true,
+        "t2": true,
+        "t3": true
+      }
+    },
+    "config_hash": "6593a8ce8ca3",
+    "executed_this_run": 6,
+    "experiment_id": "e7-repair",
+    "failed": 0,
+    "mock": false,
+    "planned": 13,
+    "selection_hash": "6666755775eb",
+    "selection_path": "experiments/specs/runs/e7-repair-selection.json",
+    "usage": {
+      "cached_input_tokens": 129536,
+      "calls": 40,
+      "calls_missing_usage": 0,
+      "input_tokens": 593493,
+      "output_tokens": 19947,
+      "reasoning_tokens": 14320,
+      "total_tokens": 613440
+    }
+  },
+  "schema": "bpmn-experiment-run",
+  "schema_version": "1.0"
+}

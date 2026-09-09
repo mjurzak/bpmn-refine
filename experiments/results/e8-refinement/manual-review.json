@@ -1,0 +1,90 @@
+{
+  "policy": "Manual review checks the stated requirement, placement in the control flow, preservation of unrelated behavior, and the available Tier 1 and Tier 2 verdicts. Instruction-level alternatives and safety-qualified successes remain separate from the primary automatic metric.",
+  "review_type": "model_assisted_manual_adjudication",
+  "reviewer": "Codex agent in the author-requested review task; all six adjudications subsequently confirmed by the thesis author",
+  "human_confirmed": true,
+  "status": "complete",
+  "primary_automatic_contract_successes": 8,
+  "primary_automatic_contract_total": 21,
+  "automatic_requirement_successes": 10,
+  "instruction_level_alternative_valid_count": 4,
+  "instruction_level_successes_after_review": 14,
+  "safety_qualified_alternative_valid_count": 3,
+  "safety_qualified_successes_after_review": 11,
+  "rejected_count": 2,
+  "formal_verdict_inconclusive_count": 1,
+  "cases": [
+    {
+      "case_id": "M01-refine-43",
+      "operator": "M01",
+      "relation_type": "exists_task",
+      "requirement_status": "missing_task",
+      "tier2_status": "pass",
+      "preservation_rate": 0.9302325581395349,
+      "ged_to_reference": 8,
+      "adjudication": "rejected",
+      "safety_qualified": false,
+      "reason": "The output adds 'Enter car problems for reference', but places it before the registration check, notification, and decision to attend the service. The task therefore occurs before the car reaches the service facility and does not identify the mechanic as the actor. It implements the wording only partially and at the wrong point in the process."
+    },
+    {
+      "case_id": "M02-refine-31",
+      "operator": "M02",
+      "relation_type": "precedes",
+      "requirement_status": "ordering_not_restored",
+      "tier2_status": "pass",
+      "preservation_rate": 1.0,
+      "ged_to_reference": 5,
+      "adjudication": "alternative_valid",
+      "safety_qualified": true,
+      "reason": "The output keeps the existing topology and changes the two task labels so that the no-account branch runs 'Enter account information' before 'Confirm registration via email link'. This realizes the requested order without using the reference edit, which instead rewires the original task identifiers."
+    },
+    {
+      "case_id": "M04-refine-40",
+      "operator": "M04",
+      "relation_type": "exists_path",
+      "requirement_status": "path_element_missing",
+      "tier2_status": "pass",
+      "preservation_rate": 1.0,
+      "ged_to_reference": 35,
+      "adjudication": "alternative_valid",
+      "safety_qualified": true,
+      "reason": "The low-OEE branch uses a parallel split to stop the machine and send the engineer email concurrently, rejoins the paths, and returns to the original merge. The instruction requires both actions but does not require the sequential order encoded by the reference contract. Unrelated behavior is preserved exactly."
+    },
+    {
+      "case_id": "M04-refine-48",
+      "operator": "M04",
+      "relation_type": "exists_path",
+      "requirement_status": "path_element_missing",
+      "tier2_status": "pass",
+      "preservation_rate": 0.04878048780487805,
+      "ged_to_reference": 44,
+      "adjudication": "rejected",
+      "safety_qualified": false,
+      "reason": "The output creates the requested train-and-recheck loop, but replaces most of the source process with a shortened model. It removes unrelated timing, running, drinking, and return-home branches and preserves only 4.9% of designated elements. The result is not an acceptable refinement of the supplied diagram."
+    },
+    {
+      "case_id": "M06-refine-49",
+      "operator": "M06",
+      "relation_type": "reaches",
+      "requirement_status": "outcome_missing",
+      "tier2_status": "pass",
+      "preservation_rate": 0.9393939393939394,
+      "ged_to_reference": 8,
+      "adjudication": "alternative_valid",
+      "safety_qualified": true,
+      "reason": "The error branch now executes 'Execute arbitrary repair activity' and loops back to the repair checks. The existing no-error branch reaches the process end, which expresses that the repair is finished without adding the reference model's explicit 'Repair is finished' task. Tier 1 and Tier 2 both pass."
+    },
+    {
+      "case_id": "M06-refine-31",
+      "operator": "M06",
+      "relation_type": "reaches",
+      "requirement_status": "outcome_missing",
+      "tier2_status": "unsupported",
+      "preservation_rate": 0.9552238805970149,
+      "ged_to_reference": 15,
+      "adjudication": "alternative_valid_formal_inconclusive",
+      "safety_qualified": false,
+      "reason": "The output produces confirmation and character selfies in parallel, joins both paths, waits for the expansion release, receives the expansion message, and then ends. This satisfies the instruction and preserves 95.5% of designated elements. Tier 2 is inconclusive because the added intermediate catch event is unsupported by the formal conversion, so the case is accepted at instruction level but not counted as safety-qualified."
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "headline": {
+    "combined_target_category": {
+      "deterministic": "16/26",
+      "full": "26/26",
+      "llm_only": "23/26"
+    },
+    "decision": "select_full_pipeline_for_e6",
+    "full_minus_llm_only": {
+      "bootstrap_ci95": [
+        0.0,
+        0.23076923076923078
+      ],
+      "difference": 0.11538461538461539,
+      "p_value": 0.088
+    },
+    "in_scope_control_false_positive_rate": {
+      "deterministic": 0.0,
+      "full": 0.0,
+      "llm_only": 0.0
+    },
+    "reason": "full covered every target in both panels with zero in-scope control false positives and only 2.2 percent more tokens than LLM-only",
+    "selected_tiers": {
+      "t1": true,
+      "t2": true,
+      "t3": true
+    },
+    "statistical_scope": "configuration selection; full versus LLM-only is not statistically conclusive on these panels"
+  },
+  "integrity": {
+    "analysis_file": "analysis.json",
+    "analysis_schema_version": "e5-analysis-v1",
+    "app_commit": "7064556",
+    "errors": 0,
+    "holdout": {
+      "checkpoints": 60,
+      "completed": 60,
+      "input_hash_mismatches": 0,
+      "missing_payloads": 0,
+      "missing_usage": 0,
+      "provider_calls": 40,
+      "tokens": 535957
+    },
+    "panel_overlap_inputs": 0,
+    "provenance_file": "provenance.json",
+    "records": 120,
+    "schema": "bpmn-experiment-integrity",
+    "schema_version": "1.1",
+    "screening": {
+      "checkpoints": 60,
+      "completed": 60,
+      "input_hash_mismatches": 0,
+      "missing_payloads": 0,
+      "missing_usage": 0,
+      "provider_calls": 40,
+      "tokens": 531538
+    },
+    "selection_file": "selection.json",
+    "total_provider_calls": 80,
+    "total_tokens": 1067495,
+    "unique_trial_ids": 120,
+    "worktree_at_verification": {
+      "analysis_code_dirty": true,
+      "dirty": true,
+      "tracked_application_code_dirty": false
+    }
+  },
+  "provenance": {
+    "derived_only": true,
+    "panel_overlap_inputs": 0,
+    "panels": {
+      "holdout": "../e5-validator-holdout/results.jsonl",
+      "screening": "../e5-validator-screening/results.jsonl"
+    },
+    "policy": "source records are read without modification and pairing uses input_path",
+    "records": 120,
+    "unique_trial_ids": 120
+  },
+  "schema": "bpmn-experiment-run",
+  "schema_version": "1.0"
+}

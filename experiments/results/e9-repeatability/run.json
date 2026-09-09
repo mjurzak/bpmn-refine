@@ -1,0 +1,178 @@
+{
+  "artifacts": {
+    "analysis": {
+      "path": "experiments/results/e9-repeatability/analysis.json",
+      "sha256": "f7b63153a0a4216c543af7b7c38e421bf3261641c1c30f253f5ed0571d6699d4"
+    },
+    "combined_records": {
+      "path": "experiments/results/e9-repeatability/results-combined.jsonl",
+      "sha256": "3c6a1dc323cb1eeb74ec157a3cf560db63022eb6e9ce30b528d4365457c24f6d"
+    },
+    "new_results": {
+      "path": "experiments/results/e9-repeatability/results.jsonl",
+      "sha256": "2251693511fa3295f9dce286d2ec874547e142169ded7d4b386d0983a51aae80"
+    },
+    "reused_e6_results": {
+      "path": "experiments/results/e6-detection/results.jsonl",
+      "sha256": "c18b67a8ee146f3d9737ac89f39528dc5bb05b09256f548230b09eb5c3342092"
+    },
+    "runner_manifest": {
+      "path": "experiments/results/e9-repeatability/manifest.json",
+      "sha256": "9da6e93bbc7fb7df32b44c4b395ae91717a4b312b1a906e29b8baecc04b4c982"
+    },
+    "spec": {
+      "path": "experiments/specs/runs/e9-repeatability.yaml",
+      "sha256": "13c9f4e032b9f4ded785d0aaf1c56dfc3b6bc4105f26739a4e08301dd4dd355c"
+    }
+  },
+  "authorization_scope": "user approved sending the fixed ten BPMN diagrams and matching English descriptions through Codex CLI for exactly twenty calls",
+  "configuration": {
+    "application_commit": "7064556",
+    "base": {
+      "include_reference_description": true,
+      "include_semantic_projection": true,
+      "ir_format": "compact_json",
+      "llm_validation_scope": "holistic",
+      "model_override": "gpt-5.6-terra",
+      "model_tier": "custom",
+      "provider_override": "codex_cli",
+      "reasoning_effort": "low",
+      "tiers_enabled": {
+        "t1": true,
+        "t2": true,
+        "t3": true
+      }
+    },
+    "concurrency": 4,
+    "config_hashes": [
+      "90d893e3d439"
+    ]
+  },
+  "dataset_version": "v1.0",
+  "design": {
+    "cases": 10,
+    "controls": 3,
+    "new_independent_calls": 20,
+    "reused_e6_records": 10,
+    "runs_per_case": 3,
+    "seed_policy": "no seed requested; the final E6 configuration had no seed and Codex CLI does not support one",
+    "selection_rule": "first three E6 controls, then first E6 single for each M01-M07 in record order",
+    "semantic_cases": 7
+  },
+  "execution": {
+    "completed": 20,
+    "failed": 0,
+    "finished_at": "2026-09-03T13:00:06.549199+00:00",
+    "new_usage": {
+      "cached_input_tokens": 110080,
+      "calls": 20,
+      "calls_missing_usage": 0,
+      "input_tokens": 267734,
+      "output_tokens": 15487,
+      "reasoning_tokens": 11243,
+      "total_tokens": 283221
+    },
+    "planned": 20,
+    "started_at": "2026-09-03T12:57:33.713264+00:00"
+  },
+  "experiment_id": "e9-repeatability-new-calls",
+  "headline": {
+    "category_stability_summary": {
+      "all_semantic_findings": {
+        "all_three_equal": 1,
+        "cases": 7,
+        "mean_case_pairwise_multiset_jaccard": 0.6531746031746032
+      },
+      "findings_overlapping_target_anchor": {
+        "all_three_equal": 1,
+        "cases": 7,
+        "mean_case_pairwise_multiset_jaccard": 0.630952380952381
+      }
+    },
+    "controls": {
+      "alerted_observations": 7,
+      "observations": 9,
+      "other_alerts": 0,
+      "semantic_alerts": 14,
+      "structural_formal_alerts": 0,
+      "total_alerts": 14
+    },
+    "detection_frequency_buckets": {
+      "anchor": {
+        "0/3": 0,
+        "1/3": 1,
+        "2/3": 0,
+        "3/3": 6
+      },
+      "category": {
+        "0/3": 2,
+        "1/3": 1,
+        "2/3": 0,
+        "3/3": 4
+      },
+      "category_and_anchor": {
+        "0/3": 2,
+        "1/3": 1,
+        "2/3": 1,
+        "3/3": 3
+      }
+    },
+    "indicated_element_stability_summary": {
+      "all_semantic_findings": {
+        "all_three_equal": 1,
+        "cases": 7,
+        "mean_case_pairwise_jaccard": 0.6996701710987425
+      },
+      "findings_overlapping_target_anchor": {
+        "all_three_equal": 2,
+        "cases": 7,
+        "mean_case_pairwise_jaccard": 0.7639455782312926
+      }
+    }
+  },
+  "integrity": {
+    "converter_versions": [
+      "compact_json@v1"
+    ],
+    "e6_raw_outputs_retained": 10,
+    "errors": 0,
+    "models": [
+      "gpt-5.6-terra"
+    ],
+    "new_provider_calls": 20,
+    "new_raw_outputs_retained": 20,
+    "new_records": 20,
+    "prompt_hashes": [
+      "f00c060029b0"
+    ],
+    "records": 30,
+    "unsupported_controls_declared": {
+      "max_tokens": "requested by the validation client but not enforceable by Codex CLI",
+      "seed": "not supported by Codex CLI and not requested in E6 or E9",
+      "temperature": "not supported by Codex CLI and not requested in E6 or E9"
+    },
+    "unsupported_controls_observed": [
+      "max_tokens"
+    ]
+  },
+  "provider_harness_version_drift": {
+    "changed": true,
+    "e6": [
+      "codex-cli 0.147.0"
+    ],
+    "e9": [
+      "codex-cli 0.151.0-alpha.7.2"
+    ],
+    "interpretation": "the model and frozen application configuration match E6, but the CLI harness is not version-identical"
+  },
+  "schema_version": "e9-repeatability-run-v1",
+  "status": "complete",
+  "threats_to_validity": [
+    "This is a ten-case descriptive diagnostic, not a new performance estimate.",
+    "The first run is reused from E6 and predates the two new calls.",
+    "The Codex CLI harness version changed between E6 and E9; model and application configuration remained fixed.",
+    "No deterministic seed was available or invented, so variation includes uncontrolled provider sampling and serving effects.",
+    "Raw prompts and provider outputs must remain retained for all three runs; derived combined records wrap rather than rewrite them.",
+    "Source controls have no exhaustive semantic-negative annotation, so their semantic findings are control alerts rather than automatic false positives."
+  ]
+}

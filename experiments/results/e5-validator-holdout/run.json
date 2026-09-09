@@ -1,0 +1,189 @@
+{
+  "integrity": {
+    "analysis_errors": 0,
+    "analysis_files": [],
+    "app_commit": "7064556",
+    "checkpoint_id_set_equal": true,
+    "checkpoint_object_mismatches": 0,
+    "checkpoints": 60,
+    "completed_records": 60,
+    "config_hashes": [
+      "03709da2c69d",
+      "40297b867d70",
+      "af87ab71775d"
+    ],
+    "dataset_version": "v1.0+ground-truth-overlay-1.2",
+    "errors": 0,
+    "experiment_id": "validator-ablation-e5-holdout-terra-low-compact-json",
+    "input_hash_mismatches": 0,
+    "missing_payloads": 0,
+    "missing_usage": 0,
+    "planned_records": 60,
+    "prompt_hashes": [
+      "f00c060029b0"
+    ],
+    "provider_calls": 40,
+    "provider_errors": 0,
+    "provider_versions": [
+      "codex-cli 0.147.0"
+    ],
+    "reasoning_effective": [
+      "low"
+    ],
+    "reasoning_requested": [
+      "low"
+    ],
+    "results_records": 60,
+    "schema": "bpmn-experiment-integrity",
+    "schema_version": "1.1",
+    "tokens": 535957,
+    "unique_trial_ids": 60,
+    "unsupported_controls": [
+      "max_tokens"
+    ],
+    "worktree_at_verification": {
+      "analysis_code_dirty": true,
+      "dirty": true,
+      "tracked_application_code_dirty": false
+    }
+  },
+  "manifest": {
+    "app_commit": "7064556",
+    "completed": 60,
+    "concurrency": 4,
+    "config_count": 3,
+    "config_hashes": [
+      "03709da2c69d",
+      "40297b867d70",
+      "af87ab71775d"
+    ],
+    "dataset_version": "v1.0+ground-truth-overlay-1.2",
+    "description_hashes": {},
+    "executed": 60,
+    "executed_this_run": 60,
+    "experiment_id": "validator-ablation-e5-holdout-terra-low-compact-json",
+    "failed": 0,
+    "failed_this_run": 0,
+    "input_hashes": {
+      "data/eval/v1.0/seeds/05.bpmn": "b1263bc9a4cc",
+      "data/eval/v1.0/seeds/09.bpmn": "55ad75dac73a",
+      "data/eval/v1.0/seeds/19.bpmn": "3fb42f94c75f",
+      "data/eval/v1.0/seeds/43.bpmn": "51bf79416375",
+      "data/eval/v1.0/seeds/45.bpmn": "7cde55c96cf5",
+      "data/eval/v1.0/seeds/47.bpmn": "5d08d3ff521b",
+      "data/eval/v1.0/seeds/48.bpmn": "8d6a7f8dd78d",
+      "data/eval/v1.0/variants/single/F01/17.bpmn": "91178c112184",
+      "data/eval/v1.0/variants/single/F01/53.bpmn": "4cf3531c36f3",
+      "data/eval/v1.0/variants/single/F02/03.bpmn": "972371ceaeaf",
+      "data/eval/v1.0/variants/single/F02/47.bpmn": "5d4f1199da4a",
+      "data/eval/v1.0/variants/single/F03/31.bpmn": "a1ac44f01937",
+      "data/eval/v1.0/variants/single/F04/11.bpmn": "f4ccae23a079",
+      "data/eval/v1.0/variants/single/F04/12.bpmn": "be17e6c6133c",
+      "data/eval/v1.0/variants/single/S01/16.bpmn": "63d5303caa36",
+      "data/eval/v1.0/variants/single/S01/52.bpmn": "5c45c1f82ada",
+      "data/eval/v1.0/variants/single/S02/36.bpmn": "987aff2d8045",
+      "data/eval/v1.0/variants/single/S02/46.bpmn": "e69a2ad455a9",
+      "data/eval/v1.0/variants/single/S03/05.bpmn": "35a25c5612de",
+      "data/eval/v1.0/variants/single/S03/13.bpmn": "28a1bb97c9c5"
+    },
+    "inputs": [
+      "data/eval/v1.0/seeds/05.bpmn",
+      "data/eval/v1.0/seeds/09.bpmn",
+      "data/eval/v1.0/seeds/19.bpmn",
+      "data/eval/v1.0/seeds/43.bpmn",
+      "data/eval/v1.0/seeds/45.bpmn",
+      "data/eval/v1.0/seeds/47.bpmn",
+      "data/eval/v1.0/seeds/48.bpmn",
+      "data/eval/v1.0/variants/single/F01/17.bpmn",
+      "data/eval/v1.0/variants/single/F01/53.bpmn",
+      "data/eval/v1.0/variants/single/F02/03.bpmn",
+      "data/eval/v1.0/variants/single/F02/47.bpmn",
+      "data/eval/v1.0/variants/single/F03/31.bpmn",
+      "data/eval/v1.0/variants/single/F04/11.bpmn",
+      "data/eval/v1.0/variants/single/F04/12.bpmn",
+      "data/eval/v1.0/variants/single/S01/16.bpmn",
+      "data/eval/v1.0/variants/single/S01/52.bpmn",
+      "data/eval/v1.0/variants/single/S02/36.bpmn",
+      "data/eval/v1.0/variants/single/S02/46.bpmn",
+      "data/eval/v1.0/variants/single/S03/05.bpmn",
+      "data/eval/v1.0/variants/single/S03/13.bpmn"
+    ],
+    "last_invocation": {
+      "concurrency": 4,
+      "executed": 60,
+      "failed": 0,
+      "skipped_already_done": 0
+    },
+    "results_file": "results.jsonl",
+    "skipped_already_done": 0,
+    "spec": {
+      "axes": {},
+      "base": {
+        "include_reference_description": false,
+        "include_semantic_projection": true,
+        "ir_format": "compact_json",
+        "llm_validation_scope": "semantic",
+        "model_override": "gpt-5.6-terra",
+        "model_tier": "custom",
+        "provider_override": "codex_cli",
+        "reasoning_effort": "low",
+        "tiers_enabled": {
+          "t1": true,
+          "t2": true,
+          "t3": false
+        }
+      },
+      "configs": [
+        {
+          "llm_validation_scope": "holistic",
+          "tiers_enabled": {
+            "t1": false,
+            "t2": false,
+            "t3": true
+          }
+        },
+        {
+          "llm_validation_scope": "holistic",
+          "tiers_enabled": {
+            "t1": true,
+            "t2": true,
+            "t3": true
+          }
+        }
+      ],
+      "dataset_version": "v1.0+ground-truth-overlay-1.2",
+      "description_root": null,
+      "exclude": [],
+      "experiment_id": "validator-ablation-e5-holdout-terra-low-compact-json",
+      "inputs": [
+        "data/eval/v1.0/seeds/05.bpmn",
+        "data/eval/v1.0/seeds/09.bpmn",
+        "data/eval/v1.0/seeds/19.bpmn",
+        "data/eval/v1.0/seeds/43.bpmn",
+        "data/eval/v1.0/seeds/45.bpmn",
+        "data/eval/v1.0/seeds/47.bpmn",
+        "data/eval/v1.0/seeds/48.bpmn",
+        "data/eval/v1.0/variants/single/F01/17.bpmn",
+        "data/eval/v1.0/variants/single/F01/53.bpmn",
+        "data/eval/v1.0/variants/single/F02/03.bpmn",
+        "data/eval/v1.0/variants/single/F02/47.bpmn",
+        "data/eval/v1.0/variants/single/F03/31.bpmn",
+        "data/eval/v1.0/variants/single/F04/11.bpmn",
+        "data/eval/v1.0/variants/single/F04/12.bpmn",
+        "data/eval/v1.0/variants/single/S01/16.bpmn",
+        "data/eval/v1.0/variants/single/S01/52.bpmn",
+        "data/eval/v1.0/variants/single/S02/36.bpmn",
+        "data/eval/v1.0/variants/single/S02/46.bpmn",
+        "data/eval/v1.0/variants/single/S03/05.bpmn",
+        "data/eval/v1.0/variants/single/S03/13.bpmn"
+      ],
+      "notes": "Frozen E5 holdout, disjoint from screening. Execute only if screening leaves the validator contribution or LLM-replacement decision unresolved. The panel was selected before any E5 outputs were inspected.",
+      "repeats": 1,
+      "run_repair": false
+    },
+    "trial_count": 60,
+    "trial_records_dir": "trials"
+  },
+  "schema": "bpmn-experiment-run",
+  "schema_version": "1.0"
+}

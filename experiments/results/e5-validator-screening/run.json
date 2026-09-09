@@ -1,0 +1,189 @@
+{
+  "integrity": {
+    "analysis_errors": 0,
+    "analysis_files": [],
+    "app_commit": "7064556",
+    "checkpoint_id_set_equal": true,
+    "checkpoint_object_mismatches": 0,
+    "checkpoints": 60,
+    "completed_records": 60,
+    "config_hashes": [
+      "03709da2c69d",
+      "40297b867d70",
+      "af87ab71775d"
+    ],
+    "dataset_version": "v1.0+ground-truth-overlay-1.2",
+    "errors": 0,
+    "experiment_id": "validator-ablation-e5-screening-terra-low-compact-json",
+    "input_hash_mismatches": 0,
+    "missing_payloads": 0,
+    "missing_usage": 0,
+    "planned_records": 60,
+    "prompt_hashes": [
+      "f00c060029b0"
+    ],
+    "provider_calls": 40,
+    "provider_errors": 0,
+    "provider_versions": [
+      "codex-cli 0.147.0"
+    ],
+    "reasoning_effective": [
+      "low"
+    ],
+    "reasoning_requested": [
+      "low"
+    ],
+    "results_records": 60,
+    "schema": "bpmn-experiment-integrity",
+    "schema_version": "1.1",
+    "tokens": 531538,
+    "unique_trial_ids": 60,
+    "unsupported_controls": [
+      "max_tokens"
+    ],
+    "worktree_at_verification": {
+      "analysis_code_dirty": true,
+      "dirty": true,
+      "tracked_application_code_dirty": false
+    }
+  },
+  "manifest": {
+    "app_commit": "7064556",
+    "completed": 60,
+    "concurrency": 4,
+    "config_count": 3,
+    "config_hashes": [
+      "03709da2c69d",
+      "40297b867d70",
+      "af87ab71775d"
+    ],
+    "dataset_version": "v1.0+ground-truth-overlay-1.2",
+    "description_hashes": {},
+    "executed": 60,
+    "executed_this_run": 60,
+    "experiment_id": "validator-ablation-e5-screening-terra-low-compact-json",
+    "failed": 0,
+    "failed_this_run": 0,
+    "input_hashes": {
+      "data/eval/v1.0/seeds/08.bpmn": "3f8984417963",
+      "data/eval/v1.0/seeds/33.bpmn": "2e3c9c42d915",
+      "data/eval/v1.0/seeds/41.bpmn": "be4d1fd408ac",
+      "data/eval/v1.0/seeds/46.bpmn": "c68c61ab7dde",
+      "data/eval/v1.0/seeds/49.bpmn": "19f42144ed36",
+      "data/eval/v1.0/seeds/50.bpmn": "1fa8f4aa6019",
+      "data/eval/v1.0/seeds/53.bpmn": "01127fe67fe4",
+      "data/eval/v1.0/variants/single/F01/02.bpmn": "43d76dfba808",
+      "data/eval/v1.0/variants/single/F01/18.bpmn": "4349602454bc",
+      "data/eval/v1.0/variants/single/F02/04.bpmn": "603bbd9c3007",
+      "data/eval/v1.0/variants/single/F02/39.bpmn": "f2d9ccc81fd7",
+      "data/eval/v1.0/variants/single/F03/04.bpmn": "eba0113cca97",
+      "data/eval/v1.0/variants/single/F04/05.bpmn": "7c53f984b3c6",
+      "data/eval/v1.0/variants/single/F04/14.bpmn": "ce602b54eeea",
+      "data/eval/v1.0/variants/single/S01/01.bpmn": "2f69a2ed25c8",
+      "data/eval/v1.0/variants/single/S01/40.bpmn": "4975b1186bba",
+      "data/eval/v1.0/variants/single/S02/15.bpmn": "41cc4a3e586a",
+      "data/eval/v1.0/variants/single/S02/55.bpmn": "f95648c4dee6",
+      "data/eval/v1.0/variants/single/S03/01.bpmn": "3a36b834191c",
+      "data/eval/v1.0/variants/single/S03/26.bpmn": "1803d3aafda4"
+    },
+    "inputs": [
+      "data/eval/v1.0/seeds/08.bpmn",
+      "data/eval/v1.0/seeds/33.bpmn",
+      "data/eval/v1.0/seeds/41.bpmn",
+      "data/eval/v1.0/seeds/46.bpmn",
+      "data/eval/v1.0/seeds/49.bpmn",
+      "data/eval/v1.0/seeds/50.bpmn",
+      "data/eval/v1.0/seeds/53.bpmn",
+      "data/eval/v1.0/variants/single/F01/02.bpmn",
+      "data/eval/v1.0/variants/single/F01/18.bpmn",
+      "data/eval/v1.0/variants/single/F02/04.bpmn",
+      "data/eval/v1.0/variants/single/F02/39.bpmn",
+      "data/eval/v1.0/variants/single/F03/04.bpmn",
+      "data/eval/v1.0/variants/single/F04/05.bpmn",
+      "data/eval/v1.0/variants/single/F04/14.bpmn",
+      "data/eval/v1.0/variants/single/S01/01.bpmn",
+      "data/eval/v1.0/variants/single/S01/40.bpmn",
+      "data/eval/v1.0/variants/single/S02/15.bpmn",
+      "data/eval/v1.0/variants/single/S02/55.bpmn",
+      "data/eval/v1.0/variants/single/S03/01.bpmn",
+      "data/eval/v1.0/variants/single/S03/26.bpmn"
+    ],
+    "last_invocation": {
+      "concurrency": 4,
+      "executed": 60,
+      "failed": 0,
+      "skipped_already_done": 0
+    },
+    "results_file": "results.jsonl",
+    "skipped_already_done": 0,
+    "spec": {
+      "axes": {},
+      "base": {
+        "include_reference_description": false,
+        "include_semantic_projection": true,
+        "ir_format": "compact_json",
+        "llm_validation_scope": "semantic",
+        "model_override": "gpt-5.6-terra",
+        "model_tier": "custom",
+        "provider_override": "codex_cli",
+        "reasoning_effort": "low",
+        "tiers_enabled": {
+          "t1": true,
+          "t2": true,
+          "t3": false
+        }
+      },
+      "configs": [
+        {
+          "llm_validation_scope": "holistic",
+          "tiers_enabled": {
+            "t1": false,
+            "t2": false,
+            "t3": true
+          }
+        },
+        {
+          "llm_validation_scope": "holistic",
+          "tiers_enabled": {
+            "t1": true,
+            "t2": true,
+            "t3": true
+          }
+        }
+      ],
+      "dataset_version": "v1.0+ground-truth-overlay-1.2",
+      "description_root": null,
+      "exclude": [],
+      "experiment_id": "validator-ablation-e5-screening-terra-low-compact-json",
+      "inputs": [
+        "data/eval/v1.0/seeds/08.bpmn",
+        "data/eval/v1.0/seeds/33.bpmn",
+        "data/eval/v1.0/seeds/41.bpmn",
+        "data/eval/v1.0/seeds/46.bpmn",
+        "data/eval/v1.0/seeds/49.bpmn",
+        "data/eval/v1.0/seeds/50.bpmn",
+        "data/eval/v1.0/seeds/53.bpmn",
+        "data/eval/v1.0/variants/single/F01/02.bpmn",
+        "data/eval/v1.0/variants/single/F01/18.bpmn",
+        "data/eval/v1.0/variants/single/F02/04.bpmn",
+        "data/eval/v1.0/variants/single/F02/39.bpmn",
+        "data/eval/v1.0/variants/single/F03/04.bpmn",
+        "data/eval/v1.0/variants/single/F04/05.bpmn",
+        "data/eval/v1.0/variants/single/F04/14.bpmn",
+        "data/eval/v1.0/variants/single/S01/01.bpmn",
+        "data/eval/v1.0/variants/single/S01/40.bpmn",
+        "data/eval/v1.0/variants/single/S02/15.bpmn",
+        "data/eval/v1.0/variants/single/S02/55.bpmn",
+        "data/eval/v1.0/variants/single/S03/01.bpmn",
+        "data/eval/v1.0/variants/single/S03/26.bpmn"
+      ],
+      "notes": "E5 resource-constrained screening. Twenty fixed cases receive the deterministic-only, holistic-LLM-only, and combined pipelines. Only the two holistic configurations call Terra, for 40 provider calls. The panel was selected by a salted stable hash before any E5 outputs were inspected.",
+      "repeats": 1,
+      "run_repair": false
+    },
+    "trial_count": 60,
+    "trial_records_dir": "trials"
+  },
+  "schema": "bpmn-experiment-run",
+  "schema_version": "1.0"
+}

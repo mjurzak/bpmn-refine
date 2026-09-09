@@ -1,0 +1,114 @@
+{
+  "by_operator": {
+    "M01": {
+      "full_enhancement_success_rate": 0.6666666666666666,
+      "mean_preservation_rate": 0.9220565947347643,
+      "records": 6,
+      "requirement_satisfaction_rate": 0.6666666666666666
+    },
+    "M02": {
+      "full_enhancement_success_rate": 0.3333333333333333,
+      "mean_preservation_rate": 1.0,
+      "records": 3,
+      "requirement_satisfaction_rate": 0.3333333333333333
+    },
+    "M03": {
+      "full_enhancement_success_rate": 0.3333333333333333,
+      "mean_preservation_rate": 0.972972972972973,
+      "records": 3,
+      "requirement_satisfaction_rate": 0.3333333333333333
+    },
+    "M04": {
+      "full_enhancement_success_rate": 0.0,
+      "mean_preservation_rate": 0.6681120144534779,
+      "records": 3,
+      "requirement_satisfaction_rate": 0.3333333333333333
+    },
+    "M06": {
+      "full_enhancement_success_rate": 0.0,
+      "mean_preservation_rate": 0.9482059399969848,
+      "records": 3,
+      "requirement_satisfaction_rate": 0.3333333333333333
+    },
+    "M07": {
+      "full_enhancement_success_rate": 0.6666666666666666,
+      "mean_preservation_rate": 0.7142857142857143,
+      "records": 3,
+      "requirement_satisfaction_rate": 0.6666666666666666
+    }
+  },
+  "by_relation": {
+    "additional_action": {
+      "full_enhancement_success_rate": 0.6666666666666666,
+      "mean_preservation_rate": 0.7142857142857143,
+      "records": 3,
+      "requirement_satisfaction_rate": 0.6666666666666666
+    },
+    "branch_condition": {
+      "full_enhancement_success_rate": 0.3333333333333333,
+      "mean_preservation_rate": 0.972972972972973,
+      "records": 3,
+      "requirement_satisfaction_rate": 0.3333333333333333
+    },
+    "exists_path": {
+      "full_enhancement_success_rate": 0.0,
+      "mean_preservation_rate": 0.6681120144534779,
+      "records": 3,
+      "requirement_satisfaction_rate": 0.3333333333333333
+    },
+    "exists_task": {
+      "full_enhancement_success_rate": 0.6666666666666666,
+      "mean_preservation_rate": 0.9220565947347643,
+      "records": 6,
+      "requirement_satisfaction_rate": 0.6666666666666666
+    },
+    "precedes": {
+      "full_enhancement_success_rate": 0.3333333333333333,
+      "mean_preservation_rate": 1.0,
+      "records": 3,
+      "requirement_satisfaction_rate": 0.3333333333333333
+    },
+    "reaches": {
+      "full_enhancement_success_rate": 0.0,
+      "mean_preservation_rate": 0.9482059399969848,
+      "records": 3,
+      "requirement_satisfaction_rate": 0.3333333333333333
+    }
+  },
+  "diagram_returned_rate": 0.7619047619047619,
+  "errors": 0,
+  "full_enhancement_success_rate": 0.38095238095238093,
+  "manual_review_count": 0,
+  "mean_ged_to_reference": 11.6875,
+  "mean_latency_ms": 36010.23809523809,
+  "mean_preservation_rate": 0.8662988274106007,
+  "mean_unnecessary_changes": 3.619047619047619,
+  "records": 21,
+  "requirement_satisfaction_rate": 0.47619047619047616,
+  "tier1_valid_rate": 1.0,
+  "tier2_timeouts": 0,
+  "tier2_valid_rate": 0.8666666666666667,
+  "usage": {
+    "cached_input_tokens": 257024,
+    "calls": 21,
+    "calls_missing_usage": 0,
+    "input_tokens": 312023,
+    "output_tokens": 28553,
+    "reasoning_tokens": 4441,
+    "total_tokens": 340576
+  },
+  "manual_review": {
+    "status": "complete",
+    "reviewed_cases": 6,
+    "instruction_level_alternative_valid_count": 4,
+    "instruction_level_successes_after_review": 14,
+    "instruction_level_success_rate_after_review": 0.6666666666666666,
+    "safety_qualified_alternative_valid_count": 3,
+    "safety_qualified_successes_after_review": 11,
+    "safety_qualified_success_rate_after_review": 0.5238095238095238,
+    "rejected_count": 2,
+    "formal_verdict_inconclusive_count": 1,
+    "review_type": "model_assisted_manual_adjudication",
+    "human_confirmed": true
+  }
+}

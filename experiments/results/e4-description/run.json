@@ -1,0 +1,373 @@
+{
+  "headline": {
+    "description_present": {
+      "anchor": {
+        "expected": 7,
+        "matched": 6,
+        "recall": 0.8571428571428571
+      },
+      "category": {
+        "expected": 7,
+        "matched": 5,
+        "recall": 0.7142857142857143
+      },
+      "category_accuracy_given_anchor": {
+        "accuracy": 0.8333333333333334,
+        "anchors": 6,
+        "confusion": [
+          {
+            "count": 1,
+            "expected": "contradictory_flow",
+            "predicted": "contradictory_flow"
+          },
+          {
+            "count": 1,
+            "expected": "inconsistent_naming",
+            "predicted": "inconsistent_naming"
+          },
+          {
+            "count": 1,
+            "expected": "missing_exception_handling",
+            "predicted": "missing_step"
+          },
+          {
+            "count": 1,
+            "expected": "missing_step",
+            "predicted": "missing_step"
+          },
+          {
+            "count": 1,
+            "expected": "unreachable_branch",
+            "predicted": "unreachable_branch"
+          },
+          {
+            "count": 1,
+            "expected": "unwanted_action",
+            "predicted": "unwanted_action"
+          }
+        ],
+        "correct": 5,
+        "expected": 7,
+        "predicted": 9
+      },
+      "comparable_total_tokens": 179448,
+      "contract_complete_rate": 1.0,
+      "control_alerts": {
+        "alert_rate": 0.3333333333333333,
+        "alerted_cases": 1,
+        "cases": 3,
+        "categories": {
+          "improper_termination": 1
+        },
+        "false_positive_rate": null,
+        "false_positive_rate_reason": "source_controls_are_not_exhaustively_adjudicated",
+        "findings": 1,
+        "policy": "source_models_assumed_mutation_free_not_exhaustively_semantic_clean"
+      },
+      "mean_latency_ms": 22590.9,
+      "unadjudicated_extra_findings": 3
+    },
+    "diagram_only": {
+      "anchor": {
+        "expected": 7,
+        "matched": 2,
+        "recall": 0.2857142857142857
+      },
+      "category": {
+        "expected": 7,
+        "matched": 1,
+        "recall": 0.14285714285714285
+      },
+      "category_accuracy_given_anchor": {
+        "accuracy": 0.5,
+        "anchors": 2,
+        "confusion": [
+          {
+            "count": 1,
+            "expected": "unreachable_branch",
+            "predicted": "inconsistent_naming"
+          },
+          {
+            "count": 1,
+            "expected": "unwanted_action",
+            "predicted": "unwanted_action"
+          }
+        ],
+        "correct": 1,
+        "expected": 7,
+        "predicted": 3
+      },
+      "comparable_total_tokens": 174342,
+      "contract_complete_rate": 1.0,
+      "control_alerts": {
+        "alert_rate": 0.0,
+        "alerted_cases": 0,
+        "cases": 3,
+        "categories": {},
+        "false_positive_rate": null,
+        "false_positive_rate_reason": "source_controls_are_not_exhaustively_adjudicated",
+        "findings": 0,
+        "policy": "source_models_assumed_mutation_free_not_exhaustively_semantic_clean"
+      },
+      "mean_latency_ms": 19148.6,
+      "unadjudicated_extra_findings": 1
+    },
+    "differences": {
+      "anchor_recall": 0.5714285714285714,
+      "anchor_targets": 4,
+      "category_recall": 0.5714285714285714,
+      "category_targets": 4,
+      "comparable_total_tokens": 5106,
+      "latency_fraction_vs_diagram_only": 0.17976771147760173,
+      "mean_latency_ms": 3442.300000000003,
+      "token_fraction_vs_diagram_only": 0.029287262965894678
+    },
+    "direction": "description_present_minus_diagram_only",
+    "limitations": [
+      "Seven injected targets; configuration selection, not a powered general causal estimate.",
+      "Source controls are not exhaustively adjudicated semantic negatives."
+    ],
+    "paired_anchor_bootstrap": {
+      "ci95": [
+        0.14285714285714285,
+        0.8571428571428571
+      ],
+      "observed_difference": 0.5714285714285714,
+      "p_value": 0.004,
+      "replicates": 2000,
+      "seed": 1729
+    },
+    "panel": {
+      "cases": 10,
+      "injected_targets": 7,
+      "source_controls": 3
+    },
+    "schema": "e4-description-comparison",
+    "schema_version": "1.0",
+    "selected_include_reference_description": true,
+    "selection_basis": "Description present detected four more anchors and four more target categories; resource overhead was secondary."
+  },
+  "integrity": {
+    "analysis_contract_fix": {
+      "applied": true,
+      "reason": "Reference evidence is not required when include_reference_description is false.",
+      "tests_passed": 63
+    },
+    "analysis_errors": 0,
+    "analysis_file": "analysis.json",
+    "analysis_records": 20,
+    "app_commit": "7064556",
+    "combined_records": 20,
+    "combined_unique_trial_ids": 20,
+    "comparison_file": "comparison-summary.json",
+    "configurations": [
+      {
+        "include_reference_description": false,
+        "ir_format": "compact_json",
+        "model": "gpt-5.6-terra",
+        "provider": "codex_cli",
+        "reasoning_effort": "low",
+        "trials": 10
+      },
+      {
+        "include_reference_description": true,
+        "ir_format": "compact_json",
+        "model": "gpt-5.6-terra",
+        "provider": "codex_cli",
+        "reasoning_effort": "low",
+        "trials": 10
+      }
+    ],
+    "dataset_version": "v1.0+ground-truth-overlay-1.2",
+    "experiment_id": "description-ablation-e4-terra-low-compact-json-no-description",
+    "new_checkpoints": 10,
+    "new_errors": 0,
+    "new_records": 10,
+    "new_unique_trial_ids": 10,
+    "paired_inputs": 10,
+    "pairing_audit": {
+      "description_hash_mismatches": 0,
+      "input_hash_mismatches": 0,
+      "key": "input_path",
+      "pairs": 10
+    },
+    "planned_new_trials": 10,
+    "prompt_hashes_recorded": [
+      "e4de599ddc37"
+    ],
+    "reused_description_present_records": 10,
+    "runner_audit": {
+      "effective_reasoning_efforts": [
+        "low"
+      ],
+      "errors": 0,
+      "missing_payloads": 0,
+      "missing_usage": 0,
+      "provider_errors": 0,
+      "provider_versions": [
+        "codex-cli 0.147.0"
+      ],
+      "requested_reasoning_efforts": [
+        "low"
+      ],
+      "unsupported_controls": [
+        "max_tokens"
+      ]
+    },
+    "schema": "bpmn-experiment-integrity",
+    "schema_version": "1.1",
+    "selected_include_reference_description": true,
+    "worktree_at_verification": {
+      "analysis_code_dirty": true,
+      "dirty": true,
+      "status": [
+        " M backend/tests/test_experiment_analysis.py",
+        " M evaluation/EXPERIMENT_PLAN.md",
+        " M experiments/ANALYSIS_PROTOCOL.md",
+        " M experiments/README.md",
+        " M experiments/analyze_results.py",
+        "?? experiments/E2_PROTOCOL.md",
+        "?? experiments/E3_LUNA_PROTOCOL.md",
+        "?? experiments/E3_PROTOCOL.md",
+        "?? experiments/E4_PROTOCOL.md",
+        "?? experiments/specs/runs/",
+        "?? output/"
+      ]
+    }
+  },
+  "manifest": {
+    "app_commit": "7064556",
+    "completed": 10,
+    "concurrency": 4,
+    "config_count": 1,
+    "config_hashes": [
+      "1f6318f9fa6e"
+    ],
+    "dataset_version": "v1.0+ground-truth-overlay-1.2",
+    "description_hashes": {
+      "data/eval/v1.0/descriptions/seeds/02.txt": "5d3ca0800486",
+      "data/eval/v1.0/descriptions/seeds/05.txt": "3367aaec6ba8",
+      "data/eval/v1.0/descriptions/seeds/18.txt": "d5c3b0403acf",
+      "data/eval/v1.0/descriptions/variants/single/M01/33.txt": "6bb43b58c9a4",
+      "data/eval/v1.0/descriptions/variants/single/M02/09.txt": "f85396ef52de",
+      "data/eval/v1.0/descriptions/variants/single/M03/17.txt": "265c63b42a76",
+      "data/eval/v1.0/descriptions/variants/single/M04/11.txt": "ccc76d998b04",
+      "data/eval/v1.0/descriptions/variants/single/M05/16.txt": "141cf1336439",
+      "data/eval/v1.0/descriptions/variants/single/M06/05.txt": "3367aaec6ba8",
+      "data/eval/v1.0/descriptions/variants/single/M07/31.txt": "b2b65a3ba2f3"
+    },
+    "executed": 10,
+    "executed_this_run": 10,
+    "experiment_id": "description-ablation-e4-terra-low-compact-json-no-description",
+    "failed": 0,
+    "failed_this_run": 0,
+    "input_hashes": {
+      "data/eval/v1.0/seeds/02.bpmn": "4d14f6522ec5",
+      "data/eval/v1.0/seeds/05.bpmn": "b1263bc9a4cc",
+      "data/eval/v1.0/seeds/18.bpmn": "194367eb51e5",
+      "data/eval/v1.0/variants/single/M01/33.bpmn": "85702b03bf61",
+      "data/eval/v1.0/variants/single/M02/09.bpmn": "e6cdb6f4652b",
+      "data/eval/v1.0/variants/single/M03/17.bpmn": "7efdca9f7ea4",
+      "data/eval/v1.0/variants/single/M04/11.bpmn": "c1e5db0e97fc",
+      "data/eval/v1.0/variants/single/M05/16.bpmn": "93b01d8c7a36",
+      "data/eval/v1.0/variants/single/M06/05.bpmn": "05254309ded1",
+      "data/eval/v1.0/variants/single/M07/31.bpmn": "ef6c3c24a5b1"
+    },
+    "inputs": [
+      "data/eval/v1.0/seeds/02.bpmn",
+      "data/eval/v1.0/seeds/05.bpmn",
+      "data/eval/v1.0/seeds/18.bpmn",
+      "data/eval/v1.0/variants/single/M01/33.bpmn",
+      "data/eval/v1.0/variants/single/M02/09.bpmn",
+      "data/eval/v1.0/variants/single/M03/17.bpmn",
+      "data/eval/v1.0/variants/single/M04/11.bpmn",
+      "data/eval/v1.0/variants/single/M05/16.bpmn",
+      "data/eval/v1.0/variants/single/M06/05.bpmn",
+      "data/eval/v1.0/variants/single/M07/31.bpmn"
+    ],
+    "last_invocation": {
+      "concurrency": 4,
+      "executed": 10,
+      "failed": 0,
+      "skipped_already_done": 0
+    },
+    "results_file": "results.jsonl",
+    "skipped_already_done": 0,
+    "spec": {
+      "axes": {},
+      "base": {
+        "include_reference_description": false,
+        "include_semantic_projection": true,
+        "ir_format": "compact_json",
+        "llm_validation_scope": "semantic",
+        "model_override": "gpt-5.6-terra",
+        "model_tier": "custom",
+        "provider_override": "codex_cli",
+        "reasoning_effort": "low",
+        "tiers_enabled": {
+          "t1": false,
+          "t2": false,
+          "t3": true
+        }
+      },
+      "configs": [],
+      "dataset_version": "v1.0+ground-truth-overlay-1.2",
+      "description_root": "data/eval/v1.0/descriptions",
+      "exclude": [],
+      "experiment_id": "description-ablation-e4-terra-low-compact-json-no-description",
+      "inputs": [
+        "data/eval/v1.0/seeds/02.bpmn",
+        "data/eval/v1.0/seeds/05.bpmn",
+        "data/eval/v1.0/seeds/18.bpmn",
+        "data/eval/v1.0/variants/single/M01/33.bpmn",
+        "data/eval/v1.0/variants/single/M02/09.bpmn",
+        "data/eval/v1.0/variants/single/M03/17.bpmn",
+        "data/eval/v1.0/variants/single/M04/11.bpmn",
+        "data/eval/v1.0/variants/single/M05/16.bpmn",
+        "data/eval/v1.0/variants/single/M06/05.bpmn",
+        "data/eval/v1.0/variants/single/M07/31.bpmn"
+      ],
+      "notes": "E4 resource-constrained description ablation. This executable spec contains only the ten new diagram-only trials. The matching diagram-plus-description Terra-low compact-JSON observations are reused unchanged from E3 in a derived analysis input with explicit provenance.",
+      "repeats": 1,
+      "run_repair": false
+    },
+    "trial_count": 10,
+    "trial_records_dir": "trials"
+  },
+  "provenance": {
+    "original_records_modified": false,
+    "pairing": {
+      "description_hash_mismatches": 0,
+      "input_hash_mismatches": 0,
+      "key": "input_path",
+      "pairs": 10
+    },
+    "purpose": "Paired reference-description ablation on the frozen E3 panel",
+    "records": 20,
+    "schema": "e4-derived-results-provenance",
+    "schema_version": "1.0",
+    "sources": [
+      {
+        "filter": {
+          "include_reference_description": false
+        },
+        "path": "experiments/results/e4-description/results.jsonl",
+        "records": 10,
+        "reused": false
+      },
+      {
+        "filter": {
+          "include_reference_description": true,
+          "ir_format": "compact_json",
+          "model": "gpt-5.6-terra",
+          "reasoning_effort": "low"
+        },
+        "path": "experiments/results/e3-reasoning-terra/results-combined.jsonl",
+        "records": 10,
+        "reused": true
+      }
+    ]
+  },
+  "schema": "bpmn-experiment-run",
+  "schema_version": "1.0"
+}

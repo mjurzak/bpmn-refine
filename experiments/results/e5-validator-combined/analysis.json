@@ -1,0 +1,4799 @@
+{
+  "combined": {
+    "comparisons": {
+      "full_minus_deterministic": {
+        "equal_cases": 16,
+        "left_only_hits": 10,
+        "mean_target_category_difference": 0.38461538461538464,
+        "paired_cases": 26,
+        "right_only_hits": 0
+      },
+      "full_minus_llm_only": {
+        "equal_cases": 23,
+        "left_only_hits": 3,
+        "mean_target_category_difference": 0.11538461538461539,
+        "paired_cases": 26,
+        "right_only_hits": 0
+      },
+      "llm_only_minus_deterministic": {
+        "equal_cases": 17,
+        "left_only_hits": 8,
+        "mean_target_category_difference": 0.2692307692307692,
+        "paired_cases": 26,
+        "right_only_hits": 1
+      }
+    },
+    "deterministic": {
+      "control_alerts": {
+        "in_scope_alerted_cases": 0,
+        "in_scope_false_positive_rate": 0.0,
+        "policy": "only_structural_formal_alerts_are_in_scope_false_positives",
+        "semantic_alert_rate_descriptive": 0.0,
+        "semantic_alerted_cases": 0
+      },
+      "control_cases": 14,
+      "control_outcomes": [
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/08.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/33.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/41.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/46.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/49.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/50.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/53.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/05.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/09.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/19.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/43.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/45.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/47.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/48.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        }
+      ],
+      "error_count": 0,
+      "latency_ms": {
+        "mean_per_record": 203.825,
+        "total": 8153.0
+      },
+      "operators": {
+        "F01": {
+          "anchor_hits": 4,
+          "anchor_recall": 1.0,
+          "cases": 4,
+          "category_hits": 0,
+          "category_recall": 0.0
+        },
+        "F02": {
+          "anchor_hits": 4,
+          "anchor_recall": 1.0,
+          "cases": 4,
+          "category_hits": 0,
+          "category_recall": 0.0
+        },
+        "F03": {
+          "anchor_hits": 2,
+          "anchor_recall": 1.0,
+          "cases": 2,
+          "category_hits": 0,
+          "category_recall": 0.0
+        },
+        "F04": {
+          "anchor_hits": 4,
+          "anchor_recall": 1.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        },
+        "S01": {
+          "anchor_hits": 0,
+          "anchor_recall": 0.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        },
+        "S02": {
+          "anchor_hits": 0,
+          "anchor_recall": 0.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        },
+        "S03": {
+          "anchor_hits": 4,
+          "anchor_recall": 1.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        }
+      },
+      "positive_cases": 26,
+      "positive_outcomes": [
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "deadlock"
+          ],
+          "expected_refs": [
+            "ExclusiveGateway_1",
+            "ExclusiveGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F01/02.bpmn",
+          "matched_findings": [],
+          "operator": "F01"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "deadlock"
+          ],
+          "expected_refs": [
+            "ExclusiveGateway_16",
+            "ExclusiveGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F01/18.bpmn",
+          "matched_findings": [],
+          "operator": "F01"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "lack of synchronisation"
+          ],
+          "expected_refs": [
+            "ParallelGateway_1",
+            "ParallelGateway_3"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F02/04.bpmn",
+          "matched_findings": [],
+          "operator": "F02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "lack of synchronisation"
+          ],
+          "expected_refs": [
+            "ParallelGateway_1",
+            "ParallelGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F02/39.bpmn",
+          "matched_findings": [],
+          "operator": "F02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "improper completion"
+          ],
+          "expected_refs": [
+            "EndEvent_1",
+            "ParallelGateway_2",
+            "ParallelGateway_5"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F03/04.bpmn",
+          "matched_findings": [],
+          "operator": "F03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R007"
+          ],
+          "expected_refs": [
+            "Task_3"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F04/05.bpmn",
+          "matched_findings": [
+            "R007",
+            "R007"
+          ],
+          "operator": "F04"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R007"
+          ],
+          "expected_refs": [
+            "Task_10"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F04/14.bpmn",
+          "matched_findings": [
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007"
+          ],
+          "operator": "F04"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R001"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S01/01.bpmn",
+          "matched_findings": [
+            "R001"
+          ],
+          "operator": "S01"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R001"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S01/40.bpmn",
+          "matched_findings": [
+            "R001"
+          ],
+          "operator": "S01"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R002"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S02/15.bpmn",
+          "matched_findings": [
+            "R002"
+          ],
+          "operator": "S02"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R002"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S02/55.bpmn",
+          "matched_findings": [
+            "R002"
+          ],
+          "operator": "S02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R005"
+          ],
+          "expected_refs": [
+            "SequenceFlow_11"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S03/01.bpmn",
+          "matched_findings": [
+            "R005"
+          ],
+          "operator": "S03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R005"
+          ],
+          "expected_refs": [
+            "SequenceFlow_13"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S03/26.bpmn",
+          "matched_findings": [
+            "R005"
+          ],
+          "operator": "S03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "deadlock"
+          ],
+          "expected_refs": [
+            "ExclusiveGateway_1",
+            "ExclusiveGateway_11"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F01/17.bpmn",
+          "matched_findings": [],
+          "operator": "F01"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "deadlock"
+          ],
+          "expected_refs": [
+            "ExclusiveGateway_1",
+            "ExclusiveGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F01/53.bpmn",
+          "matched_findings": [],
+          "operator": "F01"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "lack of synchronisation"
+          ],
+          "expected_refs": [
+            "ParallelGateway_1",
+            "ParallelGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F02/03.bpmn",
+          "matched_findings": [],
+          "operator": "F02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "lack of synchronisation"
+          ],
+          "expected_refs": [
+            "ParallelGateway_1",
+            "ParallelGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F02/47.bpmn",
+          "matched_findings": [],
+          "operator": "F02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "improper completion"
+          ],
+          "expected_refs": [
+            "EndEvent_1",
+            "ParallelGateway_6",
+            "ParallelGateway_7"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F03/31.bpmn",
+          "matched_findings": [],
+          "operator": "F03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R007"
+          ],
+          "expected_refs": [
+            "Task_7"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F04/11.bpmn",
+          "matched_findings": [
+            "R007"
+          ],
+          "operator": "F04"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R007"
+          ],
+          "expected_refs": [
+            "Task_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F04/12.bpmn",
+          "matched_findings": [
+            "R007"
+          ],
+          "operator": "F04"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R001"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S01/16.bpmn",
+          "matched_findings": [
+            "R001"
+          ],
+          "operator": "S01"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R001"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S01/52.bpmn",
+          "matched_findings": [
+            "R001"
+          ],
+          "operator": "S01"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R002"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S02/36.bpmn",
+          "matched_findings": [
+            "R002"
+          ],
+          "operator": "S02"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R002"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S02/46.bpmn",
+          "matched_findings": [
+            "R002"
+          ],
+          "operator": "S02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R005"
+          ],
+          "expected_refs": [
+            "SequenceFlow_11"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S03/05.bpmn",
+          "matched_findings": [
+            "R005"
+          ],
+          "operator": "S03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic"
+          ],
+          "expected": [
+            "R005"
+          ],
+          "expected_refs": [
+            "SequenceFlow_4"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S03/13.bpmn",
+          "matched_findings": [
+            "R005"
+          ],
+          "operator": "S03"
+        }
+      ],
+      "records": 40,
+      "target_anchor": {
+        "expected": 26,
+        "matched": 18,
+        "recall": 0.6923076923076923
+      },
+      "target_category": {
+        "expected": 26,
+        "matched": 16,
+        "recall": 0.6153846153846154
+      },
+      "target_category_and_anchor": {
+        "expected": 26,
+        "matched": 8,
+        "recall": 0.3076923076923077
+      },
+      "target_category_source_attribution": {
+        "both": 0,
+        "deterministic": 16,
+        "llm": 0,
+        "none": 10
+      },
+      "usage": {
+        "cached_input_tokens": 0,
+        "calls": 0,
+        "calls_missing_usage": 0,
+        "complete": true,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0
+      }
+    },
+    "full": {
+      "control_alerts": {
+        "in_scope_alerted_cases": 0,
+        "in_scope_false_positive_rate": 0.0,
+        "policy": "only_structural_formal_alerts_are_in_scope_false_positives",
+        "semantic_alert_rate_descriptive": 0.5,
+        "semantic_alerted_cases": 7
+      },
+      "control_cases": 14,
+      "control_outcomes": [
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/08.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/33.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/41.bpmn",
+          "other_findings": [],
+          "semantic_alert": true,
+          "semantic_findings": [
+            "llm:unwanted_action",
+            "llm:improper_termination"
+          ]
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/46.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/49.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/50.bpmn",
+          "other_findings": [],
+          "semantic_alert": true,
+          "semantic_findings": [
+            "llm:inconsistent_naming"
+          ]
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/53.bpmn",
+          "other_findings": [],
+          "semantic_alert": true,
+          "semantic_findings": [
+            "llm:contradictory_flow"
+          ]
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/05.bpmn",
+          "other_findings": [],
+          "semantic_alert": true,
+          "semantic_findings": [
+            "llm:contradictory_flow"
+          ]
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/09.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/19.bpmn",
+          "other_findings": [],
+          "semantic_alert": true,
+          "semantic_findings": [
+            "llm:contradictory_flow"
+          ]
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/43.bpmn",
+          "other_findings": [],
+          "semantic_alert": true,
+          "semantic_findings": [
+            "llm:missing_step"
+          ]
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/45.bpmn",
+          "other_findings": [],
+          "semantic_alert": true,
+          "semantic_findings": [
+            "llm:missing_exception_handling",
+            "llm:improper_termination"
+          ]
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/47.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/48.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        }
+      ],
+      "error_count": 0,
+      "latency_ms": {
+        "mean_per_record": 23024.825,
+        "total": 920993.0
+      },
+      "operators": {
+        "F01": {
+          "anchor_hits": 4,
+          "anchor_recall": 1.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        },
+        "F02": {
+          "anchor_hits": 4,
+          "anchor_recall": 1.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        },
+        "F03": {
+          "anchor_hits": 2,
+          "anchor_recall": 1.0,
+          "cases": 2,
+          "category_hits": 2,
+          "category_recall": 1.0
+        },
+        "F04": {
+          "anchor_hits": 4,
+          "anchor_recall": 1.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        },
+        "S01": {
+          "anchor_hits": 0,
+          "anchor_recall": 0.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        },
+        "S02": {
+          "anchor_hits": 0,
+          "anchor_recall": 0.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        },
+        "S03": {
+          "anchor_hits": 4,
+          "anchor_recall": 1.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        }
+      },
+      "positive_cases": 26,
+      "positive_outcomes": [
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "deadlock"
+          ],
+          "expected_refs": [
+            "ExclusiveGateway_1",
+            "ExclusiveGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F01/02.bpmn",
+          "matched_findings": [
+            "llm:deadlock"
+          ],
+          "operator": "F01"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "deadlock"
+          ],
+          "expected_refs": [
+            "ExclusiveGateway_16",
+            "ExclusiveGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F01/18.bpmn",
+          "matched_findings": [
+            "llm:deadlock"
+          ],
+          "operator": "F01"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "lack of synchronisation"
+          ],
+          "expected_refs": [
+            "ParallelGateway_1",
+            "ParallelGateway_3"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F02/04.bpmn",
+          "matched_findings": [
+            "llm:lack_of_synchronization"
+          ],
+          "operator": "F02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "lack of synchronisation"
+          ],
+          "expected_refs": [
+            "ParallelGateway_1",
+            "ParallelGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F02/39.bpmn",
+          "matched_findings": [
+            "llm:lack_of_synchronization"
+          ],
+          "operator": "F02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "improper completion"
+          ],
+          "expected_refs": [
+            "EndEvent_1",
+            "ParallelGateway_2",
+            "ParallelGateway_5"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F03/04.bpmn",
+          "matched_findings": [
+            "llm:improper_completion"
+          ],
+          "operator": "F03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R007"
+          ],
+          "expected_refs": [
+            "Task_3"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F04/05.bpmn",
+          "matched_findings": [
+            "R007",
+            "R007",
+            "llm:unreachable_region"
+          ],
+          "operator": "F04"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R007"
+          ],
+          "expected_refs": [
+            "Task_10"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F04/14.bpmn",
+          "matched_findings": [
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "R007",
+            "llm:unreachable_region"
+          ],
+          "operator": "F04"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R001"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S01/01.bpmn",
+          "matched_findings": [
+            "R001",
+            "llm:missing_start_event"
+          ],
+          "operator": "S01"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R001"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S01/40.bpmn",
+          "matched_findings": [
+            "R001",
+            "llm:missing_start_event"
+          ],
+          "operator": "S01"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R002"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S02/15.bpmn",
+          "matched_findings": [
+            "R002",
+            "llm:missing_end_event"
+          ],
+          "operator": "S02"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R002"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S02/55.bpmn",
+          "matched_findings": [
+            "R002",
+            "llm:missing_end_event"
+          ],
+          "operator": "S02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R005"
+          ],
+          "expected_refs": [
+            "SequenceFlow_11"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S03/01.bpmn",
+          "matched_findings": [
+            "R005",
+            "llm:dangling_reference"
+          ],
+          "operator": "S03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R005"
+          ],
+          "expected_refs": [
+            "SequenceFlow_13"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S03/26.bpmn",
+          "matched_findings": [
+            "R005",
+            "llm:dangling_reference"
+          ],
+          "operator": "S03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "deadlock"
+          ],
+          "expected_refs": [
+            "ExclusiveGateway_1",
+            "ExclusiveGateway_11"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F01/17.bpmn",
+          "matched_findings": [
+            "llm:deadlock"
+          ],
+          "operator": "F01"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "deadlock"
+          ],
+          "expected_refs": [
+            "ExclusiveGateway_1",
+            "ExclusiveGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F01/53.bpmn",
+          "matched_findings": [
+            "llm:deadlock"
+          ],
+          "operator": "F01"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "lack of synchronisation"
+          ],
+          "expected_refs": [
+            "ParallelGateway_1",
+            "ParallelGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F02/03.bpmn",
+          "matched_findings": [
+            "llm:lack_of_synchronization"
+          ],
+          "operator": "F02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "lack of synchronisation"
+          ],
+          "expected_refs": [
+            "ParallelGateway_1",
+            "ParallelGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F02/47.bpmn",
+          "matched_findings": [
+            "llm:lack_of_synchronization"
+          ],
+          "operator": "F02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "improper completion"
+          ],
+          "expected_refs": [
+            "EndEvent_1",
+            "ParallelGateway_6",
+            "ParallelGateway_7"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F03/31.bpmn",
+          "matched_findings": [
+            "llm:improper_completion"
+          ],
+          "operator": "F03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R007"
+          ],
+          "expected_refs": [
+            "Task_7"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F04/11.bpmn",
+          "matched_findings": [
+            "R007",
+            "llm:unreachable_region"
+          ],
+          "operator": "F04"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R007"
+          ],
+          "expected_refs": [
+            "Task_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F04/12.bpmn",
+          "matched_findings": [
+            "R007",
+            "llm:unreachable_region"
+          ],
+          "operator": "F04"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R001"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S01/16.bpmn",
+          "matched_findings": [
+            "R001",
+            "llm:missing_start_event"
+          ],
+          "operator": "S01"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R001"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S01/52.bpmn",
+          "matched_findings": [
+            "R001",
+            "llm:missing_start_event"
+          ],
+          "operator": "S01"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R002"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S02/36.bpmn",
+          "matched_findings": [
+            "R002",
+            "llm:missing_end_event"
+          ],
+          "operator": "S02"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R002"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S02/46.bpmn",
+          "matched_findings": [
+            "R002",
+            "llm:missing_end_event"
+          ],
+          "operator": "S02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R005"
+          ],
+          "expected_refs": [
+            "SequenceFlow_11"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S03/05.bpmn",
+          "matched_findings": [
+            "R005",
+            "llm:dangling_reference"
+          ],
+          "operator": "S03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "deterministic",
+            "llm"
+          ],
+          "expected": [
+            "R005"
+          ],
+          "expected_refs": [
+            "SequenceFlow_4"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S03/13.bpmn",
+          "matched_findings": [
+            "R005",
+            "llm:dangling_reference"
+          ],
+          "operator": "S03"
+        }
+      ],
+      "records": 40,
+      "target_anchor": {
+        "expected": 26,
+        "matched": 18,
+        "recall": 0.6923076923076923
+      },
+      "target_category": {
+        "expected": 26,
+        "matched": 26,
+        "recall": 1.0
+      },
+      "target_category_and_anchor": {
+        "expected": 26,
+        "matched": 18,
+        "recall": 0.6923076923076923
+      },
+      "target_category_source_attribution": {
+        "both": 16,
+        "deterministic": 0,
+        "llm": 10,
+        "none": 0
+      },
+      "usage": {
+        "cached_input_tokens": 322560,
+        "calls": 40,
+        "calls_missing_usage": 0,
+        "complete": true,
+        "input_tokens": 515543,
+        "output_tokens": 24025,
+        "total_tokens": 539568
+      }
+    },
+    "llm_only": {
+      "control_alerts": {
+        "in_scope_alerted_cases": 0,
+        "in_scope_false_positive_rate": 0.0,
+        "policy": "only_structural_formal_alerts_are_in_scope_false_positives",
+        "semantic_alert_rate_descriptive": 0.35714285714285715,
+        "semantic_alerted_cases": 5
+      },
+      "control_cases": 14,
+      "control_outcomes": [
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/08.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/33.bpmn",
+          "other_findings": [],
+          "semantic_alert": true,
+          "semantic_findings": [
+            "llm:missing_step",
+            "llm:improper_termination"
+          ]
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/41.bpmn",
+          "other_findings": [],
+          "semantic_alert": true,
+          "semantic_findings": [
+            "llm:unwanted_action",
+            "llm:improper_termination",
+            "llm:contradictory_flow"
+          ]
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/46.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/49.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/50.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/53.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/05.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/09.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/19.bpmn",
+          "other_findings": [],
+          "semantic_alert": true,
+          "semantic_findings": [
+            "llm:contradictory_flow"
+          ]
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/43.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/45.bpmn",
+          "other_findings": [],
+          "semantic_alert": true,
+          "semantic_findings": [
+            "llm:missing_exception_handling"
+          ]
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/47.bpmn",
+          "other_findings": [],
+          "semantic_alert": false,
+          "semantic_findings": []
+        },
+        {
+          "in_scope_alert": false,
+          "in_scope_findings": [],
+          "input_path": "data/eval/v1.0/seeds/48.bpmn",
+          "other_findings": [],
+          "semantic_alert": true,
+          "semantic_findings": [
+            "llm:inconsistent_naming",
+            "llm:missing_step"
+          ]
+        }
+      ],
+      "error_count": 0,
+      "latency_ms": {
+        "mean_per_record": 21909.85,
+        "total": 876394.0
+      },
+      "operators": {
+        "F01": {
+          "anchor_hits": 4,
+          "anchor_recall": 1.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        },
+        "F02": {
+          "anchor_hits": 4,
+          "anchor_recall": 1.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        },
+        "F03": {
+          "anchor_hits": 1,
+          "anchor_recall": 0.5,
+          "cases": 2,
+          "category_hits": 0,
+          "category_recall": 0.0
+        },
+        "F04": {
+          "anchor_hits": 3,
+          "anchor_recall": 0.75,
+          "cases": 4,
+          "category_hits": 3,
+          "category_recall": 0.75
+        },
+        "S01": {
+          "anchor_hits": 0,
+          "anchor_recall": 0.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        },
+        "S02": {
+          "anchor_hits": 0,
+          "anchor_recall": 0.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        },
+        "S03": {
+          "anchor_hits": 4,
+          "anchor_recall": 1.0,
+          "cases": 4,
+          "category_hits": 4,
+          "category_recall": 1.0
+        }
+      },
+      "positive_cases": 26,
+      "positive_outcomes": [
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "deadlock"
+          ],
+          "expected_refs": [
+            "ExclusiveGateway_1",
+            "ExclusiveGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F01/02.bpmn",
+          "matched_findings": [
+            "llm:deadlock"
+          ],
+          "operator": "F01"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "deadlock"
+          ],
+          "expected_refs": [
+            "ExclusiveGateway_16",
+            "ExclusiveGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F01/18.bpmn",
+          "matched_findings": [
+            "llm:deadlock"
+          ],
+          "operator": "F01"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "lack of synchronisation"
+          ],
+          "expected_refs": [
+            "ParallelGateway_1",
+            "ParallelGateway_3"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F02/04.bpmn",
+          "matched_findings": [
+            "llm:lack_of_synchronization"
+          ],
+          "operator": "F02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "lack of synchronisation"
+          ],
+          "expected_refs": [
+            "ParallelGateway_1",
+            "ParallelGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F02/39.bpmn",
+          "matched_findings": [
+            "llm:lack_of_synchronization"
+          ],
+          "operator": "F02"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "improper completion"
+          ],
+          "expected_refs": [
+            "EndEvent_1",
+            "ParallelGateway_2",
+            "ParallelGateway_5"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F03/04.bpmn",
+          "matched_findings": [],
+          "operator": "F03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R007"
+          ],
+          "expected_refs": [
+            "Task_3"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F04/05.bpmn",
+          "matched_findings": [
+            "llm:unreachable_region"
+          ],
+          "operator": "F04"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R007"
+          ],
+          "expected_refs": [
+            "Task_10"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F04/14.bpmn",
+          "matched_findings": [
+            "llm:unreachable_region"
+          ],
+          "operator": "F04"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R001"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S01/01.bpmn",
+          "matched_findings": [
+            "llm:missing_start_event"
+          ],
+          "operator": "S01"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R001"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S01/40.bpmn",
+          "matched_findings": [
+            "llm:missing_start_event"
+          ],
+          "operator": "S01"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R002"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S02/15.bpmn",
+          "matched_findings": [
+            "llm:missing_end_event"
+          ],
+          "operator": "S02"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R002"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S02/55.bpmn",
+          "matched_findings": [
+            "llm:missing_end_event"
+          ],
+          "operator": "S02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R005"
+          ],
+          "expected_refs": [
+            "SequenceFlow_11"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S03/01.bpmn",
+          "matched_findings": [
+            "llm:dangling_reference"
+          ],
+          "operator": "S03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R005"
+          ],
+          "expected_refs": [
+            "SequenceFlow_13"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S03/26.bpmn",
+          "matched_findings": [
+            "llm:dangling_reference"
+          ],
+          "operator": "S03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "deadlock"
+          ],
+          "expected_refs": [
+            "ExclusiveGateway_1",
+            "ExclusiveGateway_11"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F01/17.bpmn",
+          "matched_findings": [
+            "llm:deadlock"
+          ],
+          "operator": "F01"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "deadlock"
+          ],
+          "expected_refs": [
+            "ExclusiveGateway_1",
+            "ExclusiveGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F01/53.bpmn",
+          "matched_findings": [
+            "llm:deadlock"
+          ],
+          "operator": "F01"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "lack of synchronisation"
+          ],
+          "expected_refs": [
+            "ParallelGateway_1",
+            "ParallelGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F02/03.bpmn",
+          "matched_findings": [
+            "llm:lack_of_synchronization"
+          ],
+          "operator": "F02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "lack of synchronisation"
+          ],
+          "expected_refs": [
+            "ParallelGateway_1",
+            "ParallelGateway_2"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F02/47.bpmn",
+          "matched_findings": [
+            "llm:lack_of_synchronization"
+          ],
+          "operator": "F02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "improper completion"
+          ],
+          "expected_refs": [
+            "EndEvent_1",
+            "ParallelGateway_6",
+            "ParallelGateway_7"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F03/31.bpmn",
+          "matched_findings": [],
+          "operator": "F03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R007"
+          ],
+          "expected_refs": [
+            "Task_7"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F04/11.bpmn",
+          "matched_findings": [
+            "llm:unreachable_region"
+          ],
+          "operator": "F04"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": false,
+          "category_hit_sources": [],
+          "expected": [
+            "R007"
+          ],
+          "expected_refs": [
+            "Task_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/F04/12.bpmn",
+          "matched_findings": [],
+          "operator": "F04"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R001"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S01/16.bpmn",
+          "matched_findings": [
+            "llm:missing_start_event"
+          ],
+          "operator": "S01"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R001"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S01/52.bpmn",
+          "matched_findings": [
+            "llm:missing_start_event"
+          ],
+          "operator": "S01"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R002"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S02/36.bpmn",
+          "matched_findings": [
+            "llm:missing_end_event"
+          ],
+          "operator": "S02"
+        },
+        {
+          "anchor_hit": false,
+          "category_and_anchor_hit": false,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R002"
+          ],
+          "expected_refs": [
+            "Process_1"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S02/46.bpmn",
+          "matched_findings": [
+            "llm:missing_end_event"
+          ],
+          "operator": "S02"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R005"
+          ],
+          "expected_refs": [
+            "SequenceFlow_11"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S03/05.bpmn",
+          "matched_findings": [
+            "llm:dangling_reference"
+          ],
+          "operator": "S03"
+        },
+        {
+          "anchor_hit": true,
+          "category_and_anchor_hit": true,
+          "category_hit": true,
+          "category_hit_sources": [
+            "llm"
+          ],
+          "expected": [
+            "R005"
+          ],
+          "expected_refs": [
+            "SequenceFlow_4"
+          ],
+          "input_path": "data/eval/v1.0/variants/single/S03/13.bpmn",
+          "matched_findings": [
+            "llm:dangling_reference"
+          ],
+          "operator": "S03"
+        }
+      ],
+      "records": 40,
+      "target_anchor": {
+        "expected": 26,
+        "matched": 16,
+        "recall": 0.6153846153846154
+      },
+      "target_category": {
+        "expected": 26,
+        "matched": 23,
+        "recall": 0.8846153846153846
+      },
+      "target_category_and_anchor": {
+        "expected": 26,
+        "matched": 15,
+        "recall": 0.5769230769230769
+      },
+      "target_category_source_attribution": {
+        "both": 0,
+        "deterministic": 0,
+        "llm": 23,
+        "none": 3
+      },
+      "usage": {
+        "cached_input_tokens": 322560,
+        "calls": 40,
+        "calls_missing_usage": 0,
+        "complete": true,
+        "input_tokens": 506511,
+        "output_tokens": 21416,
+        "total_tokens": 527927
+      }
+    },
+    "replacement_retention": {
+      "deterministic_targets_detected": 16,
+      "gained_by_llm_only": 8,
+      "lost_by_llm_only": 1,
+      "retained_by_llm_only": 15
+    }
+  },
+  "panel_paths": {
+    "holdout": "experiments/results/e5-validator-holdout/results.jsonl",
+    "screening": "experiments/results/e5-validator-screening/results.jsonl"
+  },
+  "panels": {
+    "holdout": {
+      "comparisons": {
+        "full_minus_deterministic": {
+          "equal_cases": 8,
+          "left_only_hits": 5,
+          "mean_target_category_difference": 0.38461538461538464,
+          "paired_cases": 13,
+          "right_only_hits": 0
+        },
+        "full_minus_llm_only": {
+          "equal_cases": 11,
+          "left_only_hits": 2,
+          "mean_target_category_difference": 0.15384615384615385,
+          "paired_cases": 13,
+          "right_only_hits": 0
+        },
+        "llm_only_minus_deterministic": {
+          "equal_cases": 8,
+          "left_only_hits": 4,
+          "mean_target_category_difference": 0.23076923076923078,
+          "paired_cases": 13,
+          "right_only_hits": 1
+        }
+      },
+      "deterministic": {
+        "control_alerts": {
+          "in_scope_alerted_cases": 0,
+          "in_scope_false_positive_rate": 0.0,
+          "policy": "only_structural_formal_alerts_are_in_scope_false_positives",
+          "semantic_alert_rate_descriptive": 0.0,
+          "semantic_alerted_cases": 0
+        },
+        "control_cases": 7,
+        "control_outcomes": [
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/05.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/09.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/19.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/43.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/45.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/47.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/48.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          }
+        ],
+        "error_count": 0,
+        "latency_ms": {
+          "mean_per_record": 165.5,
+          "total": 3310.0
+        },
+        "operators": {
+          "F01": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 0,
+            "category_recall": 0.0
+          },
+          "F02": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 0,
+            "category_recall": 0.0
+          },
+          "F03": {
+            "anchor_hits": 1,
+            "anchor_recall": 1.0,
+            "cases": 1,
+            "category_hits": 0,
+            "category_recall": 0.0
+          },
+          "F04": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S01": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S02": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S03": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          }
+        },
+        "positive_cases": 13,
+        "positive_outcomes": [
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "deadlock"
+            ],
+            "expected_refs": [
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_11"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F01/17.bpmn",
+            "matched_findings": [],
+            "operator": "F01"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "deadlock"
+            ],
+            "expected_refs": [
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F01/53.bpmn",
+            "matched_findings": [],
+            "operator": "F01"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "lack of synchronisation"
+            ],
+            "expected_refs": [
+              "ParallelGateway_1",
+              "ParallelGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F02/03.bpmn",
+            "matched_findings": [],
+            "operator": "F02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "lack of synchronisation"
+            ],
+            "expected_refs": [
+              "ParallelGateway_1",
+              "ParallelGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F02/47.bpmn",
+            "matched_findings": [],
+            "operator": "F02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "improper completion"
+            ],
+            "expected_refs": [
+              "EndEvent_1",
+              "ParallelGateway_6",
+              "ParallelGateway_7"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F03/31.bpmn",
+            "matched_findings": [],
+            "operator": "F03"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R007"
+            ],
+            "expected_refs": [
+              "Task_7"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F04/11.bpmn",
+            "matched_findings": [
+              "R007"
+            ],
+            "operator": "F04"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R007"
+            ],
+            "expected_refs": [
+              "Task_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F04/12.bpmn",
+            "matched_findings": [
+              "R007"
+            ],
+            "operator": "F04"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R001"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S01/16.bpmn",
+            "matched_findings": [
+              "R001"
+            ],
+            "operator": "S01"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R001"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S01/52.bpmn",
+            "matched_findings": [
+              "R001"
+            ],
+            "operator": "S01"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R002"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S02/36.bpmn",
+            "matched_findings": [
+              "R002"
+            ],
+            "operator": "S02"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R002"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S02/46.bpmn",
+            "matched_findings": [
+              "R002"
+            ],
+            "operator": "S02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R005"
+            ],
+            "expected_refs": [
+              "SequenceFlow_11"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S03/05.bpmn",
+            "matched_findings": [
+              "R005"
+            ],
+            "operator": "S03"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R005"
+            ],
+            "expected_refs": [
+              "SequenceFlow_4"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S03/13.bpmn",
+            "matched_findings": [
+              "R005"
+            ],
+            "operator": "S03"
+          }
+        ],
+        "records": 20,
+        "target_anchor": {
+          "expected": 13,
+          "matched": 9,
+          "recall": 0.6923076923076923
+        },
+        "target_category": {
+          "expected": 13,
+          "matched": 8,
+          "recall": 0.6153846153846154
+        },
+        "target_category_and_anchor": {
+          "expected": 13,
+          "matched": 4,
+          "recall": 0.3076923076923077
+        },
+        "target_category_source_attribution": {
+          "both": 0,
+          "deterministic": 8,
+          "llm": 0,
+          "none": 5
+        },
+        "usage": {
+          "cached_input_tokens": 0,
+          "calls": 0,
+          "calls_missing_usage": 0,
+          "complete": true,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        }
+      },
+      "full": {
+        "control_alerts": {
+          "in_scope_alerted_cases": 0,
+          "in_scope_false_positive_rate": 0.0,
+          "policy": "only_structural_formal_alerts_are_in_scope_false_positives",
+          "semantic_alert_rate_descriptive": 0.5714285714285714,
+          "semantic_alerted_cases": 4
+        },
+        "control_cases": 7,
+        "control_outcomes": [
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/05.bpmn",
+            "other_findings": [],
+            "semantic_alert": true,
+            "semantic_findings": [
+              "llm:contradictory_flow"
+            ]
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/09.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/19.bpmn",
+            "other_findings": [],
+            "semantic_alert": true,
+            "semantic_findings": [
+              "llm:contradictory_flow"
+            ]
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/43.bpmn",
+            "other_findings": [],
+            "semantic_alert": true,
+            "semantic_findings": [
+              "llm:missing_step"
+            ]
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/45.bpmn",
+            "other_findings": [],
+            "semantic_alert": true,
+            "semantic_findings": [
+              "llm:missing_exception_handling",
+              "llm:improper_termination"
+            ]
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/47.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/48.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          }
+        ],
+        "error_count": 0,
+        "latency_ms": {
+          "mean_per_record": 23956.7,
+          "total": 479134.0
+        },
+        "operators": {
+          "F01": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "F02": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "F03": {
+            "anchor_hits": 1,
+            "anchor_recall": 1.0,
+            "cases": 1,
+            "category_hits": 1,
+            "category_recall": 1.0
+          },
+          "F04": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S01": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S02": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S03": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          }
+        },
+        "positive_cases": 13,
+        "positive_outcomes": [
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "deadlock"
+            ],
+            "expected_refs": [
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_11"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F01/17.bpmn",
+            "matched_findings": [
+              "llm:deadlock"
+            ],
+            "operator": "F01"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "deadlock"
+            ],
+            "expected_refs": [
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F01/53.bpmn",
+            "matched_findings": [
+              "llm:deadlock"
+            ],
+            "operator": "F01"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "lack of synchronisation"
+            ],
+            "expected_refs": [
+              "ParallelGateway_1",
+              "ParallelGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F02/03.bpmn",
+            "matched_findings": [
+              "llm:lack_of_synchronization"
+            ],
+            "operator": "F02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "lack of synchronisation"
+            ],
+            "expected_refs": [
+              "ParallelGateway_1",
+              "ParallelGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F02/47.bpmn",
+            "matched_findings": [
+              "llm:lack_of_synchronization"
+            ],
+            "operator": "F02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "improper completion"
+            ],
+            "expected_refs": [
+              "EndEvent_1",
+              "ParallelGateway_6",
+              "ParallelGateway_7"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F03/31.bpmn",
+            "matched_findings": [
+              "llm:improper_completion"
+            ],
+            "operator": "F03"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R007"
+            ],
+            "expected_refs": [
+              "Task_7"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F04/11.bpmn",
+            "matched_findings": [
+              "R007",
+              "llm:unreachable_region"
+            ],
+            "operator": "F04"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R007"
+            ],
+            "expected_refs": [
+              "Task_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F04/12.bpmn",
+            "matched_findings": [
+              "R007",
+              "llm:unreachable_region"
+            ],
+            "operator": "F04"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R001"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S01/16.bpmn",
+            "matched_findings": [
+              "R001",
+              "llm:missing_start_event"
+            ],
+            "operator": "S01"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R001"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S01/52.bpmn",
+            "matched_findings": [
+              "R001",
+              "llm:missing_start_event"
+            ],
+            "operator": "S01"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R002"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S02/36.bpmn",
+            "matched_findings": [
+              "R002",
+              "llm:missing_end_event"
+            ],
+            "operator": "S02"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R002"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S02/46.bpmn",
+            "matched_findings": [
+              "R002",
+              "llm:missing_end_event"
+            ],
+            "operator": "S02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R005"
+            ],
+            "expected_refs": [
+              "SequenceFlow_11"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S03/05.bpmn",
+            "matched_findings": [
+              "R005",
+              "llm:dangling_reference"
+            ],
+            "operator": "S03"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R005"
+            ],
+            "expected_refs": [
+              "SequenceFlow_4"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S03/13.bpmn",
+            "matched_findings": [
+              "R005",
+              "llm:dangling_reference"
+            ],
+            "operator": "S03"
+          }
+        ],
+        "records": 20,
+        "target_anchor": {
+          "expected": 13,
+          "matched": 9,
+          "recall": 0.6923076923076923
+        },
+        "target_category": {
+          "expected": 13,
+          "matched": 13,
+          "recall": 1.0
+        },
+        "target_category_and_anchor": {
+          "expected": 13,
+          "matched": 9,
+          "recall": 0.6923076923076923
+        },
+        "target_category_source_attribution": {
+          "both": 8,
+          "deterministic": 0,
+          "llm": 5,
+          "none": 0
+        },
+        "usage": {
+          "cached_input_tokens": 179200,
+          "calls": 20,
+          "calls_missing_usage": 0,
+          "complete": true,
+          "input_tokens": 258153,
+          "output_tokens": 12218,
+          "total_tokens": 270371
+        }
+      },
+      "llm_only": {
+        "control_alerts": {
+          "in_scope_alerted_cases": 0,
+          "in_scope_false_positive_rate": 0.0,
+          "policy": "only_structural_formal_alerts_are_in_scope_false_positives",
+          "semantic_alert_rate_descriptive": 0.42857142857142855,
+          "semantic_alerted_cases": 3
+        },
+        "control_cases": 7,
+        "control_outcomes": [
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/05.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/09.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/19.bpmn",
+            "other_findings": [],
+            "semantic_alert": true,
+            "semantic_findings": [
+              "llm:contradictory_flow"
+            ]
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/43.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/45.bpmn",
+            "other_findings": [],
+            "semantic_alert": true,
+            "semantic_findings": [
+              "llm:missing_exception_handling"
+            ]
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/47.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/48.bpmn",
+            "other_findings": [],
+            "semantic_alert": true,
+            "semantic_findings": [
+              "llm:inconsistent_naming",
+              "llm:missing_step"
+            ]
+          }
+        ],
+        "error_count": 0,
+        "latency_ms": {
+          "mean_per_record": 23019.7,
+          "total": 460394.0
+        },
+        "operators": {
+          "F01": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "F02": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "F03": {
+            "anchor_hits": 1,
+            "anchor_recall": 1.0,
+            "cases": 1,
+            "category_hits": 0,
+            "category_recall": 0.0
+          },
+          "F04": {
+            "anchor_hits": 1,
+            "anchor_recall": 0.5,
+            "cases": 2,
+            "category_hits": 1,
+            "category_recall": 0.5
+          },
+          "S01": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S02": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S03": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          }
+        },
+        "positive_cases": 13,
+        "positive_outcomes": [
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "deadlock"
+            ],
+            "expected_refs": [
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_11"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F01/17.bpmn",
+            "matched_findings": [
+              "llm:deadlock"
+            ],
+            "operator": "F01"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "deadlock"
+            ],
+            "expected_refs": [
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F01/53.bpmn",
+            "matched_findings": [
+              "llm:deadlock"
+            ],
+            "operator": "F01"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "lack of synchronisation"
+            ],
+            "expected_refs": [
+              "ParallelGateway_1",
+              "ParallelGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F02/03.bpmn",
+            "matched_findings": [
+              "llm:lack_of_synchronization"
+            ],
+            "operator": "F02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "lack of synchronisation"
+            ],
+            "expected_refs": [
+              "ParallelGateway_1",
+              "ParallelGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F02/47.bpmn",
+            "matched_findings": [
+              "llm:lack_of_synchronization"
+            ],
+            "operator": "F02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "improper completion"
+            ],
+            "expected_refs": [
+              "EndEvent_1",
+              "ParallelGateway_6",
+              "ParallelGateway_7"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F03/31.bpmn",
+            "matched_findings": [],
+            "operator": "F03"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R007"
+            ],
+            "expected_refs": [
+              "Task_7"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F04/11.bpmn",
+            "matched_findings": [
+              "llm:unreachable_region"
+            ],
+            "operator": "F04"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "R007"
+            ],
+            "expected_refs": [
+              "Task_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F04/12.bpmn",
+            "matched_findings": [],
+            "operator": "F04"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R001"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S01/16.bpmn",
+            "matched_findings": [
+              "llm:missing_start_event"
+            ],
+            "operator": "S01"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R001"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S01/52.bpmn",
+            "matched_findings": [
+              "llm:missing_start_event"
+            ],
+            "operator": "S01"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R002"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S02/36.bpmn",
+            "matched_findings": [
+              "llm:missing_end_event"
+            ],
+            "operator": "S02"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R002"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S02/46.bpmn",
+            "matched_findings": [
+              "llm:missing_end_event"
+            ],
+            "operator": "S02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R005"
+            ],
+            "expected_refs": [
+              "SequenceFlow_11"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S03/05.bpmn",
+            "matched_findings": [
+              "llm:dangling_reference"
+            ],
+            "operator": "S03"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R005"
+            ],
+            "expected_refs": [
+              "SequenceFlow_4"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S03/13.bpmn",
+            "matched_findings": [
+              "llm:dangling_reference"
+            ],
+            "operator": "S03"
+          }
+        ],
+        "records": 20,
+        "target_anchor": {
+          "expected": 13,
+          "matched": 8,
+          "recall": 0.6153846153846154
+        },
+        "target_category": {
+          "expected": 13,
+          "matched": 11,
+          "recall": 0.8461538461538461
+        },
+        "target_category_and_anchor": {
+          "expected": 13,
+          "matched": 7,
+          "recall": 0.5384615384615384
+        },
+        "target_category_source_attribution": {
+          "both": 0,
+          "deterministic": 0,
+          "llm": 11,
+          "none": 2
+        },
+        "usage": {
+          "cached_input_tokens": 179200,
+          "calls": 20,
+          "calls_missing_usage": 0,
+          "complete": true,
+          "input_tokens": 254515,
+          "output_tokens": 11071,
+          "total_tokens": 265586
+        }
+      },
+      "replacement_retention": {
+        "deterministic_targets_detected": 8,
+        "gained_by_llm_only": 4,
+        "lost_by_llm_only": 1,
+        "retained_by_llm_only": 7
+      }
+    },
+    "screening": {
+      "comparisons": {
+        "full_minus_deterministic": {
+          "equal_cases": 8,
+          "left_only_hits": 5,
+          "mean_target_category_difference": 0.38461538461538464,
+          "paired_cases": 13,
+          "right_only_hits": 0
+        },
+        "full_minus_llm_only": {
+          "equal_cases": 12,
+          "left_only_hits": 1,
+          "mean_target_category_difference": 0.07692307692307693,
+          "paired_cases": 13,
+          "right_only_hits": 0
+        },
+        "llm_only_minus_deterministic": {
+          "equal_cases": 9,
+          "left_only_hits": 4,
+          "mean_target_category_difference": 0.3076923076923077,
+          "paired_cases": 13,
+          "right_only_hits": 0
+        }
+      },
+      "deterministic": {
+        "control_alerts": {
+          "in_scope_alerted_cases": 0,
+          "in_scope_false_positive_rate": 0.0,
+          "policy": "only_structural_formal_alerts_are_in_scope_false_positives",
+          "semantic_alert_rate_descriptive": 0.0,
+          "semantic_alerted_cases": 0
+        },
+        "control_cases": 7,
+        "control_outcomes": [
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/08.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/33.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/41.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/46.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/49.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/50.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/53.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          }
+        ],
+        "error_count": 0,
+        "latency_ms": {
+          "mean_per_record": 242.15,
+          "total": 4843.0
+        },
+        "operators": {
+          "F01": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 0,
+            "category_recall": 0.0
+          },
+          "F02": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 0,
+            "category_recall": 0.0
+          },
+          "F03": {
+            "anchor_hits": 1,
+            "anchor_recall": 1.0,
+            "cases": 1,
+            "category_hits": 0,
+            "category_recall": 0.0
+          },
+          "F04": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S01": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S02": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S03": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          }
+        },
+        "positive_cases": 13,
+        "positive_outcomes": [
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "deadlock"
+            ],
+            "expected_refs": [
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F01/02.bpmn",
+            "matched_findings": [],
+            "operator": "F01"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "deadlock"
+            ],
+            "expected_refs": [
+              "ExclusiveGateway_16",
+              "ExclusiveGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F01/18.bpmn",
+            "matched_findings": [],
+            "operator": "F01"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "lack of synchronisation"
+            ],
+            "expected_refs": [
+              "ParallelGateway_1",
+              "ParallelGateway_3"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F02/04.bpmn",
+            "matched_findings": [],
+            "operator": "F02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "lack of synchronisation"
+            ],
+            "expected_refs": [
+              "ParallelGateway_1",
+              "ParallelGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F02/39.bpmn",
+            "matched_findings": [],
+            "operator": "F02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "improper completion"
+            ],
+            "expected_refs": [
+              "EndEvent_1",
+              "ParallelGateway_2",
+              "ParallelGateway_5"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F03/04.bpmn",
+            "matched_findings": [],
+            "operator": "F03"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R007"
+            ],
+            "expected_refs": [
+              "Task_3"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F04/05.bpmn",
+            "matched_findings": [
+              "R007",
+              "R007"
+            ],
+            "operator": "F04"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R007"
+            ],
+            "expected_refs": [
+              "Task_10"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F04/14.bpmn",
+            "matched_findings": [
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007"
+            ],
+            "operator": "F04"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R001"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S01/01.bpmn",
+            "matched_findings": [
+              "R001"
+            ],
+            "operator": "S01"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R001"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S01/40.bpmn",
+            "matched_findings": [
+              "R001"
+            ],
+            "operator": "S01"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R002"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S02/15.bpmn",
+            "matched_findings": [
+              "R002"
+            ],
+            "operator": "S02"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R002"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S02/55.bpmn",
+            "matched_findings": [
+              "R002"
+            ],
+            "operator": "S02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R005"
+            ],
+            "expected_refs": [
+              "SequenceFlow_11"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S03/01.bpmn",
+            "matched_findings": [
+              "R005"
+            ],
+            "operator": "S03"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic"
+            ],
+            "expected": [
+              "R005"
+            ],
+            "expected_refs": [
+              "SequenceFlow_13"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S03/26.bpmn",
+            "matched_findings": [
+              "R005"
+            ],
+            "operator": "S03"
+          }
+        ],
+        "records": 20,
+        "target_anchor": {
+          "expected": 13,
+          "matched": 9,
+          "recall": 0.6923076923076923
+        },
+        "target_category": {
+          "expected": 13,
+          "matched": 8,
+          "recall": 0.6153846153846154
+        },
+        "target_category_and_anchor": {
+          "expected": 13,
+          "matched": 4,
+          "recall": 0.3076923076923077
+        },
+        "target_category_source_attribution": {
+          "both": 0,
+          "deterministic": 8,
+          "llm": 0,
+          "none": 5
+        },
+        "usage": {
+          "cached_input_tokens": 0,
+          "calls": 0,
+          "calls_missing_usage": 0,
+          "complete": true,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        }
+      },
+      "full": {
+        "control_alerts": {
+          "in_scope_alerted_cases": 0,
+          "in_scope_false_positive_rate": 0.0,
+          "policy": "only_structural_formal_alerts_are_in_scope_false_positives",
+          "semantic_alert_rate_descriptive": 0.42857142857142855,
+          "semantic_alerted_cases": 3
+        },
+        "control_cases": 7,
+        "control_outcomes": [
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/08.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/33.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/41.bpmn",
+            "other_findings": [],
+            "semantic_alert": true,
+            "semantic_findings": [
+              "llm:unwanted_action",
+              "llm:improper_termination"
+            ]
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/46.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/49.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/50.bpmn",
+            "other_findings": [],
+            "semantic_alert": true,
+            "semantic_findings": [
+              "llm:inconsistent_naming"
+            ]
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/53.bpmn",
+            "other_findings": [],
+            "semantic_alert": true,
+            "semantic_findings": [
+              "llm:contradictory_flow"
+            ]
+          }
+        ],
+        "error_count": 0,
+        "latency_ms": {
+          "mean_per_record": 22092.95,
+          "total": 441859.0
+        },
+        "operators": {
+          "F01": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "F02": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "F03": {
+            "anchor_hits": 1,
+            "anchor_recall": 1.0,
+            "cases": 1,
+            "category_hits": 1,
+            "category_recall": 1.0
+          },
+          "F04": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S01": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S02": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S03": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          }
+        },
+        "positive_cases": 13,
+        "positive_outcomes": [
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "deadlock"
+            ],
+            "expected_refs": [
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F01/02.bpmn",
+            "matched_findings": [
+              "llm:deadlock"
+            ],
+            "operator": "F01"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "deadlock"
+            ],
+            "expected_refs": [
+              "ExclusiveGateway_16",
+              "ExclusiveGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F01/18.bpmn",
+            "matched_findings": [
+              "llm:deadlock"
+            ],
+            "operator": "F01"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "lack of synchronisation"
+            ],
+            "expected_refs": [
+              "ParallelGateway_1",
+              "ParallelGateway_3"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F02/04.bpmn",
+            "matched_findings": [
+              "llm:lack_of_synchronization"
+            ],
+            "operator": "F02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "lack of synchronisation"
+            ],
+            "expected_refs": [
+              "ParallelGateway_1",
+              "ParallelGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F02/39.bpmn",
+            "matched_findings": [
+              "llm:lack_of_synchronization"
+            ],
+            "operator": "F02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "improper completion"
+            ],
+            "expected_refs": [
+              "EndEvent_1",
+              "ParallelGateway_2",
+              "ParallelGateway_5"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F03/04.bpmn",
+            "matched_findings": [
+              "llm:improper_completion"
+            ],
+            "operator": "F03"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R007"
+            ],
+            "expected_refs": [
+              "Task_3"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F04/05.bpmn",
+            "matched_findings": [
+              "R007",
+              "R007",
+              "llm:unreachable_region"
+            ],
+            "operator": "F04"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R007"
+            ],
+            "expected_refs": [
+              "Task_10"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F04/14.bpmn",
+            "matched_findings": [
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "R007",
+              "llm:unreachable_region"
+            ],
+            "operator": "F04"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R001"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S01/01.bpmn",
+            "matched_findings": [
+              "R001",
+              "llm:missing_start_event"
+            ],
+            "operator": "S01"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R001"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S01/40.bpmn",
+            "matched_findings": [
+              "R001",
+              "llm:missing_start_event"
+            ],
+            "operator": "S01"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R002"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S02/15.bpmn",
+            "matched_findings": [
+              "R002",
+              "llm:missing_end_event"
+            ],
+            "operator": "S02"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R002"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S02/55.bpmn",
+            "matched_findings": [
+              "R002",
+              "llm:missing_end_event"
+            ],
+            "operator": "S02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R005"
+            ],
+            "expected_refs": [
+              "SequenceFlow_11"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S03/01.bpmn",
+            "matched_findings": [
+              "R005",
+              "llm:dangling_reference"
+            ],
+            "operator": "S03"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "deterministic",
+              "llm"
+            ],
+            "expected": [
+              "R005"
+            ],
+            "expected_refs": [
+              "SequenceFlow_13"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S03/26.bpmn",
+            "matched_findings": [
+              "R005",
+              "llm:dangling_reference"
+            ],
+            "operator": "S03"
+          }
+        ],
+        "records": 20,
+        "target_anchor": {
+          "expected": 13,
+          "matched": 9,
+          "recall": 0.6923076923076923
+        },
+        "target_category": {
+          "expected": 13,
+          "matched": 13,
+          "recall": 1.0
+        },
+        "target_category_and_anchor": {
+          "expected": 13,
+          "matched": 9,
+          "recall": 0.6923076923076923
+        },
+        "target_category_source_attribution": {
+          "both": 8,
+          "deterministic": 0,
+          "llm": 5,
+          "none": 0
+        },
+        "usage": {
+          "cached_input_tokens": 143360,
+          "calls": 20,
+          "calls_missing_usage": 0,
+          "complete": true,
+          "input_tokens": 257390,
+          "output_tokens": 11807,
+          "total_tokens": 269197
+        }
+      },
+      "llm_only": {
+        "control_alerts": {
+          "in_scope_alerted_cases": 0,
+          "in_scope_false_positive_rate": 0.0,
+          "policy": "only_structural_formal_alerts_are_in_scope_false_positives",
+          "semantic_alert_rate_descriptive": 0.2857142857142857,
+          "semantic_alerted_cases": 2
+        },
+        "control_cases": 7,
+        "control_outcomes": [
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/08.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/33.bpmn",
+            "other_findings": [],
+            "semantic_alert": true,
+            "semantic_findings": [
+              "llm:missing_step",
+              "llm:improper_termination"
+            ]
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/41.bpmn",
+            "other_findings": [],
+            "semantic_alert": true,
+            "semantic_findings": [
+              "llm:unwanted_action",
+              "llm:improper_termination",
+              "llm:contradictory_flow"
+            ]
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/46.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/49.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/50.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          },
+          {
+            "in_scope_alert": false,
+            "in_scope_findings": [],
+            "input_path": "data/eval/v1.0/seeds/53.bpmn",
+            "other_findings": [],
+            "semantic_alert": false,
+            "semantic_findings": []
+          }
+        ],
+        "error_count": 0,
+        "latency_ms": {
+          "mean_per_record": 20800.0,
+          "total": 416000.0
+        },
+        "operators": {
+          "F01": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "F02": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "F03": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 1,
+            "category_hits": 0,
+            "category_recall": 0.0
+          },
+          "F04": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S01": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S02": {
+            "anchor_hits": 0,
+            "anchor_recall": 0.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          },
+          "S03": {
+            "anchor_hits": 2,
+            "anchor_recall": 1.0,
+            "cases": 2,
+            "category_hits": 2,
+            "category_recall": 1.0
+          }
+        },
+        "positive_cases": 13,
+        "positive_outcomes": [
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "deadlock"
+            ],
+            "expected_refs": [
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F01/02.bpmn",
+            "matched_findings": [
+              "llm:deadlock"
+            ],
+            "operator": "F01"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "deadlock"
+            ],
+            "expected_refs": [
+              "ExclusiveGateway_16",
+              "ExclusiveGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F01/18.bpmn",
+            "matched_findings": [
+              "llm:deadlock"
+            ],
+            "operator": "F01"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "lack of synchronisation"
+            ],
+            "expected_refs": [
+              "ParallelGateway_1",
+              "ParallelGateway_3"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F02/04.bpmn",
+            "matched_findings": [
+              "llm:lack_of_synchronization"
+            ],
+            "operator": "F02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "lack of synchronisation"
+            ],
+            "expected_refs": [
+              "ParallelGateway_1",
+              "ParallelGateway_2"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F02/39.bpmn",
+            "matched_findings": [
+              "llm:lack_of_synchronization"
+            ],
+            "operator": "F02"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": false,
+            "category_hit_sources": [],
+            "expected": [
+              "improper completion"
+            ],
+            "expected_refs": [
+              "EndEvent_1",
+              "ParallelGateway_2",
+              "ParallelGateway_5"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F03/04.bpmn",
+            "matched_findings": [],
+            "operator": "F03"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R007"
+            ],
+            "expected_refs": [
+              "Task_3"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F04/05.bpmn",
+            "matched_findings": [
+              "llm:unreachable_region"
+            ],
+            "operator": "F04"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R007"
+            ],
+            "expected_refs": [
+              "Task_10"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/F04/14.bpmn",
+            "matched_findings": [
+              "llm:unreachable_region"
+            ],
+            "operator": "F04"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R001"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S01/01.bpmn",
+            "matched_findings": [
+              "llm:missing_start_event"
+            ],
+            "operator": "S01"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R001"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S01/40.bpmn",
+            "matched_findings": [
+              "llm:missing_start_event"
+            ],
+            "operator": "S01"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R002"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S02/15.bpmn",
+            "matched_findings": [
+              "llm:missing_end_event"
+            ],
+            "operator": "S02"
+          },
+          {
+            "anchor_hit": false,
+            "category_and_anchor_hit": false,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R002"
+            ],
+            "expected_refs": [
+              "Process_1"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S02/55.bpmn",
+            "matched_findings": [
+              "llm:missing_end_event"
+            ],
+            "operator": "S02"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R005"
+            ],
+            "expected_refs": [
+              "SequenceFlow_11"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S03/01.bpmn",
+            "matched_findings": [
+              "llm:dangling_reference"
+            ],
+            "operator": "S03"
+          },
+          {
+            "anchor_hit": true,
+            "category_and_anchor_hit": true,
+            "category_hit": true,
+            "category_hit_sources": [
+              "llm"
+            ],
+            "expected": [
+              "R005"
+            ],
+            "expected_refs": [
+              "SequenceFlow_13"
+            ],
+            "input_path": "data/eval/v1.0/variants/single/S03/26.bpmn",
+            "matched_findings": [
+              "llm:dangling_reference"
+            ],
+            "operator": "S03"
+          }
+        ],
+        "records": 20,
+        "target_anchor": {
+          "expected": 13,
+          "matched": 8,
+          "recall": 0.6153846153846154
+        },
+        "target_category": {
+          "expected": 13,
+          "matched": 12,
+          "recall": 0.9230769230769231
+        },
+        "target_category_and_anchor": {
+          "expected": 13,
+          "matched": 8,
+          "recall": 0.6153846153846154
+        },
+        "target_category_source_attribution": {
+          "both": 0,
+          "deterministic": 0,
+          "llm": 12,
+          "none": 1
+        },
+        "usage": {
+          "cached_input_tokens": 143360,
+          "calls": 20,
+          "calls_missing_usage": 0,
+          "complete": true,
+          "input_tokens": 251996,
+          "output_tokens": 10345,
+          "total_tokens": 262341
+        }
+      },
+      "replacement_retention": {
+        "deterministic_targets_detected": 8,
+        "gained_by_llm_only": 4,
+        "lost_by_llm_only": 0,
+        "retained_by_llm_only": 8
+      }
+    }
+  },
+  "policy": {
+    "control_false_positives": "structural_formal_alerts_only",
+    "extras": "unadjudicated_and_not_scored_as_false_positives",
+    "pooling": "panels_reported_separately_and_combined_preserves_case_pairing",
+    "semantic_control_alerts": "descriptive_only",
+    "target_truth": "one_injected_structural_or_formal_defect_per_positive_case"
+  },
+  "schema_version": "e5-analysis-v1"
+}

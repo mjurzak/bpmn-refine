@@ -1,0 +1,34 @@
+experiment_id: description-ablation-e4-terra-low-compact-json-no-description
+dataset_version: v1.0+ground-truth-overlay-1.2
+inputs:
+- data/eval/v1.0/seeds/02.bpmn
+- data/eval/v1.0/seeds/05.bpmn
+- data/eval/v1.0/seeds/18.bpmn
+- data/eval/v1.0/variants/single/M01/33.bpmn
+- data/eval/v1.0/variants/single/M02/09.bpmn
+- data/eval/v1.0/variants/single/M03/17.bpmn
+- data/eval/v1.0/variants/single/M04/11.bpmn
+- data/eval/v1.0/variants/single/M05/16.bpmn
+- data/eval/v1.0/variants/single/M06/05.bpmn
+- data/eval/v1.0/variants/single/M07/31.bpmn
+description_root: data/eval/v1.0/descriptions
+base:
+  model_tier: custom
+  model_override: gpt-5.6-terra
+  provider_override: codex_cli
+  ir_format: compact_json
+  tiers_enabled:
+    t1: false
+    t2: false
+    t3: true
+  include_reference_description: false
+  include_semantic_projection: true
+  llm_validation_scope: semantic
+  reasoning_effort: low
+run_repair: false
+repeats: 1
+notes: >-
+  E4 resource-constrained description ablation. This executable spec contains
+  only the ten new diagram-only trials. The matching diagram-plus-description
+  Terra-low compact-JSON observations are reused unchanged from E3 in a
+  derived analysis input with explicit provenance.

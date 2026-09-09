@@ -1,5 +1,6 @@
 # Not an ablation. The cheapest spec that resolves, so `make experiment-rehearse`
 # and the spec-loading test always have something to expand
+# Provider-free rehearsal fixture.
 experiment_id: smoke
 dataset_version: dev-fixtures
 notes: >-

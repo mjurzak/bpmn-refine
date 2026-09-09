@@ -33,5 +33,7 @@ frontend/dist/
 # generated local documentation
 project-explorer.html
 
-# generated experiment checkpoints and provider payloads
-experiments/results/
+# resumable per-trial checkpoints; canonical run manifests, results, analyses,
+# and manually reviewed derivatives remain visible to Git for reproducibility
+experiments/results/**/trials/
+experiments/results/**/*.tmp

@@ -1,0 +1,103 @@
+{
+  "app_commit": "7064556",
+  "completed": 20,
+  "concurrency": 4,
+  "config_count": 1,
+  "config_hashes": [
+    "90d893e3d439"
+  ],
+  "dataset_version": "v1.0",
+  "description_hashes": {
+    "data/eval/v1.0/descriptions/seeds/03.txt": "927a080464b7",
+    "data/eval/v1.0/descriptions/seeds/04.txt": "f553aa8d1da9",
+    "data/eval/v1.0/descriptions/seeds/11.txt": "ccc76d998b04",
+    "data/eval/v1.0/descriptions/variants/single/M01/08.txt": "2c8d7ec877ab",
+    "data/eval/v1.0/descriptions/variants/single/M02/01.txt": "c87eb0417c0b",
+    "data/eval/v1.0/descriptions/variants/single/M03/15.txt": "b694c995476f",
+    "data/eval/v1.0/descriptions/variants/single/M04/15.txt": "b694c995476f",
+    "data/eval/v1.0/descriptions/variants/single/M05/02.txt": "5d3ca0800486",
+    "data/eval/v1.0/descriptions/variants/single/M06/14.txt": "8a3ec8fa7376",
+    "data/eval/v1.0/descriptions/variants/single/M07/28.txt": "e334066f736d"
+  },
+  "executed": 20,
+  "executed_this_run": 20,
+  "experiment_id": "e9-repeatability-new-calls",
+  "failed": 0,
+  "failed_this_run": 0,
+  "finished_at": "2026-09-03T13:00:06.549199+00:00",
+  "input_hashes": {
+    "data/eval/v1.0/seeds/03.bpmn": "f7a96d52a0d3",
+    "data/eval/v1.0/seeds/04.bpmn": "417fd58a804f",
+    "data/eval/v1.0/seeds/11.bpmn": "b830ee9cf979",
+    "data/eval/v1.0/variants/single/M01/08.bpmn": "211f59d4ce1d",
+    "data/eval/v1.0/variants/single/M02/01.bpmn": "5676e98a5ff3",
+    "data/eval/v1.0/variants/single/M03/15.bpmn": "4973caeabb4e",
+    "data/eval/v1.0/variants/single/M04/15.bpmn": "ae2c1e0f64f2",
+    "data/eval/v1.0/variants/single/M05/02.bpmn": "9310ebc3cea1",
+    "data/eval/v1.0/variants/single/M06/14.bpmn": "fdc425c4ab1d",
+    "data/eval/v1.0/variants/single/M07/28.bpmn": "a4f9bc2c433b"
+  },
+  "inputs": [
+    "data/eval/v1.0/seeds/03.bpmn",
+    "data/eval/v1.0/seeds/04.bpmn",
+    "data/eval/v1.0/seeds/11.bpmn",
+    "data/eval/v1.0/variants/single/M01/08.bpmn",
+    "data/eval/v1.0/variants/single/M02/01.bpmn",
+    "data/eval/v1.0/variants/single/M03/15.bpmn",
+    "data/eval/v1.0/variants/single/M04/15.bpmn",
+    "data/eval/v1.0/variants/single/M05/02.bpmn",
+    "data/eval/v1.0/variants/single/M06/14.bpmn",
+    "data/eval/v1.0/variants/single/M07/28.bpmn"
+  ],
+  "last_invocation": {
+    "concurrency": 4,
+    "executed": 20,
+    "failed": 0,
+    "finished_at": "2026-09-03T13:00:04.599162+00:00",
+    "skipped_already_done": 0,
+    "started_at": "2026-09-03T12:57:33.712905+00:00"
+  },
+  "results_file": "results.jsonl",
+  "skipped_already_done": 0,
+  "spec": {
+    "axes": {},
+    "base": {
+      "include_reference_description": true,
+      "include_semantic_projection": true,
+      "ir_format": "compact_json",
+      "llm_validation_scope": "holistic",
+      "model_override": "gpt-5.6-terra",
+      "model_tier": "custom",
+      "provider_override": "codex_cli",
+      "reasoning_effort": "low",
+      "tiers_enabled": {
+        "t1": true,
+        "t2": true,
+        "t3": true
+      }
+    },
+    "configs": [],
+    "dataset_version": "v1.0",
+    "description_root": "data/eval/v1.0/descriptions",
+    "exclude": [],
+    "experiment_id": "e9-repeatability-new-calls",
+    "inputs": [
+      "data/eval/v1.0/seeds/03.bpmn",
+      "data/eval/v1.0/seeds/04.bpmn",
+      "data/eval/v1.0/seeds/11.bpmn",
+      "data/eval/v1.0/variants/single/M01/08.bpmn",
+      "data/eval/v1.0/variants/single/M02/01.bpmn",
+      "data/eval/v1.0/variants/single/M03/15.bpmn",
+      "data/eval/v1.0/variants/single/M04/15.bpmn",
+      "data/eval/v1.0/variants/single/M05/02.bpmn",
+      "data/eval/v1.0/variants/single/M06/14.bpmn",
+      "data/eval/v1.0/variants/single/M07/28.bpmn"
+    ],
+    "notes": "E9 repeated-call stability diagnostic. The panel is the first three control records and the first single-defect record for each M01-M07 in the frozen E6 result order. These are the two new independent calls per case; analysis reuses the corresponding immutable E6 record as the first of three runs. No deterministic seed or temperature is requested because neither was part of the final E6 configuration and Codex CLI does not support those controls.",
+    "repeats": 2,
+    "run_repair": false
+  },
+  "started_at": "2026-09-03T12:57:33.713264+00:00",
+  "trial_count": 20,
+  "trial_records_dir": "trials"
+}

@@ -1,0 +1,958 @@
+{
+  "cases": [
+    {
+      "case_id": "disjoint/F01+F02/18",
+      "description_path": "data/eval/v1.0/descriptions/variants/disjoint/F01+F02/18.txt",
+      "diagnostic_role": "requires_second_target_iteration",
+      "e6_all_issues": [
+        {
+          "element_id": null,
+          "element_refs": [
+            "Task_15",
+            "SequenceFlow_12",
+            "SequenceFlow_37",
+            "SequenceFlow_40",
+            "SequenceFlow_45",
+            "SequenceFlow_48",
+            "ExclusiveGateway_12",
+            "ExclusiveGateway_13",
+            "ExclusiveGateway_14",
+            "ExclusiveGateway_15",
+            "ExclusiveGateway_2",
+            "ExclusiveGateway_5",
+            "ExclusiveGateway_9",
+            "ParallelGateway_3",
+            "Task_1",
+            "Task_11",
+            "Task_13",
+            "Task_16",
+            "Task_18",
+            "Task_2",
+            "Task_20",
+            "Task_22",
+            "Task_24",
+            "Task_25",
+            "Task_4",
+            "Task_7",
+            "Task_9",
+            "ExclusiveGateway_1",
+            "ExclusiveGateway_10",
+            "ExclusiveGateway_11",
+            "ExclusiveGateway_16",
+            "ExclusiveGateway_3",
+            "ExclusiveGateway_4",
+            "ExclusiveGateway_7",
+            "ExclusiveGateway_8"
+          ],
+          "formal_witness": {
+            "counterexample_traces": [],
+            "dead_elements": [
+              "Task_15"
+            ],
+            "description": "The process is not sound. These elements can never execute: Cancel application (Task_15). The following elements are not covered by an S-component, which points at a split/join mismatch around them: SequenceFlow_12, SequenceFlow_37, SequenceFlow_40, SequenceFlow_45, SequenceFlow_48, ExclusiveGateway_12, ExclusiveGateway_13, ExclusiveGateway_14, ExclusiveGateway_15, ExclusiveGateway_2, ExclusiveGateway_5, ExclusiveGateway_9, ParallelGateway_3, Provide missing documents (Task_1), Resolve schedule conflicts (Task_11), Send orientation materials (Task_13), Evaluate application by admissions committee (Task_16), Review application and documents (Task_18), Meet with appeals committee (Task_2), Process fees or waivers (Task_20), Await decision (Task_22), Select courses (Task_24), Obtain student ID card (Task_25), Set up IT accounts (Task_4), Review grades online (Task_7), Meet with academic advisor (Task_9), ExclusiveGateway_1, ExclusiveGateway_10, ExclusiveGateway_11, ExclusiveGateway_16, ExclusiveGateway_3, ExclusiveGateway_4, ExclusiveGateway_7, ExclusiveGateway_8.",
+            "kind": "soundness",
+            "marking": {},
+            "trace": [],
+            "uncovered_elements": [
+              "SequenceFlow_12",
+              "SequenceFlow_37",
+              "SequenceFlow_40",
+              "SequenceFlow_45",
+              "SequenceFlow_48",
+              "ExclusiveGateway_12",
+              "ExclusiveGateway_13",
+              "ExclusiveGateway_14",
+              "ExclusiveGateway_15",
+              "ExclusiveGateway_2",
+              "ExclusiveGateway_5",
+              "ExclusiveGateway_9",
+              "ParallelGateway_3",
+              "Task_1",
+              "Task_11",
+              "Task_13",
+              "Task_16",
+              "Task_18",
+              "Task_2",
+              "Task_20",
+              "Task_22",
+              "Task_24",
+              "Task_25",
+              "Task_4",
+              "Task_7",
+              "Task_9",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_10",
+              "ExclusiveGateway_11",
+              "ExclusiveGateway_16",
+              "ExclusiveGateway_3",
+              "ExclusiveGateway_4",
+              "ExclusiveGateway_7",
+              "ExclusiveGateway_8"
+            ]
+          },
+          "message": "The process is not sound. These elements can never execute: Cancel application (Task_15). The following elements are not covered by an S-component, which points at a split/join mismatch around them: SequenceFlow_12, SequenceFlow_37, SequenceFlow_40, SequenceFlow_45, SequenceFlow_48, ExclusiveGateway_12, ExclusiveGateway_13, ExclusiveGateway_14, ExclusiveGateway_15, ExclusiveGateway_2, ExclusiveGateway_5, ExclusiveGateway_9, ParallelGateway_3, Provide missing documents (Task_1), Resolve schedule conflicts (Task_11), Send orientation materials (Task_13), Evaluate application by admissions committee (Task_16), Review application and documents (Task_18), Meet with appeals committee (Task_2), Process fees or waivers (Task_20), Await decision (Task_22), Select courses (Task_24), Obtain student ID card (Task_25), Set up IT accounts (Task_4), Review grades online (Task_7), Meet with academic advisor (Task_9), ExclusiveGateway_1, ExclusiveGateway_10, ExclusiveGateway_11, ExclusiveGateway_16, ExclusiveGateway_3, ExclusiveGateway_4, ExclusiveGateway_7, ExclusiveGateway_8.",
+          "raw": {
+            "dead_tasks": [
+              "Task_15"
+            ],
+            "diagnostic_messages": [
+              "Input is ok.",
+              "Petri Net is a workflow net.",
+              "The following places are not covered by an s-component: [SequenceFlow_12, SequenceFlow_37, SequenceFlow_40, SequenceFlow_45, SequenceFlow_48, ent_ExclusiveGateway_12, ent_ExclusiveGateway_13, ent_ExclusiveGateway_14, ent_ExclusiveGateway_15, ent_ExclusiveGateway_2, ent_ExclusiveGateway_5, ent_ExclusiveGateway_9, ent_ParallelGateway_3, ent_Task_1, ent_Task_11, ent_Task_13, ent_Task_16, ent_Task_18, ent_Task_2, ent_Task_20, ent_Task_22, ent_Task_24, ent_Task_25, ent_Task_4, ent_Task_7, ent_Task_9, exi_ExclusiveGateway_1, exi_ExclusiveGateway_10, exi_ExclusiveGateway_11, exi_ExclusiveGateway_16, exi_ExclusiveGateway_3, exi_ExclusiveGateway_4, exi_ExclusiveGateway_7, exi_ExclusiveGateway_8, sink, source].",
+              "Not well-handled pairs are: [(133, 124), (77, 38)].",
+              "The following places are uncovered in uniform invariants: [SequenceFlow_12, SequenceFlow_37, SequenceFlow_40, SequenceFlow_45, SequenceFlow_48, ent_ExclusiveGateway_12, ent_ExclusiveGateway_13, ent_ExclusiveGateway_14, ent_ExclusiveGateway_15, ent_ExclusiveGateway_2, ent_ExclusiveGateway_5, ent_ExclusiveGateway_9, ent_ParallelGateway_3, ent_Task_1, ent_Task_11, ent_Task_13, ent_Task_16, ent_Task_18, ent_Task_2, ent_Task_20, ent_Task_22, ent_Task_24, ent_Task_25, ent_Task_4, ent_Task_7, ent_Task_9, exi_ExclusiveGateway_1, exi_ExclusiveGateway_10, exi_ExclusiveGateway_11, exi_ExclusiveGateway_16, exi_ExclusiveGateway_3, exi_ExclusiveGateway_4, exi_ExclusiveGateway_7, exi_ExclusiveGateway_8, sink, source]",
+              "The following places are uncovered in weighted invariants: [SequenceFlow_12, SequenceFlow_37, SequenceFlow_40, SequenceFlow_45, SequenceFlow_48, ent_ExclusiveGateway_12, ent_ExclusiveGateway_13, ent_ExclusiveGateway_14, ent_ExclusiveGateway_15, ent_ExclusiveGateway_2, ent_ExclusiveGateway_5, ent_ExclusiveGateway_9, ent_ParallelGateway_3, ent_Task_1, ent_Task_11, ent_Task_13, ent_Task_16, ent_Task_18, ent_Task_2, ent_Task_20, ent_Task_22, ent_Task_24, ent_Task_25, ent_Task_4, ent_Task_7, ent_Task_9, exi_ExclusiveGateway_1, exi_ExclusiveGateway_10, exi_ExclusiveGateway_11, exi_ExclusiveGateway_16, exi_ExclusiveGateway_3, exi_ExclusiveGateway_4, exi_ExclusiveGateway_7, exi_ExclusiveGateway_8, sink, source]",
+              "No improper coditions.",
+              "The following tasks are dead: [(Task_15, 'Cancel application'), (short_circuited_transition, 'short_circuited_transition')]"
+            ],
+            "petri_net_names": {
+              "dead_tasks": [
+                "Task_15",
+                "short_circuited_transition"
+              ],
+              "uncovered_places_s_component": [
+                "SequenceFlow_12",
+                "SequenceFlow_37",
+                "SequenceFlow_40",
+                "SequenceFlow_45",
+                "SequenceFlow_48",
+                "ent_ExclusiveGateway_12",
+                "ent_ExclusiveGateway_13",
+                "ent_ExclusiveGateway_14",
+                "ent_ExclusiveGateway_15",
+                "ent_ExclusiveGateway_2",
+                "ent_ExclusiveGateway_5",
+                "ent_ExclusiveGateway_9",
+                "ent_ParallelGateway_3",
+                "ent_Task_1",
+                "ent_Task_11",
+                "ent_Task_13",
+                "ent_Task_16",
+                "ent_Task_18",
+                "ent_Task_2",
+                "ent_Task_20",
+                "ent_Task_22",
+                "ent_Task_24",
+                "ent_Task_25",
+                "ent_Task_4",
+                "ent_Task_7",
+                "ent_Task_9",
+                "exi_ExclusiveGateway_1",
+                "exi_ExclusiveGateway_10",
+                "exi_ExclusiveGateway_11",
+                "exi_ExclusiveGateway_16",
+                "exi_ExclusiveGateway_3",
+                "exi_ExclusiveGateway_4",
+                "exi_ExclusiveGateway_7",
+                "exi_ExclusiveGateway_8",
+                "sink",
+                "source"
+              ]
+            },
+            "sound": false,
+            "uncovered_places_s_component": [
+              "SequenceFlow_12",
+              "SequenceFlow_37",
+              "SequenceFlow_40",
+              "SequenceFlow_45",
+              "SequenceFlow_48",
+              "ExclusiveGateway_12",
+              "ExclusiveGateway_13",
+              "ExclusiveGateway_14",
+              "ExclusiveGateway_15",
+              "ExclusiveGateway_2",
+              "ExclusiveGateway_5",
+              "ExclusiveGateway_9",
+              "ParallelGateway_3",
+              "Task_1",
+              "Task_11",
+              "Task_13",
+              "Task_16",
+              "Task_18",
+              "Task_2",
+              "Task_20",
+              "Task_22",
+              "Task_24",
+              "Task_25",
+              "Task_4",
+              "Task_7",
+              "Task_9",
+              "ExclusiveGateway_1",
+              "ExclusiveGateway_10",
+              "ExclusiveGateway_11",
+              "ExclusiveGateway_16",
+              "ExclusiveGateway_3",
+              "ExclusiveGateway_4",
+              "ExclusiveGateway_7",
+              "ExclusiveGateway_8"
+            ]
+          },
+          "rule_id": "woflan:soundness",
+          "severity": "error",
+          "source": "woflan",
+          "suggestion": null,
+          "tier": "tier2"
+        },
+        {
+          "element_id": "Task_3",
+          "element_refs": [
+            "Task_3",
+            "Task_15",
+            "ExclusiveGateway_6"
+          ],
+          "formal_witness": null,
+          "message": "The parallel gateway before the end event waits for both the rejection-letter path and the cancellation path, although those paths are mutually exclusive.",
+          "raw": null,
+          "rule_id": "llm:deadlock",
+          "severity": "error",
+          "source": "llm",
+          "suggestion": "Replace this join with separate terminating end events, or merge the alternative termination paths with an exclusive gateway.",
+          "tier": "tier3"
+        },
+        {
+          "element_id": "ExclusiveGateway_6",
+          "element_refs": [
+            "ExclusiveGateway_6",
+            "EndEvent_1"
+          ],
+          "formal_witness": null,
+          "message": "No rejected, cancelled, graduated, or withdrawn case can reach the end event because the preceding parallel join requires incompatible tokens.",
+          "raw": null,
+          "rule_id": "llm:improper_completion",
+          "severity": "error",
+          "source": "llm",
+          "suggestion": "Model each valid termination outcome so it can independently reach an end event.",
+          "tier": "tier3"
+        },
+        {
+          "element_id": "Task_3",
+          "element_refs": [
+            "Task_3",
+            "ExclusiveGateway_6"
+          ],
+          "formal_witness": null,
+          "message": "Sending a rejection letter should end the application process, but its flow instead waits for a cancellation that cannot occur for a rejected application.",
+          "raw": null,
+          "rule_id": "llm:improper_termination",
+          "severity": "error",
+          "source": "llm",
+          "suggestion": "Connect the rejection path directly to a rejection end event.",
+          "tier": "tier3"
+        },
+        {
+          "element_id": "ParallelGateway_6",
+          "element_refs": [
+            "ParallelGateway_6",
+            "Task_11",
+            "Task_25",
+            "ParallelGateway_3"
+          ],
+          "formal_witness": null,
+          "message": "The parallel branches for obtaining the student ID and completing the study-plan activities merge through an exclusive gateway, so classes may begin before the other branch finishes.",
+          "raw": null,
+          "rule_id": "llm:lack_of_synchronization",
+          "severity": "warning",
+          "source": "llm",
+          "suggestion": "Use a parallel join at ParallelGateway_3 to wait for both branches before beginning classes.",
+          "tier": "tier3"
+        },
+        {
+          "element_id": "Task_12",
+          "element_refs": [
+            "Task_12",
+            "ExclusiveGateway_16",
+            "Task_5",
+            "Task_15"
+          ],
+          "formal_witness": null,
+          "message": "The required specified deadline for confirming enrollment is not modeled; confirmation and cancellation are only undifferentiated gateway alternatives.",
+          "raw": null,
+          "rule_id": "llm:missing_step",
+          "severity": "warning",
+          "source": "llm",
+          "suggestion": "Add a timer/deadline event and route expiry to cancellation while timely confirmation proceeds.",
+          "tier": "tier3"
+        }
+      ],
+      "e6_input_hash": "6834f0ad3223",
+      "e6_issue_indices": [
+        1,
+        4
+      ],
+      "e6_trial_id": "f391f0370fea",
+      "eligible_issues": [
+        {
+          "element_id": "Task_3",
+          "element_refs": [
+            "Task_3",
+            "Task_15",
+            "ExclusiveGateway_6"
+          ],
+          "formal_witness": null,
+          "message": "The parallel gateway before the end event waits for both the rejection-letter path and the cancellation path, although those paths are mutually exclusive.",
+          "raw": null,
+          "rule_id": "llm:deadlock",
+          "severity": "error",
+          "source": "llm",
+          "suggestion": "Replace this join with separate terminating end events, or merge the alternative termination paths with an exclusive gateway.",
+          "tier": "tier3"
+        },
+        {
+          "element_id": "ParallelGateway_6",
+          "element_refs": [
+            "ParallelGateway_6",
+            "Task_11",
+            "Task_25",
+            "ParallelGateway_3"
+          ],
+          "formal_witness": null,
+          "message": "The parallel branches for obtaining the student ID and completing the study-plan activities merge through an exclusive gateway, so classes may begin before the other branch finishes.",
+          "raw": null,
+          "rule_id": "llm:lack_of_synchronization",
+          "severity": "warning",
+          "source": "llm",
+          "suggestion": "Use a parallel join at ParallelGateway_3 to wait for both branches before beginning classes.",
+          "tier": "tier3"
+        }
+      ],
+      "expected_elements": [
+        "ExclusiveGateway_3",
+        "ExclusiveGateway_6",
+        "ParallelGateway_6",
+        "ParallelGateway_3"
+      ],
+      "expected_findings": [
+        "deadlock",
+        "lack_of_synchronisation"
+      ],
+      "group": "disjoint_formal",
+      "input_path": "data/eval/v1.0/variants/disjoint/F01+F02/18.bpmn",
+      "truth_path": "data/eval/v1.0/ground_truth/disjoint/F01+F02/18.json"
+    },
+    {
+      "case_id": "disjoint/F04+F04/08",
+      "description_path": "data/eval/v1.0/descriptions/variants/disjoint/F04+F04/08.txt",
+      "diagnostic_role": "known_legacy_regression",
+      "e6_all_issues": [
+        {
+          "element_id": "Task_1",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_1' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_1",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_1' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_2",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_2' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_3",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_3' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_4",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_4' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_4",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_4' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_5",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_5' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_6",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_6' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_7",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_7' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_7",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_7' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_8",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_8' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_8",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_8' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_9",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_9' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_9",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_9' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_10",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_10' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_11",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_11' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_11",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_11' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_12",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_12' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "Task_12",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_12' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "ExclusiveGateway_1",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'ExclusiveGateway_1' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "ExclusiveGateway_1",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'ExclusiveGateway_1' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "ExclusiveGateway_2",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'ExclusiveGateway_2' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "ExclusiveGateway_2",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'ExclusiveGateway_2' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "ParallelGateway_1",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'ParallelGateway_1' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "ParallelGateway_1",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'ParallelGateway_1' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "ParallelGateway_2",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'ParallelGateway_2' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "ParallelGateway_2",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'ParallelGateway_2' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "StartEvent_1",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'StartEvent_1' cannot reach any end event — the process can never complete through it (dead end / trap).",
+          "raw": null,
+          "rule_id": "R008",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Route it towards an end event, or remove the dead branch.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "EndEvent_1",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'EndEvent_1' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": null,
+          "element_refs": [],
+          "formal_witness": {
+            "counterexample_traces": [],
+            "dead_elements": [],
+            "description": "The process is not sound. The violation could not be localised to a specific element. Checker diagnostics: Input is ok. There is more than one source place.",
+            "kind": "soundness",
+            "marking": {},
+            "trace": [],
+            "uncovered_elements": []
+          },
+          "message": "The process is not sound. The violation could not be localised to a specific element. Checker diagnostics: Input is ok. There is more than one source place.",
+          "raw": {
+            "dead_tasks": [],
+            "diagnostic_messages": [
+              "Input is ok.",
+              "There is more than one source place."
+            ],
+            "petri_net_names": {
+              "dead_tasks": [],
+              "uncovered_places_s_component": []
+            },
+            "sound": false,
+            "uncovered_places_s_component": []
+          },
+          "rule_id": "woflan:soundness",
+          "severity": "error",
+          "source": "woflan",
+          "suggestion": null,
+          "tier": "tier2"
+        },
+        {
+          "element_id": "StartEvent_1",
+          "element_refs": [
+            "StartEvent_1",
+            "Task_6",
+            "Task_2",
+            "Task_5"
+          ],
+          "formal_witness": null,
+          "message": "The start path ends at “Assign report to appropriate team,” which has no outgoing sequence flow; the process cannot complete.",
+          "raw": null,
+          "rule_id": "llm:improper_completion",
+          "severity": "error",
+          "source": "llm",
+          "suggestion": "Connect Task_5 to the investigation and resolution flow, ultimately leading to closure and the end event.",
+          "tier": "tier3"
+        },
+        {
+          "element_id": "ParallelGateway_2",
+          "element_refs": [
+            "ParallelGateway_2",
+            "Task_8",
+            "Task_9",
+            "ParallelGateway_1",
+            "Task_1",
+            "ExclusiveGateway_2",
+            "Task_11",
+            "Task_4",
+            "Task_7",
+            "ExclusiveGateway_1",
+            "Task_12"
+          ],
+          "formal_witness": null,
+          "message": "The investigation, corrective-action, solution, and follow-up region has no path from the start event.",
+          "raw": null,
+          "rule_id": "llm:unreachable_region",
+          "severity": "error",
+          "source": "llm",
+          "suggestion": "Connect the assignment task to this region and connect its follow-up outcome to closure.",
+          "tier": "tier3"
+        },
+        {
+          "element_id": "Task_3",
+          "element_refs": [
+            "Task_3",
+            "Task_10",
+            "EndEvent_1"
+          ],
+          "formal_witness": null,
+          "message": "The closure, stakeholder-notification, and end-event region is disconnected from the start event.",
+          "raw": null,
+          "rule_id": "llm:unreachable_region",
+          "severity": "error",
+          "source": "llm",
+          "suggestion": "Connect the follow-up task to Task_3 so the process can notify stakeholders and end.",
+          "tier": "tier3"
+        },
+        {
+          "element_id": "ExclusiveGateway_2",
+          "element_refs": [
+            "ExclusiveGateway_2",
+            "SequenceFlow_2",
+            "SequenceFlow_11",
+            "SequenceFlow_20"
+          ],
+          "formal_witness": null,
+          "message": "The solution-choice gateway has three unlabeled outgoing paths, so the criteria for choosing a fix, policy change, or training are unspecified.",
+          "raw": null,
+          "rule_id": "llm:contradictory_flow",
+          "severity": "warning",
+          "source": "llm",
+          "suggestion": "Add mutually exclusive conditions and, where appropriate, a default flow to the gateway.",
+          "tier": "tier3"
+        }
+      ],
+      "e6_input_hash": "49b7c616812a",
+      "e6_issue_indices": [
+        3,
+        25
+      ],
+      "e6_trial_id": "fa8f967ee9e9",
+      "eligible_issues": [
+        {
+          "element_id": "Task_3",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'Task_3' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        },
+        {
+          "element_id": "ParallelGateway_2",
+          "element_refs": [],
+          "formal_witness": null,
+          "message": "Element 'ParallelGateway_2' is not reachable from any start event and can never be activated.",
+          "raw": null,
+          "rule_id": "R007",
+          "severity": "error",
+          "source": "rules",
+          "suggestion": "Connect it to the flow downstream of a start event, or remove it.",
+          "tier": "tier1"
+        }
+      ],
+      "expected_elements": [
+        "ParallelGateway_2",
+        "Task_3"
+      ],
+      "expected_findings": [
+        "R007",
+        "R007"
+      ],
+      "group": "disjoint_formal",
+      "input_path": "data/eval/v1.0/variants/disjoint/F04+F04/08.bpmn",
+      "truth_path": "data/eval/v1.0/ground_truth/disjoint/F04+F04/08.json"
+    },
+    {
+      "case_id": "single/M02/01",
+      "description_path": "data/eval/v1.0/descriptions/variants/single/M02/01.txt",
+      "diagnostic_role": "new_llm_error_after_target_repair",
+      "e6_all_issues": [
+        {
+          "element_id": "ExclusiveGateway_4",
+          "element_refs": [
+            "ExclusiveGateway_4",
+            "ExclusiveGateway_3",
+            "EndEvent_1"
+          ],
+          "formal_witness": null,
+          "message": "The flow can end directly after collecting information and addressing questions, without placing, recording, or confirming an order.",
+          "raw": null,
+          "rule_id": "llm:improper_termination",
+          "severity": "error",
+          "source": "llm",
+          "suggestion": "Route this outcome to an explicit rejection/withdrawal end state, or require the order-completion path before the successful end event.",
+          "tier": "tier3"
+        },
+        {
+          "element_id": "ExclusiveGateway_2",
+          "element_refs": [
+            "ExclusiveGateway_2",
+            "ExclusiveGateway_1",
+            "ExclusiveGateway_3",
+            "EndEvent_1"
+          ],
+          "formal_witness": null,
+          "message": "After product/service selection, one gateway branch bypasses order placement, recording, and customer confirmation and reaches the end event.",
+          "raw": null,
+          "rule_id": "llm:improper_termination",
+          "severity": "error",
+          "source": "llm",
+          "suggestion": "Ensure only a modeled declined/cancelled outcome may end here; route an approved customer through Place order, Record order, and Send order confirmation.",
+          "tier": "tier3"
+        },
+        {
+          "element_id": "Task_4",
+          "element_refs": [
+            "Task_4",
+            "ExclusiveGateway_2"
+          ],
+          "formal_witness": null,
+          "message": "Customer approval of the quote is required by the reference description but is not modeled as an activity, event, or labeled decision outcome.",
+          "raw": null,
+          "rule_id": "llm:missing_step",
+          "severity": "warning",
+          "source": "llm",
+          "suggestion": "Add an explicit customer-approval step or label the gateway's outgoing flows with approved and declined conditions.",
+          "tier": "tier3"
+        },
+        {
+          "element_id": "Task_4",
+          "element_refs": [
+            "Task_4",
+            "Task_3"
+          ],
+          "formal_witness": null,
+          "message": "The diagram provides the quote before guiding the customer in selecting a product or service, contrary to the described sequence.",
+          "raw": null,
+          "rule_id": "llm:contradictory_flow",
+          "severity": "warning",
+          "source": "llm",
+          "suggestion": "Reverse these tasks or revise their flow to match the intended business sequence.",
+          "tier": "tier3"
+        }
+      ],
+      "e6_input_hash": "5676e98a5ff3",
+      "e6_issue_indices": [
+        3
+      ],
+      "e6_trial_id": "6ef1295a5e84",
+      "eligible_issues": [
+        {
+          "element_id": "Task_4",
+          "element_refs": [
+            "Task_4",
+            "Task_3"
+          ],
+          "formal_witness": null,
+          "message": "The diagram provides the quote before guiding the customer in selecting a product or service, contrary to the described sequence.",
+          "raw": null,
+          "rule_id": "llm:contradictory_flow",
+          "severity": "warning",
+          "source": "llm",
+          "suggestion": "Reverse these tasks or revise their flow to match the intended business sequence.",
+          "tier": "tier3"
+        }
+      ],
+      "expected_elements": [
+        "Task_3",
+        "Task_4"
+      ],
+      "expected_findings": [
+        "contradictory_flow"
+      ],
+      "group": "single_semantic",
+      "input_path": "data/eval/v1.0/variants/single/M02/01.bpmn",
+      "truth_path": "data/eval/v1.0/ground_truth/single/M02/01.json"
+    }
+  ],
+  "created_at": "2026-08-16T11:19:29.441774+00:00",
+  "dataset_root": "data/eval/v1.0",
+  "eligible_counts": {},
+  "required_groups": [],
+  "schema_version": "e7b-diagnostic-selection-v1",
+  "selected_counts": {},
+  "selection_policy": {
+    "cases": {
+      "disjoint/F01+F02/18": "requires_second_target_iteration",
+      "disjoint/F04+F04/08": "known_legacy_regression",
+      "single/M02/01": "new_llm_error_after_target_repair"
+    },
+    "purpose": "post_hoc_regression_check_not_confirmatory_replacement",
+    "repair_loop_policy": "target_scoped_safe"
+  },
+  "source_results": "experiments/results/e6-detection/results.jsonl",
+  "source_results_hash": "c18b67a8ee14",
+  "source_selection": "experiments/specs/runs/e7-repair-selection.json",
+  "unavailable_groups": []
+}

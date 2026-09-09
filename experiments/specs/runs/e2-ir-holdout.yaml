@@ -1,0 +1,37 @@
+experiment_id: ir-selection-e2-holdout-terra-medium
+dataset_version: v1.0+ground-truth-overlay-1.2
+inputs:
+- data/eval/v1.0/seeds/19.bpmn
+- data/eval/v1.0/seeds/20.bpmn
+- data/eval/v1.0/seeds/34.bpmn
+- data/eval/v1.0/variants/single/M01/40.bpmn
+- data/eval/v1.0/variants/single/M02/12.bpmn
+- data/eval/v1.0/variants/single/M03/36.bpmn
+- data/eval/v1.0/variants/single/M04/17.bpmn
+- data/eval/v1.0/variants/single/M05/26.bpmn
+- data/eval/v1.0/variants/single/M06/33.bpmn
+- data/eval/v1.0/variants/single/M07/34.bpmn
+description_root: data/eval/v1.0/descriptions
+base:
+  model_tier: custom
+  model_override: gpt-5.6-terra
+  provider_override: codex_cli
+  ir_format: compact_json
+  tiers_enabled:
+    t1: false
+    t2: false
+    t3: true
+  include_semantic_projection: true
+  llm_validation_scope: semantic
+  reasoning_effort: medium
+run_repair: false
+axes:
+  ir_format:
+  - compact_json
+  - yaml
+repeats: 1
+notes: >-
+  E2 stage 2: compact JSON and YAML were shortlisted by the preregistered
+  stage-1 ordering. This disjoint holdout was frozen before stage-1 results
+  were inspected and contains the other three controls and a second
+  single-defect case for every semantic operator.

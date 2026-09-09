@@ -1,0 +1,220 @@
+{
+  "integrity": {
+    "analysis_errors": 0,
+    "analysis_file": "analysis.json",
+    "app_commit": "7064556",
+    "checkpoints": 40,
+    "comparison_errors": 0,
+    "comparison_file": "comparison-analysis.json",
+    "configurations": [
+      {
+        "model": "gpt-5.6-luna",
+        "provider": "codex_cli",
+        "provider_version": "codex-cli 0.147.0",
+        "reasoning_effective": "high",
+        "reasoning_requested": "high",
+        "trials": 10
+      },
+      {
+        "model": "gpt-5.6-luna",
+        "provider": "codex_cli",
+        "provider_version": "codex-cli 0.147.0",
+        "reasoning_effective": "low",
+        "reasoning_requested": "low",
+        "trials": 10
+      },
+      {
+        "model": "gpt-5.6-luna",
+        "provider": "codex_cli",
+        "provider_version": "codex-cli 0.147.0",
+        "reasoning_effective": "medium",
+        "reasoning_requested": "medium",
+        "trials": 10
+      },
+      {
+        "model": "gpt-5.6-luna",
+        "provider": "codex_cli",
+        "provider_version": "codex-cli 0.147.0",
+        "reasoning_effective": "xhigh",
+        "reasoning_requested": "xhigh",
+        "trials": 10
+      }
+    ],
+    "dataset_version": "v1.0+ground-truth-overlay-1.2",
+    "description_hash_mismatches": 0,
+    "errors": 0,
+    "experiment_id": "reasoning-ablation-e3-luna-compact-json",
+    "input_hash_mismatches": 0,
+    "missing_payloads": 0,
+    "missing_usage": 0,
+    "planned_trials": 40,
+    "practical_substitute_threshold_met": true,
+    "prompt_hash_current": "e4de599ddc37",
+    "prompt_hashes_recorded": [
+      "e4de599ddc37"
+    ],
+    "provider_errors": 0,
+    "ranking_suppressed": true,
+    "records": 40,
+    "schema": "bpmn-experiment-integrity",
+    "schema_version": "1.0",
+    "selected_luna_reasoning_effort": "low",
+    "selection_basis": "lowest Luna effort within one injected target of best anchor and category recall; complete contract and no errors",
+    "unique_trial_ids": 40,
+    "unsupported_controls": [
+      "max_tokens"
+    ],
+    "worktree_at_verification": {
+      "dirty": true,
+      "status": [
+        " M evaluation/EXPERIMENT_PLAN.md",
+        " M experiments/ANALYSIS_PROTOCOL.md",
+        " M experiments/README.md",
+        "?? experiments/E2_PROTOCOL.md",
+        "?? experiments/E3_LUNA_PROTOCOL.md",
+        "?? experiments/E3_PROTOCOL.md",
+        "?? experiments/specs/runs/"
+      ],
+      "tracked_application_code_dirty": false
+    }
+  },
+  "manifest": {
+    "app_commit": "7064556",
+    "completed": 40,
+    "concurrency": 4,
+    "config_count": 4,
+    "config_hashes": [
+      "ecf144dcc02c",
+      "a27005a726fb",
+      "2b4768fa627a",
+      "a2279170e15a"
+    ],
+    "dataset_version": "v1.0+ground-truth-overlay-1.2",
+    "description_hashes": {
+      "data/eval/v1.0/descriptions/seeds/02.txt": "5d3ca0800486",
+      "data/eval/v1.0/descriptions/seeds/05.txt": "3367aaec6ba8",
+      "data/eval/v1.0/descriptions/seeds/18.txt": "d5c3b0403acf",
+      "data/eval/v1.0/descriptions/variants/single/M01/33.txt": "6bb43b58c9a4",
+      "data/eval/v1.0/descriptions/variants/single/M02/09.txt": "f85396ef52de",
+      "data/eval/v1.0/descriptions/variants/single/M03/17.txt": "265c63b42a76",
+      "data/eval/v1.0/descriptions/variants/single/M04/11.txt": "ccc76d998b04",
+      "data/eval/v1.0/descriptions/variants/single/M05/16.txt": "141cf1336439",
+      "data/eval/v1.0/descriptions/variants/single/M06/05.txt": "3367aaec6ba8",
+      "data/eval/v1.0/descriptions/variants/single/M07/31.txt": "b2b65a3ba2f3"
+    },
+    "executed": 40,
+    "executed_this_run": 40,
+    "experiment_id": "reasoning-ablation-e3-luna-compact-json",
+    "failed": 0,
+    "failed_this_run": 0,
+    "input_hashes": {
+      "data/eval/v1.0/seeds/02.bpmn": "4d14f6522ec5",
+      "data/eval/v1.0/seeds/05.bpmn": "b1263bc9a4cc",
+      "data/eval/v1.0/seeds/18.bpmn": "194367eb51e5",
+      "data/eval/v1.0/variants/single/M01/33.bpmn": "85702b03bf61",
+      "data/eval/v1.0/variants/single/M02/09.bpmn": "e6cdb6f4652b",
+      "data/eval/v1.0/variants/single/M03/17.bpmn": "7efdca9f7ea4",
+      "data/eval/v1.0/variants/single/M04/11.bpmn": "c1e5db0e97fc",
+      "data/eval/v1.0/variants/single/M05/16.bpmn": "93b01d8c7a36",
+      "data/eval/v1.0/variants/single/M06/05.bpmn": "05254309ded1",
+      "data/eval/v1.0/variants/single/M07/31.bpmn": "ef6c3c24a5b1"
+    },
+    "inputs": [
+      "data/eval/v1.0/seeds/02.bpmn",
+      "data/eval/v1.0/seeds/05.bpmn",
+      "data/eval/v1.0/seeds/18.bpmn",
+      "data/eval/v1.0/variants/single/M01/33.bpmn",
+      "data/eval/v1.0/variants/single/M02/09.bpmn",
+      "data/eval/v1.0/variants/single/M03/17.bpmn",
+      "data/eval/v1.0/variants/single/M04/11.bpmn",
+      "data/eval/v1.0/variants/single/M05/16.bpmn",
+      "data/eval/v1.0/variants/single/M06/05.bpmn",
+      "data/eval/v1.0/variants/single/M07/31.bpmn"
+    ],
+    "last_invocation": {
+      "concurrency": 4,
+      "executed": 40,
+      "failed": 0,
+      "skipped_already_done": 0
+    },
+    "results_file": "results.jsonl",
+    "skipped_already_done": 0,
+    "spec": {
+      "axes": {
+        "reasoning_effort": [
+          "low",
+          "medium",
+          "high",
+          "xhigh"
+        ]
+      },
+      "base": {
+        "include_semantic_projection": true,
+        "ir_format": "compact_json",
+        "llm_validation_scope": "semantic",
+        "model_override": "gpt-5.6-luna",
+        "model_tier": "custom",
+        "provider_override": "codex_cli",
+        "reasoning_effort": "low",
+        "tiers_enabled": {
+          "t1": false,
+          "t2": false,
+          "t3": true
+        }
+      },
+      "configs": [],
+      "dataset_version": "v1.0+ground-truth-overlay-1.2",
+      "description_root": "data/eval/v1.0/descriptions",
+      "exclude": [],
+      "experiment_id": "reasoning-ablation-e3-luna-compact-json",
+      "inputs": [
+        "data/eval/v1.0/seeds/02.bpmn",
+        "data/eval/v1.0/seeds/05.bpmn",
+        "data/eval/v1.0/seeds/18.bpmn",
+        "data/eval/v1.0/variants/single/M01/33.bpmn",
+        "data/eval/v1.0/variants/single/M02/09.bpmn",
+        "data/eval/v1.0/variants/single/M03/17.bpmn",
+        "data/eval/v1.0/variants/single/M04/11.bpmn",
+        "data/eval/v1.0/variants/single/M05/16.bpmn",
+        "data/eval/v1.0/variants/single/M06/05.bpmn",
+        "data/eval/v1.0/variants/single/M07/31.bpmn"
+      ],
+      "notes": "E3 Luna extension: the same three controls, seven single-defect cases, compact JSON, semantic projection, prompt, response schema, and Codex CLI harness as the Terra reasoning ablation. Only the model changes. The local Codex CLI catalog exposes low, medium, high, xhigh, and max for Luna; this matched comparison evaluates the same four levels actually tested on Terra.",
+      "repeats": 1,
+      "run_repair": false
+    },
+    "trial_count": 40,
+    "trial_records_dir": "trials"
+  },
+  "provenance": {
+    "original_records_modified": false,
+    "purpose": "Practical substitution comparison of frozen Terra low and selected Luna low",
+    "records": 20,
+    "schema": "matched-model-comparison-provenance",
+    "schema_version": "1.0",
+    "sources": [
+      {
+        "filter": {
+          "ir_format": "compact_json",
+          "model": "gpt-5.6-terra",
+          "reasoning_effort": "low"
+        },
+        "path": "experiments/results/e3-reasoning-terra/results.jsonl",
+        "records": 10,
+        "reused": true
+      },
+      {
+        "filter": {
+          "ir_format": "compact_json",
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "low"
+        },
+        "path": "experiments/results/e3-reasoning-luna/results.jsonl",
+        "records": 10,
+        "reused": false
+      }
+    ]
+  },
+  "schema": "bpmn-experiment-run",
+  "schema_version": "1.0"
+}
