@@ -12,7 +12,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from app.experiments import ExperimentConfig, RepairMode
+from app.experiments import ExperimentConfig, RepairLoopPolicy, RepairMode
 from app.history import service as hist
 from app.llm import client as llm_client
 from app.llm.envelope import LlmResponseEnvelope
@@ -37,7 +37,7 @@ from app.services.ir_payload import (
     parse_diagram_payload,
 )
 from app.services.validation import validate_diagram
-from app.validation.rules import ValidationIssue, issue_to_dict
+from app.validation.rules import Severity, ValidationIssue, issue_to_dict
 
 _PROMPT_DIR = Path(__file__).parent.parent / "llm" / "prompts"
 _REPAIR_PROMPT = _PROMPT_DIR / "repair.txt"
@@ -87,6 +87,8 @@ class StopReason(StrEnum):
     REPEATED_STATE = "repeated_state"
     PROPOSAL_READY = "proposal_ready"
     ITERATION_BUDGET = "iteration_budget"
+    TARGETS_RESOLVED = "targets_resolved"
+    REGRESSION_REJECTED = "regression_rejected"
 
 
 class OpOrigin(StrEnum):
@@ -105,6 +107,10 @@ class DispatcherRepairResult(BaseModel):
     # operations the apply layer rejected, kept so a half-executed plan is visible
     failed_ops: list[EditOpResult] = []
     failed_op_origins: list[OpOrigin] = []
+    # Candidate operations that applied but were rolled back by the safety gate.
+    rejected_ops: list[EditOp] = []
+    regression_issues: list[ValidationIssue] = []
+    rolled_back: bool = False
     remaining_issues: list[ValidationIssue] = []
     iterations: int = 0
     # no repairable issue of any severity remains
@@ -329,12 +335,51 @@ async def dispatch_repair(
     atomic_repair_fn: AtomicRepairFn | None = None,
     single_plan: bool = False,
     reference_description: str | None = None,
+    assigned_issues: list[ValidationIssue] | None = None,
+) -> DispatcherRepairResult:
+    """Dispatch through the historical or explicitly selected safe loop.
+
+    Omitting ``repair_loop_policy`` preserves the exact historical behavior used
+    by E7.  Safe runs keep ``issues`` as the full baseline context and may pass a
+    narrower ``assigned_issues`` list as the frozen repair scope.
+    """
+    active_config = config or ExperimentConfig()
+    if active_config.repair_loop_policy == RepairLoopPolicy.TARGET_SCOPED_SAFE:
+        return await _dispatch_repair_target_scoped(
+            diagram,
+            issues=issues,
+            assigned_issues=issues if assigned_issues is None else assigned_issues,
+            config=active_config,
+            repair_fn=repair_fn,
+            atomic_repair_fn=atomic_repair_fn,
+            single_plan=single_plan,
+            reference_description=reference_description,
+        )
+    return await _dispatch_repair_legacy(
+        diagram,
+        issues=issues,
+        config=active_config,
+        repair_fn=repair_fn,
+        atomic_repair_fn=atomic_repair_fn,
+        single_plan=single_plan,
+        reference_description=reference_description,
+    )
+
+
+async def _dispatch_repair_legacy(
+    diagram: BpmnDiagram,
+    issues: list[ValidationIssue],
+    config: ExperimentConfig,
+    repair_fn: RepairFn | None = None,
+    atomic_repair_fn: AtomicRepairFn | None = None,
+    single_plan: bool = False,
+    reference_description: str | None = None,
 ) -> DispatcherRepairResult:
     """repair issues once for review, or run the closed loop to convergence
 
     `single_plan` is the human-review path: one plan, applied and revalidated once.
     """
-    active_config = config or ExperimentConfig()
+    active_config = config
     active_repair_fn = repair_fn or repair_diagram
     active_atomic_repair_fn = atomic_repair_fn or repair_with_edit_ops
     current = diagram.model_copy(deep=True)
@@ -435,6 +480,220 @@ async def dispatch_repair(
         errors_resolved=_has_no_errors(remaining),
         stop_reason=stop_reason,
     )
+
+
+async def _dispatch_repair_target_scoped(
+    diagram: BpmnDiagram,
+    issues: list[ValidationIssue],
+    assigned_issues: list[ValidationIssue],
+    config: ExperimentConfig,
+    repair_fn: RepairFn | None = None,
+    atomic_repair_fn: AtomicRepairFn | None = None,
+    single_plan: bool = False,
+    reference_description: str | None = None,
+) -> DispatcherRepairResult:
+    """Repair only frozen targets and reject candidates with new hard errors."""
+    active_repair_fn = repair_fn or repair_diagram
+    active_atomic_repair_fn = atomic_repair_fn or repair_with_edit_ops
+    current = diagram.model_copy(deep=True)
+    current_findings = list(issues)
+    targets = list(assigned_issues)
+    remaining_targets = _matching_target_findings(targets, current_findings)
+    applied_ops: list[EditOp] = []
+    applied_op_origins: list[OpOrigin] = []
+    failed_ops: list[EditOpResult] = []
+    failed_op_origins: list[OpOrigin] = []
+    rejected_ops: list[EditOp] = []
+    regression_issues: list[ValidationIssue] = []
+    iterations = 0
+    rolled_back = False
+    stop_reason = StopReason.ITERATION_BUDGET
+    seen_states = {_state_fingerprint(current)}
+    accepted_hard_keys = _hard_issue_keys(current_findings)
+    iteration_limit = 1 if single_plan else config.max_repair_iters
+
+    while iterations < iteration_limit:
+        target_batch = _highest_priority_batch(remaining_targets)
+        if not target_batch:
+            stop_reason = StopReason.TARGETS_RESOLVED
+            break
+
+        candidate_ops: list[EditOp]
+        candidate_origins: list[OpOrigin]
+        candidate_failed: list[EditOpResult] = []
+        candidate_failed_origins: list[OpOrigin] = []
+        if config.repair_mode == RepairMode.REGEN:
+            regenerated = await active_repair_fn(
+                current,
+                issues=target_batch,
+                config=config,
+                snapshot=False,
+                reference_description=reference_description,
+            )
+            candidate = regenerated.repaired_diagram
+            candidate_ops = [ReplaceDiagramOp(diagram=candidate)]
+            candidate_origins = [OpOrigin.MODEL_REGEN]
+        else:
+            ops = _batch_quick_fixes(target_batch, current)
+            origin = OpOrigin.QUICK_FIX
+            if ops is None:
+                origin = OpOrigin.MODEL_PLAN
+                assigned_ids = {id(issue) for issue in target_batch}
+                ops = await active_atomic_repair_fn(
+                    current,
+                    issues=target_batch,
+                    config=config,
+                    context_issues=[
+                        issue
+                        for issue in current_findings
+                        if id(issue) not in assigned_ids
+                    ],
+                    reference_description=reference_description,
+                )
+            candidate, op_results = apply_edit_ops(ops, current)
+            candidate_ops = [result.op for result in op_results if result.applied]
+            candidate_origins = [origin] * len(candidate_ops)
+            candidate_failed = [result for result in op_results if not result.applied]
+            candidate_failed_origins = [origin] * len(candidate_failed)
+
+        validation = await validate_diagram(
+            candidate,
+            include_semantic=config.tiers_enabled.t3,
+            config=config,
+            reference_description=reference_description,
+        )
+        candidate_findings = validation.issues + validation.semantic_issues
+        iterations += 1
+        new_hard_keys = _hard_issue_keys(candidate_findings) - accepted_hard_keys
+        if new_hard_keys:
+            rolled_back = True
+            stop_reason = StopReason.REGRESSION_REJECTED
+            rejected_ops.extend(candidate_ops)
+            failed_ops.extend(candidate_failed)
+            failed_op_origins.extend(candidate_failed_origins)
+            regression_issues = [
+                issue
+                for issue in candidate_findings
+                if _hard_issue_key(issue) in new_hard_keys
+            ]
+            break
+
+        current = candidate
+        current_findings = candidate_findings
+        applied_ops.extend(candidate_ops)
+        applied_op_origins.extend(candidate_origins)
+        failed_ops.extend(candidate_failed)
+        failed_op_origins.extend(candidate_failed_origins)
+        accepted_hard_keys = _hard_issue_keys(current_findings)
+        remaining_targets = _matching_target_findings(targets, current_findings)
+
+        if not remaining_targets:
+            stop_reason = StopReason.TARGETS_RESOLVED
+            break
+
+        fingerprint = _state_fingerprint(current)
+        if fingerprint in seen_states:
+            stop_reason = (
+                StopReason.NO_PROGRESS
+                if fingerprint == _state_fingerprint(diagram) and iterations == 1
+                else StopReason.REPEATED_STATE
+            )
+            break
+        seen_states.add(fingerprint)
+
+    if (
+        single_plan
+        and iterations == 1
+        and stop_reason is StopReason.ITERATION_BUDGET
+    ):
+        stop_reason = StopReason.PROPOSAL_READY
+
+    return DispatcherRepairResult(
+        repaired_diagram=current,
+        applied_ops=applied_ops,
+        applied_op_origins=applied_op_origins,
+        failed_ops=failed_ops,
+        failed_op_origins=failed_op_origins,
+        rejected_ops=rejected_ops,
+        regression_issues=regression_issues,
+        rolled_back=rolled_back,
+        remaining_issues=current_findings,
+        iterations=iterations,
+        converged=not remaining_targets and not rolled_back,
+        errors_resolved=_has_no_errors(current_findings),
+        stop_reason=stop_reason,
+    )
+
+
+def _issue_refs(issue: ValidationIssue) -> set[str]:
+    refs = {str(ref) for ref in issue.element_refs if ref}
+    if issue.element_id:
+        refs.add(str(issue.element_id))
+    return refs
+
+
+def _same_target(target: ValidationIssue, finding: ValidationIssue) -> bool:
+    if str(target.rule_id) != str(finding.rule_id):
+        return False
+    target_refs = _issue_refs(target)
+    finding_refs = _issue_refs(finding)
+    # Process-global findings legitimately have no anchor. Anchored findings must
+    # retain at least one anchor so a same-category issue elsewhere is not chased.
+    return not target_refs or bool(target_refs.intersection(finding_refs))
+
+
+def _matching_target_findings(
+    targets: list[ValidationIssue], findings: list[ValidationIssue]
+) -> list[ValidationIssue]:
+    """Return current one-to-one matches for the frozen target set."""
+    matches: dict[int, int] = {}
+
+    def visit(target_index: int, visited: set[int]) -> bool:
+        for finding_index, finding in enumerate(findings):
+            if finding_index in visited or not _same_target(
+                targets[target_index], finding
+            ):
+                continue
+            visited.add(finding_index)
+            previous = next(
+                (
+                    candidate
+                    for candidate, matched in matches.items()
+                    if matched == finding_index
+                ),
+                None,
+            )
+            if previous is None or visit(previous, visited):
+                matches[target_index] = finding_index
+                return True
+        return False
+
+    for target_index in range(len(targets)):
+        visit(target_index, set())
+    return [findings[matches[index]] for index in sorted(matches)]
+
+
+def _hard_issue_key(issue: ValidationIssue) -> tuple[str, ...] | None:
+    """Stable key for a deterministic diagram regression.
+
+    Runtime/checker failures are observations about tooling, not diagram defects.
+    LLM findings are deliberately excluded because revalidation is non-deterministic.
+    """
+    rule_id = str(issue.rule_id)
+    if issue.severity != Severity.ERROR or issue.source not in {"rules", "woflan"}:
+        return None
+    if rule_id.endswith(":runtime_error"):
+        return None
+    if rule_id == "woflan:soundness":
+        return (rule_id,)
+    refs = sorted(_issue_refs(issue))
+    return (rule_id, *refs)
+
+
+def _hard_issue_keys(issues: list[ValidationIssue]) -> set[tuple[str, ...]]:
+    return {
+        key for issue in issues if (key := _hard_issue_key(issue)) is not None
+    }
 
 
 def _state_fingerprint(diagram: BpmnDiagram) -> str:

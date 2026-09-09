@@ -55,6 +55,13 @@ class RepairMode(StrEnum):
     REGEN = "regen"
 
 
+class RepairLoopPolicy(StrEnum):
+    """How closed-loop repair chooses work after each revalidation."""
+
+    LEGACY_ALL_FINDINGS = "legacy_all_findings"
+    TARGET_SCOPED_SAFE = "target_scoped_safe"
+
+
 class ReasoningEffort(StrEnum):
     NONE = "none"
     LOW = "low"
@@ -88,6 +95,9 @@ class ExperimentConfig(BaseModel):
     include_semantic_projection: bool = False
     llm_validation_scope: LlmValidationScope = LlmValidationScope.SEMANTIC
     repair_mode: RepairMode = RepairMode.ATOMIC
+    # None preserves the pre-policy behavior and its historical config hashes.
+    # New safe runs opt in explicitly, so legacy experiments remain reproducible.
+    repair_loop_policy: RepairLoopPolicy | None = None
     max_repair_iters: int = Field(default=5, ge=1)
     temperature: float | None = Field(default=None, ge=0.0)
     reasoning_effort: ReasoningEffort | None = None

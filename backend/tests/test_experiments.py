@@ -33,6 +33,17 @@ def test_experiment_config_defaults_match_current_runtime():
     assert data["seed"] is None
     assert data["include_formal_evidence"] is True
     assert data["include_semantic_projection"] is False
+    # Omitted means the historical loop, and null is dropped from canonical hashes.
+    assert data["repair_loop_policy"] is None
+
+
+def test_safe_repair_loop_policy_is_explicit_and_changes_the_config_hash():
+    legacy = ExperimentConfig()
+    safe = ExperimentConfig(repair_loop_policy="target_scoped_safe")
+
+    assert "repair_loop_policy" not in canonical_config_json(legacy)
+    assert '"repair_loop_policy":"target_scoped_safe"' in canonical_config_json(safe)
+    assert config_hash(legacy) != config_hash(safe)
 
 
 def test_custom_model_tier_requires_model_override():
@@ -142,7 +153,10 @@ def test_build_run_block_populates_reproducibility_fields(tmp_path):
 
     assert run.model_used == "gpt-5-nano"
     assert run.prompt_versions["chat"].name == "chat_system.txt"
-    assert run.prompt_versions["chat"].hash == hashlib.sha256(b"chat prompt\n").hexdigest()[:12]
+    assert (
+        run.prompt_versions["chat"].hash
+        == hashlib.sha256(b"chat prompt\n").hexdigest()[:12]
+    )
     assert run.converter == "pydantic_ir@v1"
     assert run.rules_version == "R001-R008"
     assert run.checkers == {"woflan": "pm4py-2.7"}

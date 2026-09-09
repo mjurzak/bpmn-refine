@@ -317,6 +317,167 @@ async def test_dispatch_repair_targets_a_warning_once_no_error_remains():
     assert result.iterations == 1
 
 
+async def test_target_scoped_safe_stops_after_target_and_keeps_new_warning(
+    monkeypatch,
+):
+    assigned: list[list[str]] = []
+    new_warning = ValidationIssue(
+        rule_id="semantic:missing_step",
+        severity=Severity.WARNING,
+        message="Newly observed warning outside the assigned repair scope.",
+        tier=ValidationTier.TIER3,
+        element_id="task_1",
+        source="llm",
+    )
+
+    async def fake_atomic_repair(diagram, issues, **kwargs):
+        assigned.append([issue.rule_id for issue in issues])
+        return [RenameNodeOp(id="task_1", new_name="Target repaired")]
+
+    async def fake_validate(diagram, **kwargs):
+        return ValidationResult(
+            is_valid=True,
+            issues=[],
+            semantic_issues=[new_warning],
+        )
+
+    monkeypatch.setattr(repair_service, "validate_diagram", fake_validate)
+    target = ValidationIssue(
+        rule_id="semantic:improper_termination",
+        severity=Severity.ERROR,
+        message="Assigned target.",
+        tier=ValidationTier.TIER3,
+        element_id="task_1",
+        source="llm",
+    )
+    result = await dispatch_repair(
+        _minimal_valid_diagram(),
+        issues=[target],
+        config=ExperimentConfig(
+            repair_loop_policy="target_scoped_safe", max_repair_iters=3
+        ),
+        atomic_repair_fn=fake_atomic_repair,
+    )
+
+    assert assigned == [["semantic:improper_termination"]]
+    assert result.iterations == 1
+    assert result.stop_reason == StopReason.TARGETS_RESOLVED
+    assert result.converged is True
+    assert result.remaining_issues == [new_warning]
+    assert result.rolled_back is False
+
+
+async def test_target_scoped_safe_continues_only_unresolved_original_target(
+    monkeypatch,
+):
+    assigned: list[list[str]] = []
+    contexts: list[list[str]] = []
+    validation_round = 0
+    first = ValidationIssue(
+        rule_id="semantic:missing_step",
+        severity=Severity.ERROR,
+        message="First assigned target.",
+        tier=ValidationTier.TIER3,
+        element_id="task_1",
+        source="llm",
+    )
+    second = ValidationIssue(
+        rule_id="semantic:improper_termination",
+        severity=Severity.ERROR,
+        message="Second assigned target.",
+        tier=ValidationTier.TIER3,
+        element_id="end_1",
+        source="llm",
+    )
+    new_warning = ValidationIssue(
+        rule_id="semantic:inconsistent_naming",
+        severity=Severity.WARNING,
+        message="New context only.",
+        tier=ValidationTier.TIER3,
+        element_id="task_1",
+        source="llm",
+    )
+
+    async def fake_atomic_repair(diagram, issues, **kwargs):
+        assigned.append([issue.rule_id for issue in issues])
+        contexts.append([issue.rule_id for issue in kwargs["context_issues"]])
+        return [RenameNodeOp(id="task_1", new_name=f"Round {len(assigned)}")]
+
+    async def fake_validate(diagram, **kwargs):
+        nonlocal validation_round
+        validation_round += 1
+        remaining = [second, new_warning] if validation_round == 1 else [new_warning]
+        return ValidationResult(
+            is_valid=not any(issue.severity == Severity.ERROR for issue in remaining),
+            issues=[],
+            semantic_issues=remaining,
+        )
+
+    monkeypatch.setattr(repair_service, "validate_diagram", fake_validate)
+    result = await dispatch_repair(
+        _minimal_valid_diagram(),
+        issues=[first, second],
+        config=ExperimentConfig(
+            repair_loop_policy="target_scoped_safe", max_repair_iters=3
+        ),
+        atomic_repair_fn=fake_atomic_repair,
+    )
+
+    assert assigned == [
+        ["semantic:missing_step", "semantic:improper_termination"],
+        ["semantic:improper_termination"],
+    ]
+    assert contexts == [[], ["semantic:inconsistent_naming"]]
+    assert result.stop_reason == StopReason.TARGETS_RESOLVED
+    assert result.remaining_issues == [new_warning]
+
+
+async def test_target_scoped_safe_rolls_back_new_deterministic_error(monkeypatch):
+    original = _minimal_valid_diagram()
+    target = ValidationIssue(
+        rule_id="semantic:missing_step",
+        severity=Severity.WARNING,
+        message="Assigned semantic target.",
+        tier=ValidationTier.TIER3,
+        element_id="task_1",
+        source="llm",
+    )
+    regression = ValidationIssue(
+        rule_id="R007",
+        severity=Severity.ERROR,
+        message="The repair made task_1 unreachable.",
+        tier=ValidationTier.TIER1,
+        element_id="task_1",
+        source="rules",
+    )
+
+    async def fake_atomic_repair(diagram, issues, **kwargs):
+        return [RenameNodeOp(id="task_1", new_name="Regressive candidate")]
+
+    async def fake_validate(diagram, **kwargs):
+        return ValidationResult(
+            is_valid=False,
+            issues=[regression],
+            semantic_issues=[],
+        )
+
+    monkeypatch.setattr(repair_service, "validate_diagram", fake_validate)
+    result = await dispatch_repair(
+        original,
+        issues=[target],
+        config=ExperimentConfig(repair_loop_policy="target_scoped_safe"),
+        atomic_repair_fn=fake_atomic_repair,
+    )
+
+    assert result.repaired_diagram == original
+    assert result.applied_ops == []
+    assert [op.op for op in result.rejected_ops] == ["rename_node"]
+    assert result.regression_issues == [regression]
+    assert result.rolled_back is True
+    assert result.stop_reason == StopReason.REGRESSION_REJECTED
+    assert result.converged is False
+
+
 async def test_dispatch_repair_does_not_iterate_when_nothing_is_repairable():
     """A checker failure is a fact about the run, not a defect to repair."""
     calls = []
@@ -378,9 +539,10 @@ async def test_repair_with_edit_ops_parses_atomic_llm_output(monkeypatch):
 
     assert [op.op for op in ops] == ["rename_node"]
     assert "Choose the operation by what is missing" in captured["system"]
-    assert "Never use `add_node` to represent a missing sequence flow" in captured[
-        "system"
-    ]
+    assert (
+        "Never use `add_node` to represent a missing sequence flow"
+        in captured["system"]
+    )
     assert "replace_diagram" not in captured["system"]
     assert '"$defs"' not in captured["system"]
     payload = json.loads(captured["prompt"])
@@ -758,6 +920,7 @@ def _diagram_without_start() -> BpmnDiagram:
 
 async def test_atomic_repair_can_connect_a_node_it_just_added(monkeypatch):
     """Inserting a gateway needs add_node followed by add_flow onto it."""
+
     async def fake_complete_structured(**kwargs):
         return _atomic_response(
             [
@@ -906,17 +1069,16 @@ async def test_atomic_repair_discards_disconnected_tasks_and_reprompts(monkeypat
 
     assert len(prompts) == 3
     assert "repair_feedback" not in prompts[0]
-    assert "Disconnected new node(s): sf_audit_escalated, sf_card_feed" in prompts[
-        1
-    ]["repair_feedback"]
+    assert (
+        "Disconnected new node(s): sf_audit_escalated, sf_card_feed"
+        in prompts[1]["repair_feedback"]
+    )
     assert "Disconnected new node(s)" in prompts[2]["repair_feedback"]
     assert "do not merely invent another node ID" in prompts[1]["repair_feedback"]
     assert "Do not repeat" not in prompts[1]["repair_feedback"]
     assert [op.op for op in ops] == ["add_flow", "add_flow"]
     assert not any(op.op == "add_node" for op in ops)
-    gateway_ids = schemas[0]["$defs"]["ChangeGatewayTypeOp"]["properties"]["id"][
-        "enum"
-    ]
+    gateway_ids = schemas[0]["$defs"]["ChangeGatewayTypeOp"]["properties"]["id"]["enum"]
     assert gateway_ids == ["gw_amount", "gw_close", "gw_decision", "gw_receipts"]
     assert "task_check" not in gateway_ids
 
@@ -969,6 +1131,7 @@ async def test_atomic_repair_caps_runaway_disconnected_node_diagnostics(monkeypa
 
 async def test_atomic_repair_still_rejects_an_id_that_is_never_created(monkeypatch):
     """Relaxing the enum must not reopen the hallucinated-id hole."""
+
     async def fake_complete_structured(**kwargs):
         return _atomic_response(
             [
@@ -1002,6 +1165,7 @@ async def test_atomic_repair_still_rejects_an_id_that_is_never_created(monkeypat
 
 async def test_atomic_repair_rejects_add_node_onto_an_existing_id(monkeypatch):
     """Seen live on R004: the model re-added the orphan instead of removing it."""
+
     async def fake_complete_structured(**kwargs):
         return _atomic_response(
             [
@@ -1034,6 +1198,7 @@ async def test_atomic_repair_rejects_add_node_onto_an_existing_id(monkeypatch):
 
 async def test_atomic_repair_rejects_reference_to_a_node_removed_earlier(monkeypatch):
     """The id set shrinks as well as grows."""
+
     async def fake_complete_structured(**kwargs):
         return _atomic_response(
             [

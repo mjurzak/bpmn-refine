@@ -63,6 +63,9 @@ class RepairResponse(BaseModel):
     applied_op_origins: list[OpOrigin] = Field(default_factory=list)
     failed_ops: list[EditOpResult] = Field(default_factory=list)
     failed_op_origins: list[OpOrigin] = Field(default_factory=list)
+    rejected_ops: list[EditOp] = Field(default_factory=list)
+    regression_issues: list[ValidationIssue] = Field(default_factory=list)
+    rolled_back: bool = False
     remaining_issues: list[ValidationIssue] = Field(default_factory=list)
     iterations: int
     converged: bool
@@ -159,6 +162,9 @@ async def repair(req: RepairRequest) -> RepairResponse | JSONResponse:
         applied_op_origins=repair_result.applied_op_origins,
         failed_ops=repair_result.failed_ops,
         failed_op_origins=repair_result.failed_op_origins,
+        rejected_ops=repair_result.rejected_ops,
+        regression_issues=repair_result.regression_issues,
+        rolled_back=repair_result.rolled_back,
         remaining_issues=remaining_issues,
         iterations=iterations,
         converged=converged,

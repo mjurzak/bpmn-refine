@@ -72,9 +72,7 @@ def _description_hash(path: Path) -> str:
     return hash_bytes(path.read_text(encoding="utf-8").encode("utf-8"))
 
 
-# ---------------------------------------------------------------------------
-# the spec
-# ---------------------------------------------------------------------------
+# Experiment specification
 
 
 class SweepSpec(BaseModel):
@@ -199,9 +197,7 @@ def expand_configs(spec: SweepSpec) -> list[ExperimentConfig]:
     return expanded
 
 
-# ---------------------------------------------------------------------------
-# trials
-# ---------------------------------------------------------------------------
+# Trial expansion
 
 
 class Trial(BaseModel):
@@ -277,9 +273,7 @@ def build_trials(
     return trials
 
 
-# ---------------------------------------------------------------------------
-# results
-# ---------------------------------------------------------------------------
+# Result records
 
 
 class CallRecord(BaseModel):
@@ -330,6 +324,9 @@ class RepairRecord(BaseModel):
     applied_op_origins: list[str] = Field(default_factory=list)
     failed_ops: list[dict[str, Any]] = Field(default_factory=list)
     remaining_issue_ids: list[str] = Field(default_factory=list)
+    rejected_ops: list[dict[str, Any]] = Field(default_factory=list)
+    regression_issues: list[dict[str, Any]] = Field(default_factory=list)
+    rolled_back: bool = False
 
 
 class TrialRecord(BaseModel):
@@ -359,9 +356,7 @@ class TrialRecord(BaseModel):
     error: str | None = None
 
 
-# ---------------------------------------------------------------------------
-# execution
-# ---------------------------------------------------------------------------
+# Trial execution
 
 
 @asynccontextmanager
@@ -522,6 +517,11 @@ async def run_trial(trial: Trial, keep_payloads: bool = False) -> TrialRecord:
                 remaining_issue_ids=sorted(
                     issue.rule_id for issue in repair.remaining_issues
                 ),
+                rejected_ops=[op.model_dump(mode="json") for op in repair.rejected_ops],
+                regression_issues=[
+                    _issue_json(issue) for issue in repair.regression_issues
+                ],
+                rolled_back=repair.rolled_back,
             )
 
             # the same tiers re-run as an oracle, giving the soundness pass rate
@@ -606,9 +606,7 @@ def _model_for(config: ExperimentConfig) -> str:
     return resolve_model(TaskType.REPAIR, config=config)
 
 
-# ---------------------------------------------------------------------------
-# persistence
-# ---------------------------------------------------------------------------
+# Result persistence
 
 
 def _jsonl_records(results_path: Path) -> list[dict[str, Any]]:
@@ -794,9 +792,7 @@ def write_manifest(
     return path
 
 
-# ---------------------------------------------------------------------------
-# the sweep
-# ---------------------------------------------------------------------------
+# Sweep orchestration
 
 
 class SweepSummary(BaseModel):
