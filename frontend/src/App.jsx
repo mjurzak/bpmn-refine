@@ -25,14 +25,14 @@ import { PROVIDER_OPTIONS } from "./llmProviders.js";
 import "./app.css";
 
 const UI_SESSION_KEYS = {
-  darkMode: "bpmn-ai-validator.dark-mode",
-  chatOpen: "bpmn-ai-validator.chat-open",
-  leftPanelOpen: "bpmn-ai-validator.left-panel-open",
-  historyOpen: "bpmn-ai-validator.history-open",
-  approvalMode: "bpmn-ai-validator.approval-mode",
-  llmSettings: "bpmn-ai-validator.llm-settings",
-  assistantTab: "bpmn-ai-validator.assistant-tab",
-  editorTab: "bpmn-ai-validator.editor-tab",
+  darkMode: "bpmn-refine.dark-mode",
+  chatOpen: "bpmn-refine.chat-open",
+  leftPanelOpen: "bpmn-refine.left-panel-open",
+  historyOpen: "bpmn-refine.history-open",
+  approvalMode: "bpmn-refine.approval-mode",
+  llmSettings: "bpmn-refine.llm-settings",
+  assistantTab: "bpmn-refine.assistant-tab",
+  editorTab: "bpmn-refine.editor-tab",
 };
 
 const EDITOR_TABS = {
@@ -1250,7 +1250,7 @@ export default function App() {
     <div className="app-layout">
       <div className="toolbar">
         <div className="toolbar-title">
-          BPMN <span>AI</span> Validator
+          BPMN <span>Refine</span>
         </div>
         <div className="toolbar-caption">
           interactive BPMN validation and refinement

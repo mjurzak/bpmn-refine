@@ -1,4 +1,4 @@
-# bpmn-ai-validator
+# bpmn-refine
 
 Interactive system for validation, repair, and refinement of BPMN 2.0 diagrams using Large Language Models.
 
@@ -123,15 +123,15 @@ PYTHONPATH=backend .venv/bin/python -m app.cli repair data/rule_cases/R000_valid
 With `.venv` activated, the CLI is also exposed as:
 
 ```bash
-bpmn-ai-validator validate data/rule_cases/R000_valid_baseline.bpmn
+bpmn-refine validate data/rule_cases/R000_valid_baseline.bpmn
 ```
 
 Experiment-oriented commands support metadata such as runtime, dataset path, provider, model, and prompt filename:
 
 ```bash
-bpmn-ai-validator validate data/rule_cases/R000_valid_baseline.bpmn --json
-bpmn-ai-validator repair data/rule_cases/R000_valid_baseline.bpmn --json
-bpmn-ai-validator batch-validate data/rule_cases --recursive --format json --out /tmp/results.json
+bpmn-refine validate data/rule_cases/R000_valid_baseline.bpmn --json
+bpmn-refine repair data/rule_cases/R000_valid_baseline.bpmn --json
+bpmn-refine batch-validate data/rule_cases --recursive --format json --out /tmp/results.json
 ```
 
 ## Documentation

@@ -5,7 +5,7 @@ from app.api.routes import chat, dataset, diagrams, history, repair, validate
 from app.core.config import settings
 
 app = FastAPI(
-    title="BPMN AI Validator",
+    title="BPMN Refine",
     description="Interactive BPMN validation, repair, and refinement with LLMs",
     version="0.1.0",
 )

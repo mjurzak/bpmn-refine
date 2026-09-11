@@ -1,5 +1,5 @@
 [project]
-name = "bpmn-ai-validator"
+name = "bpmn-refine"
 version = "0.1.0"
 description = "Interactive BPMN validation, repair, and refinement with LLMs"
 readme = "README.md"
@@ -32,7 +32,7 @@ dev = [
 ]
 
 [project.scripts]
-bpmn-ai-validator = "app.cli:app"
+bpmn-refine = "app.cli:app"
 
 [build-system]
 requires = ["hatchling"]
