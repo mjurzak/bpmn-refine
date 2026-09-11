@@ -6,23 +6,25 @@ configuration assume that working directory.
 ## Requirements
 
 - Python 3.12 or newer;
-- `uv` for the Python environment;
-- Node.js 18 or newer with `npm`;
+- `uv` for the Python environment and `make` for the run commands;
+- Node.js 22.x (22.22.2 or newer) with `npm`;
 - Docker with Compose, only if the container path is used.
 
 ## Local setup
 
 ```bash
-uv venv .venv
+uv sync --extra dev --frozen
 source .venv/bin/activate
-uv pip install -e ".[dev]"
-cp .env.example .env
 npm --prefix frontend ci
 ```
 
-Keep `.env` local. API keys are needed only for their respective hosted
-providers. Codex CLI and Claude Code use their existing local authentication;
-their adapters register only when the configured executable is available.
+The backend starts and **Verify Rules** works without `.env`. To use semantic validation, chat, or LLM-based repair, create the local configuration without replacing an existing file:
+
+```bash
+test -e .env || cp .env.example .env
+```
+
+Restart the backend after changing `.env`. Keep `.env` local. Replace the placeholder for the hosted provider you select. The **Models** button in the application chooses a provider and model for each LLM interaction. Codex CLI and Claude Code use existing local authentication; their adapters register only when the configured executable is available.
 
 ## Configuration
 
@@ -48,10 +50,15 @@ Hosted providers additionally read `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or
 
 ## Run the application
 
-Use separate terminals:
+Use separate terminals. Run both commands from the repository root:
 
 ```bash
 make backend
+```
+
+In the second terminal:
+
+```bash
 make frontend
 ```
 
@@ -59,9 +66,14 @@ The backend is available at `http://localhost:8000`; the Vite frontend is at
 `http://localhost:5173`. OpenAPI documentation is generated from the route and
 Pydantic models at `http://localhost:8000/docs`.
 
+**Verify Rules** makes no LLM request. Semantic validation, chat, and repair use the provider and model selected through **Models**. Proposal review is the default; select Auto mode explicitly before the application applies a repair or chat proposal automatically.
+
 For containers:
 
+Docker Compose requires a root `.env` file. Create it without replacing an existing file, then run:
+
 ```bash
+test -e .env || cp .env.example .env
 docker compose up --build
 ```
 

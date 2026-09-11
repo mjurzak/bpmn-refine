@@ -1,12 +1,12 @@
 # repair loop
 
-Repair is one of the three top-level operations (see [`architecture.md`](architecture.md)). It takes **issues** (found by tier 1, tier 2, and/or tier 3) and a diagram, and produces **proposed changes** — never silent mutations. The user decides whether to apply them.
+Repair is one of the three top-level operations (see [`architecture.md`](architecture.md)). It takes **issues** (found by tier 1, tier 2, and/or tier 3) and a diagram, and produces **proposed changes** — never silent mutations. Manual mode requires acceptance; explicitly selected Auto mode permits application without separate acceptance.
 
 The endpoint has two orchestration modes.
 
 **Single plan** (`single_plan=true`, the default) backs manual approval: dispatcher -> apply to an isolated candidate -> re-validate -> return for review. Findings discovered on the way are reported, not repaired inside the same request.
 
-**Closed loop** (`single_plan=false`) backs unattended experiment runs: dispatcher -> apply -> re-validate -> stop or iterate. Keeping it opt-in is what stops the human review gate from ending up behind several model-generated plans.
+**Closed loop** (`single_plan=false`) backs explicitly enabled Auto mode and closed-loop experiment runs: dispatcher -> apply -> re-validate -> stop or iterate. Keeping it opt-in is what stops the human review gate from ending up behind several model-generated plans.
 
 **Status (2026-09-03):** the loop, both repair modes, quick fixes for R001,
 R002, R005, and R006, the `/repair`, `/repair/xml`, and `/repair/apply`
@@ -57,7 +57,7 @@ Response:
 }
 ```
 
-`/repair` is meaningless without an issue list. A frontend "Validate & Repair" button is a UI chain (`/validate` -> `/repair`); it is not a backend automation. Nothing is applied to the real diagram until the user accepts the response.
+`/repair` is meaningless without an issue list. The frontend exposes separate validation and Repair actions. The endpoint returns a candidate; the frontend applies it after acceptance in manual mode or directly in explicitly selected Auto mode.
 
 ---
 

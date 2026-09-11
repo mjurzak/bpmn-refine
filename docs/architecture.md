@@ -2,7 +2,7 @@
 
 ## overview
 
-A web application for validating, repairing, and refining BPMN 2.0 diagrams with large language models. A React frontend with bpmn-js gives the user a live modelling surface; a FastAPI backend runs three independent validator tiers behind a common repair loop. All LLM calls route through a provider-agnostic client. Every backend response carries a `run` block recording which model, prompts, rules, and converter produced it, so experiments can be replayed.
+A web application for validating, repairing, and refining BPMN 2.0 diagrams with large language models. A React frontend with bpmn-js gives the user a live modelling surface; a FastAPI backend runs three independent validator tiers behind a common repair loop. All LLM calls route through a provider-agnostic client. Validation, repair and chat responses record execution metadata in a `run` block once a run context exists; see [`run.md`](run.md) for error-response coverage.
 
 Four ideas shape the architecture:
 
@@ -26,8 +26,8 @@ The system performs three distinct operations over a diagram:
 
 Shared constraints:
 
-- **Nothing applies automatically.** Every repair or refinement result is a suggestion until the user accepts it. Validation never modifies the diagram at all.
-- **Repair requires issues.** `/repair` operates over known problems, so it does nothing without an issue list. A frontend "Validate & Repair" button is a UI chain (`/validate` -> `/repair`), not a backend automation.
+- **Manual approval by default.** Repair and refinement results remain proposals until accepted. Explicit Auto mode permits application without a separate acceptance step. Validation never applies changes.
+- **Repair requires issues.** `/repair` operates over known problems, so it does nothing without an issue list. The frontend exposes separate validation and Repair actions.
 - **Refinement cannot be auto-triggered.** The system cannot infer intent; chat is always user-initiated.
 
 Repair and refinement emit the same `EditOp` schema. They differ in what triggers them and what context they carry.
@@ -151,7 +151,7 @@ Single-turn LLM call over the IR plus tier 1 diagnostics. Targets concerns no de
 
 ## repair loop
 
-Repairs are always **suggestions by default**; the frontend only applies them on explicit user acceptance. The `/repair` endpoint orchestrates a closed loop:
+Repairs are proposals by default. Manual mode requests one plan (`single_plan=true`) for review. Explicit Auto mode requests the closed loop (`single_plan=false`) and applies its result without separate acceptance. The dispatcher follows this flow:
 
 ```
 issues (tier 1 + 2 + 3)
@@ -203,7 +203,7 @@ Chat and repair share the common outer response convention but use different
 task-specific result schemas. What drives chat is the conversation (history,
 stated goal), not a checker counterexample.
 
-Chat is **not** auto-triggered and never applies changes silently.
+Chat is user-initiated. Manual mode presents changes for review; explicitly selected Auto mode applies them without a separate acceptance step.
 
 ---
 
@@ -268,14 +268,14 @@ Houses tier 1 deterministic rules and the Woflan adapter that normalises formal-
 ### llm layer — `backend/app/llm/`
 
 - `client.py` — high-level entry points (`complete`, `complete_with_history`). Every LLM call routes through here.
-- `protocol.py` + `providers/` — provider abstraction. Current implementations: Anthropic, OpenAI, Gemini, Ollama (each registered only when its credentials are present; Ollama always). Only `providers/` modules touch vendor SDKs.
+- `protocol.py` + `providers/` — provider abstraction. Current implementations: Anthropic, OpenAI, Gemini, Ollama, Codex CLI and Claude Code. Hosted adapters require credentials; CLI adapters require an available executable; Ollama is always registered. Only `providers/` modules touch vendor SDKs.
 - `registry.py` — provider registration at startup.
 - `router.py` — `TaskType` -> model tier -> concrete provider + model id.
 - `prompts/` — versioned `.txt` files (`validate.txt`, `repair.txt`, `chat_system.txt`). Hashed at load for `run.prompt_versions`.
 
 ### history layer — `backend/app/history/`
 
-Session-scoped revision log. Every diagram change (upload, repair acceptance, chat-accepted suggestion) creates a revision. `/history/{session_id}` exposes list, get, and revert.
+Session-scoped revision log. Uploads and accepted or auto-approved changes create revisions. Uncommitted canvas edits do not create a revision for each edit. `/history/{session_id}` exposes list, get, and revert.
 
 ### services layer — `backend/app/services/`
 
@@ -314,28 +314,29 @@ user clicks "Formal Validate" or "Semantic LLM"
 ### repair -> iterative loop
 
 ```
-user clicks "Repair" on one or more issues
-  -> POST /repair { xml, issues, ExperimentConfig }
+user clicks "Repair" with current validation findings
+  -> POST /repair { xml, issues, config, single_plan }
   -> dispatcher loop:
-      1. pick an issue
+      1. choose the current target findings
       2. deterministic quick-fix?  -> apply
          else -> LLM repair call with counterexample context
                 (mode=atomic emits EditOp[]; mode=regen emits full IR)
       3. apply to canonical IR
-      4. revalidate via tier 1 (and tier 2 if configured)
-      5. continue until converged or iterations > max
+      4. revalidate with the configured tiers
+      5. return one plan for review, or continue within the closed-loop budget
   -> response { updated_xml, iterations, applied_ops, remaining_issues, run }
-  -> frontend previews diff; user accepts or rejects
+  -> manual mode: preview diff for acceptance or rejection
+  -> explicit Auto mode: apply the result
 ```
 
 ### conversational refinement
 
 ```
 user types in chat
-  -> POST /chat { messages, xml, ExperimentConfig }
+  -> POST /chat { messages, diagram, config, snapshot_changes }
   -> LLM emits a description plus an optional serialized complete diagram
-  -> frontend renders as a proposed change
-  -> change is applied only on explicit user acceptance
+  -> manual mode: frontend presents a proposal for acceptance
+  -> explicit Auto mode: frontend applies the returned diagram
 ```
 
 ---
@@ -343,9 +344,9 @@ user types in chat
 ## design principles
 
 - **Deterministic before probabilistic.** Tier 1 runs before tier 2, tier 2 before tier 3. Cheap, testable checks narrow what the LLM is asked to reason about.
-- **No silent diagram mutations.** Validation never modifies a diagram. Repairs stay suggestions until the user accepts them.
+- **No silent diagram mutations.** Validation never modifies a diagram. Repairs require acceptance in manual mode; automatic application requires explicitly selected Auto mode.
 - **Configuration, not code, picks the variant.** Provider, prompt file, IR format, and tier-2 tool set are all selected through `ExperimentConfig` or a registry. Nothing outside configuration hard-codes a model or a format.
-- **Every response is reproducible.** The `run` block is a hard contract; no endpoint omits it.
+- **Every response is reproducible.** Validation, repair and chat responses carry a `run` block once a run context exists; request parsing failures precede that context. See [`run.md`](run.md).
 - **Round-trip fidelity holds.** Every converter must satisfy `serialize(parse(xml))` semantically equivalent to the input, enforced as a test gate.
 
 ---

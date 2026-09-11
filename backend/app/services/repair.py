@@ -375,7 +375,7 @@ async def _dispatch_repair_legacy(
     single_plan: bool = False,
     reference_description: str | None = None,
 ) -> DispatcherRepairResult:
-    """repair issues once for review, or run the closed loop to convergence
+    """Run one reviewed repair plan or an explicitly selected automatic repair loop.
 
     `single_plan` is the human-review path: one plan, applied and revalidated once.
     """

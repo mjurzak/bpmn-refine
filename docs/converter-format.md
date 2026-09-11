@@ -35,7 +35,7 @@ class DiagramConverter(Protocol):
 
 Every converter, regardless of its on-wire format, produces and consumes the same canonical IR. This keeps validation, repair, and history format-agnostic.
 
-> **Note:** today the protocol's return type is `Any`; it will be tightened to `BpmnDiagram` as part of adopting the canonical-IR pattern. The behavioural contract is already that every converter returns a `BpmnDiagram` — the type annotation just needs to catch up.
+`parse` returns `BpmnDiagram`. The protocol also exposes `parse_with_diagnostics`, which returns the diagram together with unsupported-element diagnostics.
 
 ---
 
@@ -45,17 +45,14 @@ The canonical IR lives in `backend/app/model/schema.py`:
 
 | Class | Role |
 |---|---|
-| `BpmnDiagram` | top-level container (definitions id, namespaces, processes, collaboration) |
-| `BpmnProcess` | one per `<process>`; carries `is_executable`, flow nodes, sequence flows, lane sets |
+| `BpmnDiagram` | top-level container (definitions id, target namespace, namespaces, processes) |
+| `BpmnProcess` | one per `<process>`; carries `is_executable`, flow nodes and sequence flows; also has a schema-only `pools` field |
 | `FlowNode` | any gateway, task, or event; typed via `FlowNodeType` enum |
 | `EventDefinition` | what makes an event a timer, message or error one; typed via `EventDefinitionType` |
 | `SequenceFlow` | edge with optional `name` and `condition_expression` |
-| `Collaboration` | the pools and the messages between them |
-| `Participant` | one pool; `process_ref` is `None` for a black-box partner |
-| `MessageFlow` | a message across pools; either end may be a participant rather than a node |
-| `LaneSet`, `Lane` | swimlane structure inside a process; lanes may nest |
+| `Pool`, `Lane` | schema-only containers; the BPMN XML converter does not parse or serialize pools or lanes |
 
-`FlowNode.extra: dict` preserves XML attributes the schema does not model explicitly, so round-trip fidelity holds even for elements we do not semantically understand.
+`FlowNode.extra: dict` preserves additional attributes on supported flow nodes. It does not preserve arbitrary XML children or extend the supported element set. Unsupported children are reported by import diagnostics.
 
 ---
 
@@ -81,18 +78,18 @@ Legend: ✅ full · ◐ partial (schema or attributes preserved via `extra`, but
 | Gateways | `exclusiveGateway`, `parallelGateway`, `inclusiveGateway`, `eventBasedGateway`, `complexGateway` | ✅ | |
 | Flows | `sequenceFlow` (id, source, target, name) | ✅ | |
 | Flows | `conditionExpression` on a sequence flow | ✅ | |
-| Flows | `messageFlow` | ◐ | modelled and round-tripped, ends may address a pool; **no tier-2 checker reads them** |
-| Swimlanes | `laneSet` / `lane` / `flowNodeRef` | ✅ | including `childLaneSet`; removing a node drops it from its lane |
-| Collaboration | `collaboration`, `participant` (pool) | ✅ | black-box participants included; a second `<collaboration>` is reported as unsupported |
+| Flows | `messageFlow` | ☐ | not imported or serialized; its enclosing collaboration is reported as unsupported |
+| Swimlanes | `laneSet` / `lane` / `flowNodeRef` | ☐ | lane sets are reported as unsupported; schema-only `Pool`/`Lane` classes do not provide XML coverage |
+| Collaboration | `collaboration`, `participant` (pool) | ☐ | collaborations and their contents are not imported or serialized |
 | Data | `dataObject`, `dataObjectReference`, `dataStoreReference` | ☐ | |
 | Data | `dataInputAssociation`, `dataOutputAssociation` | ☐ | |
 | Artifacts | `textAnnotation`, `group`, `association` | ☐ | |
-| Visualization | `bpmndi:BPMNDiagram` (DI) | ✅ | the author's geometry is carried on the IR and re-emitted unchanged; only elements that never had a shape go through the fallback layout. A collaboration gets one plane, with pool and lane shapes |
+| Visualization | `bpmndi:BPMNDiagram` (DI) | ✅ | node bounds, flow waypoints and label bounds are preserved for supported elements; missing geometry gets a fallback layout. XML wrapper IDs and formatting may change; pool and lane geometry is unsupported |
 
 ### closing the gaps (priority order)
 
 1. **Sub-process recursion** — parse/serialise nested flow nodes so structural validation works inside sub-processes. Blocks meaningful validation of hierarchical models.
-2. **A tier-2 checker that reads message flows** — the IR carries them, nothing consumes them. Until something does, a collaboration whose participants each carry control flow gets a soundness verdict about one participant in isolation, which is why the dataset probe excludes those models under `multi_process`.
+2. **Collaboration and swimlane coverage** — implement XML import/export together with explicit formal-checker limits. The current dataset probe excludes unsupported collaborations and lanes at the lossless-import gate (`lossy_import`); it does not assign a `multi_process` verdict.
 3. **Data objects / artifacts** — useful for tier-2 data-flow checks (PM4Py); lower priority for control-flow validation.
 4. **Event definition payloads** — the trigger's kind is modelled, its schedule is not.
 
@@ -117,10 +114,10 @@ Additional formats used primarily for LLM I/O and for thesis-level comparison ex
 | Key | Status | Purpose | Notes |
 |---|---|---|---|
 | `pydantic` (BPMN XML) | ✅ built | user upload/export; canonical-parity baseline | the converter connecting the user's world (XML) to the canonical IR |
-| `pydantic-json` | ✅ built | canonical IR as JSON for LLM I/O | 1:1 with the Pydantic schema; the "no information loss" baseline |
+| `pydantic_json` | ✅ built | canonical IR as JSON for LLM I/O | 1:1 with the Pydantic schema; the "no information loss" baseline |
 | `yaml` | ✅ built | **novel thesis contribution** | canonical IR as deterministic YAML; measures token cost and edit success vs JSON |
 | `mermaid` | ✅ built | token-efficiency reference | Mermaid flowchart plus compact IR metadata for lossless supported-subset round-trip |
-| `compact-json` | ✅ built | ablation | minimal-key JSON; isolates whether verbose keys hurt LLM accuracy |
+| `compact_json` | ✅ built | ablation | minimal-key JSON; isolates whether verbose keys hurt LLM accuracy |
 
 The active candidate IR is selected per request via `ExperimentConfig.ir_format`.
 
@@ -145,7 +142,7 @@ Every converter must satisfy:
 serialize(parse(x)) ≡ x   for every valid input x in the converter's supported subset
 ```
 
-For the `pydantic` (BPMN XML) converter this means BPMN XML -> `BpmnDiagram` -> BPMN XML produces semantically equivalent BPMN (modulo whitespace, attribute ordering, and the always-regenerated DI layout).
+For the `pydantic` (BPMN XML) converter, BPMN XML -> `BpmnDiagram` -> BPMN XML preserves semantics within the supported subset, modulo XML formatting and generated wrapper identifiers. Existing node, edge and label geometry is preserved; missing geometry is generated.
 
 For a candidate IR (say `yaml`) the invariant is two-sided:
 
@@ -167,7 +164,7 @@ converter = get_converter()             # uses DIAGRAM_CONVERTER env var (defaul
 converter = get_converter("pydantic")   # explicit
 ```
 
-The default converter is registered at import time. Additional converters register themselves at application startup or via explicit `register()` calls.
+All five built-in converters are registered when the registry module is imported. Custom converters use explicit `register()` calls.
 
 For user upload/export, the active converter is still resolved from `DIAGRAM_CONVERTER` via `get_converter()`.
 

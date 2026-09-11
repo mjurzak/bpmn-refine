@@ -12,7 +12,7 @@ This doc owns:
 
 It does **not** own the inputs. How the benchmark is built — operator catalogue, grounding, ground-truth derivation — is [`evaluation/METHODOLOGY.md`](../evaluation/METHODOLOGY.md); the on-disk layout is [`data/eval/README.md`](../data/eval/README.md); the runs themselves are [`experiments/README.md`](../experiments/README.md). [`evaluation/README.md`](../evaluation/README.md) is the map.
 
-The system is designed so the **same backend** serves interactive sessions and batch ablation runs. An experiment is not a separate code path — it is a sweep over `ExperimentConfig` that hits the live endpoints and records every `run` block. See [`run.md`](run.md).
+Interactive API routes and batch runners share backend services. The generic sweep calls validation and repair services directly and records run metadata; it does not send HTTP requests to a running FastAPI server. E7 and E8 use dedicated drivers for repair and chat refinement. See [`run.md`](run.md) and [`experiments/README.md`](../experiments/README.md).
 
 ---
 
@@ -151,9 +151,9 @@ the `none` stratum explicitly disables thinking.
 
 Mermaid ~93% reduction against raw BPMN XML is the reference point (Grohs et al., 2024). YAML is the novel candidate; Mermaid is the strong-baseline candidate.
 
-### LLM-as-a-Judge (qualitative)
+### Evaluation and human review
 
-A separate strong-tier LLM call rates repaired diagrams on a small rubric (label fidelity, structural plausibility, BPMN-idiomatic) against the ground truth. Used as a **secondary** signal, never in place of the objective metrics above. Prompt and rubric versioned alongside other prompts; the judge's model id is recorded in `run`.
+LLM-as-a-Judge was considered but is not used to score the executed E1–E9 experiments. Detection and change assessment use deterministic checks against the versioned ground truth. E7 and E8 also record human review of flagged semantic repairs and refinements. LLM assistance during dataset construction is a separate activity, documented in [`evaluation/METHODOLOGY.md`](../evaluation/METHODOLOGY.md). Executed analyses and review provenance are listed in [`experiments/README.md`](../experiments/README.md).
 
 ---
 

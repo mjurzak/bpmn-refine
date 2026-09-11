@@ -10,7 +10,7 @@ Part of a master's thesis: *Design and Implementation of an Interactive System S
 - **Repairs** diagrams by proposing targeted fixes for detected issues
 - **Refines** diagrams through chat: the user describes intent, the system suggests changes
 
-Nothing is applied automatically. Every repair and refinement is a proposal until the user accepts it.
+Repair and refinement proposals require acceptance by default. A user can explicitly enable Auto mode to apply a proposal and continue the repair loop.
 
 The supported local harnesses are Codex CLI (`codex_cli`) and Claude Code
 (`claude_cli`), alongside the existing API providers. The thesis comparison
@@ -32,6 +32,49 @@ backend/app/
 
 See [`docs/architecture.md`](docs/architecture.md) for a detailed walkthrough.
 
+## Quick start
+
+Run all commands from the repository root. You need Python 3.12 or newer, `uv`, `make`, and Node.js 22.x (22.22.2 or newer) with `npm`.
+
+Install the locked dependencies:
+
+```bash
+uv sync --extra dev --frozen
+source .venv/bin/activate
+npm --prefix frontend ci
+```
+
+Start the backend in one terminal:
+
+```bash
+make backend
+```
+
+Start the frontend in another terminal, again from the repository root:
+
+```bash
+make frontend
+```
+
+Open `http://localhost:5173`. The backend is available at `http://localhost:8000`, with OpenAPI at `http://localhost:8000/docs` and a health check at `http://localhost:8000/health`.
+
+For a first check, import `data/rule_cases/R000_valid_baseline.bpmn` and click **Verify Rules**. The panel should show **No issues found**. This check needs no `.env` file or LLM provider. Semantic validation, chat, and LLM-based repair need a configured provider. Create the local configuration without overwriting an existing file, then replace the relevant placeholder with a valid credential:
+
+```bash
+test -e .env || cp .env.example .env
+```
+
+Restart the backend after changing `.env`. Use the **Models** control in the toolbar to choose the provider and model for each LLM interaction. Hosted providers require the matching API key. Ollama requires a local server at `OLLAMA_BASE_URL`; Codex CLI and Claude Code use existing local authentication when their executable is available.
+
+Docker Compose requires a root `.env` file. Create it without overwriting an existing file, then run:
+
+```bash
+test -e .env || cp .env.example .env
+docker compose up --build
+```
+
+The containerized frontend uses `http://localhost:3000`.
+
 ## Repository map and retention
 
 | Path | Role | Retention policy |
@@ -51,27 +94,6 @@ See [`docs/architecture.md`](docs/architecture.md) for a detailed walkthrough.
 The detailed experiment layout and the exceptions for manually reviewed or
 rescored outputs are documented in [`experiments/README.md`](experiments/README.md).
 
-## Quick start
-
-**Requirements:** Python 3.12+, Node 18+, a `.env` file (copy from `.env.example`).
-
-```bash
-# backend
-uv venv .venv && source .venv/bin/activate
-uv pip install -e ".[dev]"
-PYTHONPATH=backend uvicorn app.main:app --reload   # -> http://localhost:8000
-
-# frontend (separate terminal)
-cd frontend && npm ci && npm run dev                # -> http://localhost:5173
-
-# or full-stack via Docker
-docker compose up --build
-```
-
-The backend exposes its OpenAPI UI at `http://localhost:8000/docs` and a health
-check at `http://localhost:8000/health`. The frontend started with Vite uses
-port 5173; the containerized frontend uses port 3000.
-
 ## Running tests
 
 ```bash
@@ -85,26 +107,31 @@ make test-frontend
 Run the backend-local CLI without starting FastAPI:
 
 ```bash
-PYTHONPATH=backend .venv/bin/python -m app.cli validate data/pmo-dataset/bpmn/01.bpmn
-PYTHONPATH=backend .venv/bin/python -m app.cli validate data/pmo-dataset/bpmn/01.bpmn --json
-PYTHONPATH=backend .venv/bin/python -m app.cli roundtrip data/pmo-dataset/bpmn/01.bpmn --out /tmp/roundtrip.bpmn
-PYTHONPATH=backend .venv/bin/python -m app.cli chat data/pmo-dataset/bpmn/01.bpmn --message "add a manager approval step" --out /tmp/refined.bpmn
-PYTHONPATH=backend .venv/bin/python -m app.cli repair data/pmo-dataset/bpmn/01.bpmn --out /tmp/repaired.bpmn
-PYTHONPATH=backend .venv/bin/python -m app.cli batch-validate data/pmo-dataset/bpmn --recursive --format jsonl --out /tmp/validation.jsonl
+PYTHONPATH=backend .venv/bin/python -m app.cli validate data/rule_cases/R000_valid_baseline.bpmn
+PYTHONPATH=backend .venv/bin/python -m app.cli validate data/rule_cases/R000_valid_baseline.bpmn --json
+PYTHONPATH=backend .venv/bin/python -m app.cli roundtrip data/rule_cases/R000_valid_baseline.bpmn --out /tmp/roundtrip.bpmn
+PYTHONPATH=backend .venv/bin/python -m app.cli batch-validate data/rule_cases --recursive --format jsonl --out /tmp/validation.jsonl
 ```
 
-After `uv pip install -e .`, the CLI is also exposed as:
+With a configured LLM provider, chat and repair can use the same versioned fixture:
 
 ```bash
-bpmn-ai-validator validate data/pmo-dataset/bpmn/01.bpmn
+PYTHONPATH=backend .venv/bin/python -m app.cli chat data/rule_cases/R000_valid_baseline.bpmn --message "add a manager approval step" --out /tmp/refined.bpmn
+PYTHONPATH=backend .venv/bin/python -m app.cli repair data/rule_cases/R000_valid_baseline.bpmn --out /tmp/repaired.bpmn
+```
+
+With `.venv` activated, the CLI is also exposed as:
+
+```bash
+bpmn-ai-validator validate data/rule_cases/R000_valid_baseline.bpmn
 ```
 
 Experiment-oriented commands support metadata such as runtime, dataset path, provider, model, and prompt filename:
 
 ```bash
-bpmn-ai-validator validate data/pmo-dataset/bpmn/01.bpmn --json
-bpmn-ai-validator repair data/pmo-dataset/bpmn/01.bpmn --json
-bpmn-ai-validator batch-validate data/pmo-dataset/bpmn --recursive --format json --out /tmp/results.json
+bpmn-ai-validator validate data/rule_cases/R000_valid_baseline.bpmn --json
+bpmn-ai-validator repair data/rule_cases/R000_valid_baseline.bpmn --json
+bpmn-ai-validator batch-validate data/rule_cases --recursive --format json --out /tmp/results.json
 ```
 
 ## Documentation
