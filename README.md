@@ -151,6 +151,10 @@ bpmn-refine batch-validate data/rule_cases --recursive --format json --out /tmp/
 | [`evaluation/README.md`](evaluation/README.md) | Dataset construction and audit entry point |
 | [`experiments/README.md`](experiments/README.md) | Executed E1–E9 runs and retained artifacts |
 
-The repository does not currently declare a reusable software license. The
-derived evaluation dataset has its own source attribution and license record in
-[`data/eval/v1.0/ATTRIBUTION.md`](data/eval/v1.0/ATTRIBUTION.md).
+## License
+
+The project's original code, including the backend and frontend, is licensed
+under the GNU Affero General Public License version 3 only
+([AGPL-3.0-only](LICENSE)). See [LICENSING.md](LICENSING.md) for scope and
+third-party exceptions. The derived evaluation dataset retains its separate
+[source attribution and license](data/eval/v1.0/ATTRIBUTION.md).
