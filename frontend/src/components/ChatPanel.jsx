@@ -249,7 +249,7 @@ export default function ChatPanel({
       setMessages((prev) => [...prev, assistantMsg]);
       if (res.updated_diagram) {
         if (autoApprove) {
-          onIrUpdate?.(res.updated_diagram, res.rev_id ?? null, res.session_id ?? null);
+          await onIrUpdate?.(res.updated_diagram, res.rev_id ?? null, res.session_id ?? null);
         } else {
           onDiagramProposal?.({
             source: "chat",

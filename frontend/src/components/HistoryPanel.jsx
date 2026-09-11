@@ -161,10 +161,11 @@ export default function HistoryPanel({
     handleMouseLeave();
     try {
       const res = await revertToRevision(sessionId, revId);
-      onRevert?.(res.diagram, res.new_rev_id);
+      await onRevert?.(res.diagram, res.new_rev_id);
       await refresh();
     } catch (err) {
       console.error("revert failed:", err);
+      alert(`Revert failed: ${err.message}`);
     } finally {
       setReverting(null);
     }

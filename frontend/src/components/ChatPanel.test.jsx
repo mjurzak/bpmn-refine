@@ -8,8 +8,20 @@ vi.mock("../api/client.js", () => ({
   applyEditOps: vi.fn(),
 }));
 
-import { applyEditOps } from "../api/client.js";
+import { applyEditOps, sendChatMessage } from "../api/client.js";
 import ChatPanel from "./ChatPanel.jsx";
+
+it("shows a failed document update instead of reporting a successful chat turn", async () => {
+  sendChatMessage.mockResolvedValue({ reply: "Updated", updated_diagram: { processes: [] } });
+  const onActivity = vi.fn();
+  render(<ChatPanel approvalMode="autoapprove" onActivity={onActivity}
+    onIrUpdate={async () => { throw new Error("Export unavailable"); }} />);
+  await userEvent.type(screen.getByRole("textbox"), "Update the diagram");
+  await userEvent.click(screen.getByTitle("Send message"));
+  expect(await screen.findByText("Error: Export unavailable")).toBeInTheDocument();
+  expect(onActivity).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(Error) }));
+  expect(onActivity).not.toHaveBeenCalledWith(expect.objectContaining({ response: expect.anything() }));
+});
 
 const BASE_DIAGRAM = {
   definitions_id: "defs_1",

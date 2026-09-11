@@ -603,6 +603,8 @@ function LlmSettingsPanel({ settings, onChange, onClose }) {
 }
 
 export default function App() {
+  const documentVersion = useRef(0);
+  const validationRequest = useRef(0);
   const [xml, setXml] = useState(null);
   const [diagram, setDiagram] = useState(null);
   const [validationSourceDiagram, setValidationSourceDiagram] = useState(null);
@@ -765,34 +767,43 @@ export default function App() {
     [appendLogEntries],
   );
 
+  const invalidateValidation = useCallback(() => {
+    documentVersion.current += 1;
+    validationRequest.current += 1;
+    setValidationResult(null);
+    setLastValidationTiers(null);
+    setValidating(false);
+    setValidationMode(null);
+  }, []);
+
   const handleXmlChange = useCallback(
     (updatedXml) => {
       // ignore canvas changes while previewing a historical snapshot
       if (previewRev) return;
+      if (updatedXml === xml) return;
+      invalidateValidation();
       if (pendingProposal) setPendingProposal(null);
       setXml(updatedXml);
       setCanvasDirty(true);
     },
-    [previewRev, pendingProposal],
+    [previewRev, pendingProposal, xml, invalidateValidation],
   );
 
   async function applyDiagram(updatedDiagram) {
+    const exported = await exportDiagram(updatedDiagram);
+    const laid = await autoLayout(exported.xml);
+    invalidateValidation();
     setDiagram(updatedDiagram);
     setValidationSourceDiagram(updatedDiagram);
     setCanvasDirty(false);
     setParseError(null);
-    try {
-      const exported = await exportDiagram(updatedDiagram);
-      const laid = await autoLayout(exported.xml);
-      setXml(laid);
-    } catch (err) {
-      console.error("failed to apply diagram update:", err);
-    }
+    setXml(laid);
   }
 
   async function handleUpload(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    invalidateValidation();
     const startedAt = performance.now();
     dismissPreview();
     // keep the raw text so an unparseable file is still viewable
@@ -801,6 +812,9 @@ export default function App() {
     e.target.value = "";
     try {
       const res = await uploadDiagram(file);
+      const exported = await exportDiagram(res.diagram);
+      const laid = await autoLayout(exported.xml);
+      invalidateValidation();
       setDiagram(res.diagram);
       setValidationSourceDiagram(res.diagram);
       setCanvasDirty(false);
@@ -810,8 +824,6 @@ export default function App() {
       setParseError(null);
       setValidationResult(null);
       setEditorTab(EDITOR_TABS.DIAGRAM);
-      const exported = await exportDiagram(res.diagram);
-      const laid = await autoLayout(exported.xml);
       setXml(laid);
       recordApiActivity({
         title: "Import BPMN",
@@ -851,7 +863,10 @@ export default function App() {
       interactionConfig(llmSettings.validation),
       modeConfig,
     );
-    setLastValidationTiers(modeConfig.tiers_enabled ?? null);
+    const version = documentVersion.current;
+    const requestId = ++validationRequest.current;
+    const isCurrent = () => version === documentVersion.current &&
+      requestId === validationRequest.current;
     setValidating(true);
     setValidationMode(mode);
     const startedAt = performance.now();
@@ -860,7 +875,9 @@ export default function App() {
       let validationSource = "source_diagram";
       if (!diagramForValidation || canvasDirty) {
         const currentXml = await editorRef.current?.getXml();
+        if (!isCurrent()) return;
         const parsed = await parseDiagramXml(currentXml ?? xml);
+        if (!isCurrent()) return;
         if (currentXml) setXml(currentXml);
         setDiagram(parsed.diagram);
         setValidationSourceDiagram(parsed.diagram);
@@ -873,6 +890,8 @@ export default function App() {
         includeSemanticPass,
         config,
       );
+      if (!isCurrent()) return;
+      setLastValidationTiers(modeConfig.tiers_enabled ?? null);
       setValidationResult(res);
       const issueTotal =
         (res.issues?.length ?? 0) + (res.semantic_issues?.length ?? 0);
@@ -898,6 +917,7 @@ export default function App() {
         },
       });
     } catch (err) {
+      if (!isCurrent()) return;
       recordApiActivity({
         title:
           mode === VALIDATION_MODES.SEMANTIC
@@ -914,8 +934,10 @@ export default function App() {
       });
       alert(`Validation failed: ${err.message}`);
     } finally {
-      setValidating(false);
-      setValidationMode(null);
+      if (isCurrent()) {
+        setValidating(false);
+        setValidationMode(null);
+      }
     }
   }
 
@@ -986,7 +1008,7 @@ export default function App() {
       setCurrentRevId(commit.new_rev_id);
       if (pendingProposal.source === "repair" && acceptedRemainingIssues) {
         setValidationResult({
-          is_valid: acceptedRemainingIssues.length === 0,
+          is_valid: !acceptedRemainingIssues.some((issue) => issue.severity === "error"),
           issues: acceptedRemainingIssues,
           semantic_issues: [],
         });
@@ -1169,7 +1191,7 @@ export default function App() {
         setSessionId(commit.session_id);
         setCurrentRevId(commit.new_rev_id);
         setValidationResult({
-          is_valid: res.remaining_issues.length === 0,
+          is_valid: !res.remaining_issues.some((issue) => issue.severity === "error"),
           issues: res.remaining_issues,
           semantic_issues: [],
         });
