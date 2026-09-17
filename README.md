@@ -2,7 +2,7 @@
 
 Interactive system for validation, repair, and refinement of BPMN 2.0 diagrams using Large Language Models.
 
-Part of a master's thesis: *Design and Implementation of an Interactive System Supporting Validation, Repair, and Refinement of BPMN Diagrams with Large Language Models* — AGH University of Science and Technology.
+Part of a master's thesis: *Design and Implementation of an Interactive System Supporting Validation, Repair, and Refinement of BPMN Diagrams with Large Language Models* — AGH University of Krakow.
 
 ## What it does
 
